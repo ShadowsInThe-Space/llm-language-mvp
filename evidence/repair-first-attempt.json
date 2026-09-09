@@ -1,0 +1,124 @@
+{
+  "status": "exhausted",
+  "baseline_hash": "3c1db0d49960939d41e6fddd9b0c4379a0cc4ca9dacc293b18cc1006fde7b6d9",
+  "checker": "cert-v0.1",
+  "candidate_source": "(candidate p0 (body (if (int.lt (var 0) (var 1)) (var 0) (var 1))) (body (var 1)))",
+  "verification": {
+    "status": "counterexample",
+    "domains": [
+      {
+        "status": "domain_nonempty",
+        "witness": [
+          {
+            "type": "Int",
+            "value": "0"
+          },
+          {
+            "type": "Int",
+            "value": "0"
+          }
+        ],
+        "certificate": null
+      },
+      {
+        "status": "domain_nonempty",
+        "witness": [
+          {
+            "type": "Int",
+            "value": "0"
+          },
+          {
+            "type": "Int",
+            "value": "0"
+          }
+        ],
+        "certificate": null
+      }
+    ],
+    "certificate": null,
+    "counterexample": {
+      "entry": 1,
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "1"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        }
+      ],
+      "kind": "postcondition",
+      "result": {
+        "type": "Int",
+        "value": "1"
+      }
+    },
+    "diagnostics": []
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "counterexample",
+      "source_hash": "1a47f05135b70b43e97ee7c03d382ab6a786bbdf6584c1be0ac8b33b7ac8c14f",
+      "elapsed_ms": 38,
+      "feedback": {
+        "status": "counterexample",
+        "domains": [
+          {
+            "status": "domain_nonempty",
+            "witness": [
+              {
+                "type": "Int",
+                "value": "0"
+              },
+              {
+                "type": "Int",
+                "value": "0"
+              }
+            ],
+            "certificate": null
+          },
+          {
+            "status": "domain_nonempty",
+            "witness": [
+              {
+                "type": "Int",
+                "value": "0"
+              },
+              {
+                "type": "Int",
+                "value": "0"
+              }
+            ],
+            "certificate": null
+          }
+        ],
+        "counterexample": {
+          "entry": 1,
+          "inputs": [
+            {
+              "type": "Int",
+              "value": "1"
+            },
+            {
+              "type": "Int",
+              "value": "0"
+            }
+          ],
+          "kind": "postcondition",
+          "result": {
+            "type": "Int",
+            "value": "1"
+          }
+        },
+        "diagnostics": []
+      }
+    }
+  ],
+  "reason": {
+    "status": "unverified",
+    "code": "E_FACTORY_ATTEMPTS",
+    "message": "Candidate attempt budget exhausted"
+  }
+}

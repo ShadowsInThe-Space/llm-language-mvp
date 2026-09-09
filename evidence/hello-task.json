@@ -1,0 +1,8 @@
+{
+  "task": "Generate a P0 candidate satisfying the supplied frozen hello.llspec. Values are Unicode/ASCII codes for output positions. Write only candidate source; do not modify contract/checker.",
+  "specification": "examples/hello/hello.llspec",
+  "expected_output": "Hello World\n",
+  "author": "Lead architect",
+  "source_generated_by": "/root/hello_synthesis",
+  "completion_record": "evidence/agent-provenance.json"
+}

@@ -1,0 +1,241 @@
+{
+  "task": "overlap_length",
+  "description": "Inputs a, b, c, d describe ordered intervals [a,b] and [c,d]. Return max(0, min(b,d)-max(a,c)); touching intervals have zero length.",
+  "entry": 0,
+  "witness": [
+    {
+      "type": "Int",
+      "value": "0"
+    },
+    {
+      "type": "Int",
+      "value": "0"
+    },
+    {
+      "type": "Int",
+      "value": "0"
+    },
+    {
+      "type": "Int",
+      "value": "0"
+    }
+  ],
+  "samples": [
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "5"
+        },
+        {
+          "type": "Int",
+          "value": "3"
+        },
+        {
+          "type": "Int",
+          "value": "8"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "2"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "3"
+        },
+        {
+          "type": "Int",
+          "value": "8"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "5"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "2"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "10"
+        },
+        {
+          "type": "Int",
+          "value": "2"
+        },
+        {
+          "type": "Int",
+          "value": "4"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "2"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "2"
+        },
+        {
+          "type": "Int",
+          "value": "4"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "10"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "2"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "2"
+        },
+        {
+          "type": "Int",
+          "value": "3"
+        },
+        {
+          "type": "Int",
+          "value": "5"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "3"
+        },
+        {
+          "type": "Int",
+          "value": "5"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "2"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "3"
+        },
+        {
+          "type": "Int",
+          "value": "3"
+        },
+        {
+          "type": "Int",
+          "value": "5"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "2"
+        },
+        {
+          "type": "Int",
+          "value": "2"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "5"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-9"
+        },
+        {
+          "type": "Int",
+          "value": "-2"
+        },
+        {
+          "type": "Int",
+          "value": "-5"
+        },
+        {
+          "type": "Int",
+          "value": "4"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "3"
+      }
+    }
+  ]
+}

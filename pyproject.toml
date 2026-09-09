@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llmlang-mvp"
+version = "0.2.0"
+description = "A small proof-carrying language and bounded agent synthesis factory"
+requires-python = ">=3.12"
+dependencies = ["z3-solver>=4.13,<6", "pydantic>=2,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "hypothesis>=6", "ruff>=0.9", "mypy>=1.13"]
+
+[project.scripts]
+llmlang = "llmlang.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["z3", "z3.*"]
+ignore_missing_imports = true

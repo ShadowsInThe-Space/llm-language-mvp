@@ -1,0 +1,42 @@
+{
+  "status": "proved",
+  "domains": [
+    {
+      "status": "domain_nonempty",
+      "witness": [
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        }
+      ],
+      "certificate": null
+    },
+    {
+      "status": "domain_nonempty",
+      "witness": [
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        }
+      ],
+      "certificate": null
+    }
+  ],
+  "certificate": {
+    "checker": "cert-v0.1",
+    "baseline_hash": "3c1db0d49960939d41e6fddd9b0c4379a0cc4ca9dacc293b18cc1006fde7b6d9",
+    "candidate_hash": "5da37285a45ee066cfaa20d9114368a8aedb66bd49b1acc5ff0f43d2f90eccdb",
+    "obligations": {},
+    "domains": {}
+  },
+  "counterexample": null,
+  "diagnostics": []
+}

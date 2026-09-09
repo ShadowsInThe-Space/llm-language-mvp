@@ -1,0 +1,75 @@
+{
+  "profile": "p0",
+  "assurance": "A2-relative-to-TCB",
+  "golden_programs": [
+    {
+      "task": "abs",
+      "status": "proved",
+      "samples": 4
+    },
+    {
+      "task": "access_rule",
+      "status": "proved",
+      "samples": 6
+    },
+    {
+      "task": "clamp",
+      "status": "proved",
+      "samples": 7
+    },
+    {
+      "task": "grant",
+      "status": "proved",
+      "samples": 6
+    },
+    {
+      "task": "identity",
+      "status": "proved",
+      "samples": 4
+    },
+    {
+      "task": "maximum",
+      "status": "proved",
+      "samples": 5
+    },
+    {
+      "task": "minimum",
+      "status": "proved",
+      "samples": 5
+    },
+    {
+      "task": "nonnegative_difference",
+      "status": "proved",
+      "samples": 5
+    },
+    {
+      "task": "overlap_length",
+      "status": "proved",
+      "samples": 9
+    },
+    {
+      "task": "tiered_fee",
+      "status": "proved",
+      "samples": 7
+    }
+  ],
+  "hello": {
+    "status": "proved",
+    "run_status": "returned",
+    "output": "Hello World\n",
+    "agent": "/root/hello_synthesis",
+    "baseline_hash": "0ae7e1d4afdf776a06e0c9248d4c222c3bebb62ee11f9ab260c99a0514af341b"
+  },
+  "repair": {
+    "status": "proved",
+    "attempts": 2,
+    "baseline_hash": "3c1db0d49960939d41e6fddd9b0c4379a0cc4ca9dacc293b18cc1006fde7b6d9",
+    "input": [
+      "7",
+      "3"
+    ],
+    "result": "3"
+  },
+  "definition_of_done": "passed",
+  "generation_mode": "Replay of genuine session-agent outputs, not a new model request"
+}

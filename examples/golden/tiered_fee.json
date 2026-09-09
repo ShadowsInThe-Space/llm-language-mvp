@@ -1,0 +1,97 @@
+{
+  "task": "tiered_fee",
+  "description": "Nonnegative quantity q costs 2 integer units each for the first 10, then 1 unit each. Return the exact total.",
+  "entry": 0,
+  "witness": [
+    {
+      "type": "Int",
+      "value": "0"
+    }
+  ],
+  "samples": [
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "1"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "2"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "9"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "18"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "10"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "20"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "11"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "21"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "30"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "40"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "9007199254740993"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "9007199254741003"
+      }
+    }
+  ]
+}

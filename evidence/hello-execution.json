@@ -1,0 +1,56 @@
+{
+  "status": "proved",
+  "run_status": "returned",
+  "output": "Hello World\n",
+  "codepoints": [
+    {
+      "type": "Int",
+      "value": "72"
+    },
+    {
+      "type": "Int",
+      "value": "101"
+    },
+    {
+      "type": "Int",
+      "value": "108"
+    },
+    {
+      "type": "Int",
+      "value": "108"
+    },
+    {
+      "type": "Int",
+      "value": "111"
+    },
+    {
+      "type": "Int",
+      "value": "32"
+    },
+    {
+      "type": "Int",
+      "value": "87"
+    },
+    {
+      "type": "Int",
+      "value": "111"
+    },
+    {
+      "type": "Int",
+      "value": "114"
+    },
+    {
+      "type": "Int",
+      "value": "108"
+    },
+    {
+      "type": "Int",
+      "value": "100"
+    },
+    {
+      "type": "Int",
+      "value": "10"
+    }
+  ],
+  "note": "Each character came from the checked P0 function; host handles stdout."
+}

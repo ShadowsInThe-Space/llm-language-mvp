@@ -1,0 +1,61 @@
+{
+  "task": "abs",
+  "description": "Return the exact absolute value of an integer.",
+  "entry": 0,
+  "witness": [
+    {
+      "type": "Int",
+      "value": "0"
+    }
+  ],
+  "samples": [
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "9"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "9"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-9"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "9"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-9223372036854775808"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "9223372036854775808"
+      }
+    }
+  ]
+}

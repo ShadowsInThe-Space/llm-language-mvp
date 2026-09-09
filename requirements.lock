@@ -1,0 +1,20 @@
+# Installed versions used for the recorded MVP acceptance.
+annotated-types==0.8.0
+ast_serialize==0.11.0
+hypothesis==6.168.0
+iniconfig==2.3.0
+librt==0.15.0
+mypy==2.3.1
+mypy_extensions==1.1.0
+packaging==26.3
+pathspec==1.1.1
+pluggy==1.6.0
+pydantic==2.13.5
+pydantic_core==2.46.5
+Pygments==2.21.0
+pytest==9.1.1
+ruff==0.16.6
+sortedcontainers==2.4.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+z3-solver==5.1.0.0

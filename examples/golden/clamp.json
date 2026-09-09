@@ -1,0 +1,161 @@
+{
+  "task": "clamp",
+  "description": "Inputs are value, lower, upper; lower <= upper. Return value clamped to the inclusive range.",
+  "entry": 0,
+  "witness": [
+    {
+      "type": "Int",
+      "value": "0"
+    },
+    {
+      "type": "Int",
+      "value": "0"
+    },
+    {
+      "type": "Int",
+      "value": "0"
+    }
+  ],
+  "samples": [
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-1"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "10"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "10"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "6"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "10"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "6"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "10"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "10"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "10"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "11"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Int",
+          "value": "10"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "10"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "5"
+        },
+        {
+          "type": "Int",
+          "value": "-2"
+        },
+        {
+          "type": "Int",
+          "value": "-2"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "-2"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-4"
+        },
+        {
+          "type": "Int",
+          "value": "-10"
+        },
+        {
+          "type": "Int",
+          "value": "-1"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "-4"
+      }
+    }
+  ]
+}

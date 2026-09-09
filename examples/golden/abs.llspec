@@ -1,0 +1,1 @@
+(spec p0 (fn (params Int) (result Int) (requires true) (ensures (int.eq result (if (int.lt (var 0) 0) (int.sub 0 (var 0)) (var 0))))))

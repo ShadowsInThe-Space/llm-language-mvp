@@ -1,0 +1,1 @@
+(spec p0 (fn (params Int Int Int Int) (result Int) (requires (and (int.le (var 3) (var 2)) (int.le (var 1) (var 0)))) (ensures (let (if (int.le (var 3) (var 1)) (var 1) (var 3)) (let (if (int.le (var 3) (var 1)) (var 3) (var 1)) (int.eq result (if (int.lt (var 1) (var 0)) (int.sub (var 0) (var 1)) 0)))))))

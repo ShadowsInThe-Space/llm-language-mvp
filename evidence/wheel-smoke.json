@@ -1,0 +1,18 @@
+{
+  "installation_exit_code": 0,
+  "module_origin": "/workspace/scratch/a67318291dbe/wheel-smoke/llmlang/__init__.py",
+  "command": [
+    "/workspace/scratch/a67318291dbe/llm-language-mvp/.venv/bin/python",
+    "-m",
+    "llmlang",
+    "hello",
+    "--spec",
+    "/workspace/scratch/a67318291dbe/llm-language-mvp/examples/hello/hello.llspec",
+    "--candidate",
+    "/workspace/scratch/a67318291dbe/llm-language-mvp/examples/hello/hello.ll"
+  ],
+  "exit_code": 0,
+  "stdout": "Hello World\n",
+  "stderr": "",
+  "wheel": "llmlang_mvp-0.2.0-py3-none-any.whl"
+}

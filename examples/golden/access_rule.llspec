@@ -1,0 +1,1 @@
+(spec p0 (fn (params Int Bool) (result Bool) (requires (int.le 0 (var 1))) (ensures (bool.eq result (and (int.le 18 (var 1)) (var 0))))))

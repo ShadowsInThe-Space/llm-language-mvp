@@ -1,0 +1,58 @@
+{
+  "recorded_at": "2026-09-08T22:07:43.932182+00:00",
+  "scope": "Observed final validation commands; not an A4 seal or a proof of the Python implementation",
+  "gates": [
+    {
+      "command": ".venv/bin/python -m pytest -q",
+      "exit_code": 0,
+      "stdout_summary": "178 passed in 8.65s",
+      "tool_output_chunk": "461064"
+    },
+    {
+      "command": ".venv/bin/python -m ruff check src tests scripts",
+      "exit_code": 0,
+      "stdout": "All checks passed!\n",
+      "tool_output_chunk": "80cdd7"
+    },
+    {
+      "command": "PYTHONPATH=/workspace/scratch/a67318291dbe/mypy-pure .venv/bin/python -m mypy --no-incremental --cache-dir=/tmp/llmlang-release-mypy src",
+      "exit_code": 0,
+      "stdout": "Success: no issues found in 12 source files\n",
+      "tool_output_chunk": "a50a18",
+      "environment_note": "Native mypy startup caused SIGBUS. Used the unmodified Python sources shipped with the same installed mypy version; strict checks unchanged."
+    },
+    {
+      "command": ".venv/bin/python scripts/demo.py --out evidence/acceptance",
+      "exit_code": 0,
+      "stdout": "Hello World\nDefinition of Done passed: 10 golden programs, agent Hello World, agent repair.\nEvidence: evidence/acceptance/acceptance.json\n",
+      "tool_output_chunk": "2ff6bd"
+    }
+  ],
+  "source_sha256": {
+    "src/llmlang/__init__.py": "06154f35c82697af11cb705be0899679c754bb316d825cb083bb00eaae1704a7",
+    "src/llmlang/__main__.py": "742127713e09e2c1a526802e892aa627c03508d93e0faccfb443a303fa19c2a5",
+    "src/llmlang/adapters.py": "a418eafe08ad92db2f4d884eded9d95be4ffc286ab5ecb5c3ee42eed8c4ddad7",
+    "src/llmlang/cli.py": "d1bb2fbd433dfd3afde00fa228721e8b3af7cb7551fa9d112c1eb2a73018596e",
+    "src/llmlang/core.py": "acae24c339b0978aa13e60a9091e04325405db0d0c29efe7f2d8ad0b58eec544",
+    "src/llmlang/factory.py": "7269a0671eb546a10a2d5057179a544a1400dc50fff300bd920ed062ec6bc365",
+    "src/llmlang/model.py": "55bbd83ae5cf86aaebb287d7301a72dda1e056154407dd0a7f4a99ba5193e394",
+    "src/llmlang/parser.py": "5b9cfa6878e00852ba629201ca220ed7172154954ea982596e39c5e4ccd9bffd",
+    "src/llmlang/proof.py": "6b3eafd9ade9874a80e00f1b4c000ff8b68754be195ad612013a1a63f93788d3",
+    "src/llmlang/solver.py": "5f76fa49ca1d08129b767a10a26a61a2e7148e72dace17debcd1620c72880e75",
+    "src/llmlang/symbolic.py": "e9c6fc3a495c90447ec02bcbe9630e1de679688861e0da2a178efddfba7bb6be",
+    "src/llmlang/transport.py": "3f3e097efe4b9474fedfcb5a92e84bae57946d393ca4b7df33ff89fe241a7958",
+    "tests/test_adapters.py": "4054ec5b530d6f2b93ccd2c6c35bd62dac2e23b285330d1d74a4753c49c738fd",
+    "tests/test_cli.py": "6d6f3f658138903a28d9e68e80c4690757b00860f512ee5cbaef584ee5ba0577",
+    "tests/test_core.py": "a2b8851605eb1c829bea3c52e83ab6f09a9795e8949fb0482843965e5b9a2bfb",
+    "tests/test_demo.py": "2782f59ca5b62398ec228badff1dc3b9af6d7eca7fef7679681a5706b82432ed",
+    "tests/test_factory.py": "d9e50b1b57d03fef11a1809fdbac23ab737187c277c358320a8fdc719d051dba",
+    "tests/test_golden.py": "f09ed65c12152ea46a7a60eb7b2590ce9fdd053a79d95508d100572889404ad3",
+    "tests/test_limits.py": "094a2815c08c7b3f2d78a25b918b5a57fb6e44c57407dafe9596df880b50103f",
+    "tests/test_parser.py": "564e4f0ad8d98a318bab578c49f2c30390115a83a67b7f271cdcdb5bc93f79fa",
+    "tests/test_proof.py": "d390dee1abbeba1ccb0e56a9895ed7e44e6a21cbf2977409f3e63c7f2bbb6609",
+    "tests/test_proof_properties.py": "555d8e7e2d3533c63edeb4656e254e4110e1383d0d7cfdab40a9d3781f2f2d0f",
+    "tests/test_security.py": "15326eb39f30e532d6ac43afd1881a5e5c2be36cc3247e7aa3a30ab089a5716f",
+    "scripts/demo.py": "62fc5a6218b217f874ee4f6429aa84ba6a5753ec13641895fdb9d3144538cefa"
+  },
+  "wheel_sha256": "e04ca32e6b7e6eb98f2d039e6355da7c7e759af3f2e08421856e98e49ac65041"
+}

@@ -1,0 +1,113 @@
+{
+  "task": "access_rule",
+  "description": "Inputs nonnegative age and active-account flag. Grant access exactly when age >= 18 and account is active.",
+  "entry": 0,
+  "witness": [
+    {
+      "type": "Int",
+      "value": "0"
+    },
+    {
+      "type": "Bool",
+      "value": false
+    }
+  ],
+  "samples": [
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        },
+        {
+          "type": "Bool",
+          "value": true
+        }
+      ],
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "17"
+        },
+        {
+          "type": "Bool",
+          "value": true
+        }
+      ],
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "18"
+        },
+        {
+          "type": "Bool",
+          "value": true
+        }
+      ],
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "18"
+        },
+        {
+          "type": "Bool",
+          "value": false
+        }
+      ],
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "70"
+        },
+        {
+          "type": "Bool",
+          "value": true
+        }
+      ],
+      "expected": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "70"
+        },
+        {
+          "type": "Bool",
+          "value": false
+        }
+      ],
+      "expected": {
+        "type": "Bool",
+        "value": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "mode": "Genuine session-agent synthesis and feedback-driven repair; replay files persisted",
+  "hello": {
+    "agent": "/root/hello_synthesis",
+    "source": "examples/hello/hello.ll",
+    "source_sha256": "f34306dbc896051761f48134e122c047e9e83acf0616ac3a737cf1d86a0fc984",
+    "specification": "examples/hello/hello.llspec",
+    "baseline_hash": "0ae7e1d4afdf776a06e0c9248d4c222c3bebb62ee11f9ab260c99a0514af341b",
+    "first_check": "unverified: branch budget exhausted",
+    "resolution": "Checker-owned exact contradiction rule; specification and agent candidate unchanged"
+  },
+  "repair": {
+    "agent": "/root/hello_synthesis",
+    "source": "examples/agent-repair/repaired.ll",
+    "source_sha256": "6eb051112e16d7fb19b67972bb3307719e58ecf0e802c9f56d8346bc2e54d053",
+    "specification": "examples/agent-repair/grant.llspec",
+    "baseline_hash": "3c1db0d49960939d41e6fddd9b0c4379a0cc4ca9dacc293b18cc1006fde7b6d9",
+    "request": "evidence/repair-agent-request.json",
+    "first_feedback": "counterexample: requested=1, available=0, result=1",
+    "repair": "Replace entry body by the required backward call to the minimum helper"
+  },
+  "evidence_scope": "These metadata record observed session actions, not cryptographically attested model identity."
+}

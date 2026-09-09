@@ -1,0 +1,56 @@
+{
+  "status": "proved",
+  "baseline_hash": "0ae7e1d4afdf776a06e0c9248d4c222c3bebb62ee11f9ab260c99a0514af341b",
+  "checker": "cert-v0.1",
+  "candidate_source": "(candidate p0 (body (if (int.eq (var 0) 0) 72 (if (int.eq (var 0) 1) 101 (if (int.eq (var 0) 2) 108 (if (int.eq (var 0) 3) 108 (if (int.eq (var 0) 4) 111 (if (int.eq (var 0) 5) 32 (if (int.eq (var 0) 6) 87 (if (int.eq (var 0) 7) 111 (if (int.eq (var 0) 8) 114 (if (int.eq (var 0) 9) 108 (if (int.eq (var 0) 10) 100 10)))))))))))))",
+  "verification": {
+    "status": "proved",
+    "domains": [
+      {
+        "status": "domain_nonempty",
+        "witness": [
+          {
+            "type": "Int",
+            "value": "0"
+          }
+        ],
+        "certificate": null
+      }
+    ],
+    "certificate": {
+      "checker": "cert-v0.1",
+      "baseline_hash": "0ae7e1d4afdf776a06e0c9248d4c222c3bebb62ee11f9ab260c99a0514af341b",
+      "candidate_hash": "52073e750c8b981efac01a31aeafea90a5e898e009674ec5db14c10b20a1015c",
+      "obligations": {},
+      "domains": {}
+    },
+    "counterexample": null,
+    "diagnostics": []
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "proved",
+      "source_hash": "f34306dbc896051761f48134e122c047e9e83acf0616ac3a737cf1d86a0fc984",
+      "elapsed_ms": 18,
+      "feedback": {
+        "status": "proved",
+        "domains": [
+          {
+            "status": "domain_nonempty",
+            "witness": [
+              {
+                "type": "Int",
+                "value": "0"
+              }
+            ],
+            "certificate": null
+          }
+        ],
+        "counterexample": null,
+        "diagnostics": []
+      }
+    }
+  ],
+  "reason": null
+}

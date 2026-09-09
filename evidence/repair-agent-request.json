@@ -1,0 +1,60 @@
+{
+  "task": "Repair the candidate body using actual verifier feedback. Preserve the authoritative frozen specification. Return candidate P0 source only.",
+  "specification": "(spec p0 (fn (params Int Int) (result Int) (requires (and (int.le 0 (var 1)) (int.le 0 (var 0)))) (ensures (int.eq result (if (int.le (var 1) (var 0)) (var 1) (var 0))))) (fn (params Int Int) (result Int) (requires (and (int.le 0 (var 1)) (int.le 0 (var 0)))) (ensures (int.eq result (if (int.le (var 1) (var 0)) (var 1) (var 0))))))\n",
+  "baseline_hash": "3c1db0d49960939d41e6fddd9b0c4379a0cc4ca9dacc293b18cc1006fde7b6d9",
+  "previous_candidate": "(candidate p0 (body (if (int.lt (var 0) (var 1)) (var 0) (var 1))) (body (var 1)))\n",
+  "feedback": {
+    "status": "counterexample",
+    "domains": [
+      {
+        "status": "domain_nonempty",
+        "witness": [
+          {
+            "type": "Int",
+            "value": "0"
+          },
+          {
+            "type": "Int",
+            "value": "0"
+          }
+        ],
+        "certificate": null
+      },
+      {
+        "status": "domain_nonempty",
+        "witness": [
+          {
+            "type": "Int",
+            "value": "0"
+          },
+          {
+            "type": "Int",
+            "value": "0"
+          }
+        ],
+        "certificate": null
+      }
+    ],
+    "counterexample": {
+      "entry": 1,
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "1"
+        },
+        {
+          "type": "Int",
+          "value": "0"
+        }
+      ],
+      "kind": "postcondition",
+      "result": {
+        "type": "Int",
+        "value": "1"
+      }
+    },
+    "diagnostics": []
+  },
+  "attempt": 2,
+  "max_attempts": 3
+}

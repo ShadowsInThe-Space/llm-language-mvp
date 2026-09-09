@@ -1,0 +1,24 @@
+{
+  "status": "proved",
+  "domains": [
+    {
+      "status": "domain_nonempty",
+      "witness": [
+        {
+          "type": "Int",
+          "value": "0"
+        }
+      ],
+      "certificate": null
+    }
+  ],
+  "certificate": {
+    "checker": "cert-v0.1",
+    "baseline_hash": "657cf2866d012591affe9816b4eb1d743a04ac0d7f1ea5efc316162f14661037",
+    "candidate_hash": "366ffc35d95b26941bcf2245a9b8b83ec8aa4edcada03f23c9a5c97539b2099f",
+    "obligations": {},
+    "domains": {}
+  },
+  "counterexample": null,
+  "diagnostics": []
+}

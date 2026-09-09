@@ -1,0 +1,61 @@
+{
+  "task": "identity",
+  "description": "Return the exact mathematical integer input.",
+  "entry": 0,
+  "witness": [
+    {
+      "type": "Int",
+      "value": "0"
+    }
+  ],
+  "samples": [
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "0"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-7"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "-7"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "9007199254740993"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "9007199254740993"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-1267650600228229401496703205376"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "-1267650600228229401496703205376"
+      }
+    }
+  ]
+}

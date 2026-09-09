@@ -1,0 +1,97 @@
+{
+  "task": "nonnegative_difference",
+  "description": "Return max(0, a - b).",
+  "entry": 0,
+  "witness": [
+    {
+      "type": "Int",
+      "value": "0"
+    },
+    {
+      "type": "Int",
+      "value": "0"
+    }
+  ],
+  "samples": [
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "8"
+        },
+        {
+          "type": "Int",
+          "value": "3"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "5"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "3"
+        },
+        {
+          "type": "Int",
+          "value": "8"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "5"
+        },
+        {
+          "type": "Int",
+          "value": "5"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-2"
+        },
+        {
+          "type": "Int",
+          "value": "-7"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "5"
+      }
+    },
+    {
+      "inputs": [
+        {
+          "type": "Int",
+          "value": "-7"
+        },
+        {
+          "type": "Int",
+          "value": "-2"
+        }
+      ],
+      "expected": {
+        "type": "Int",
+        "value": "0"
+      }
+    }
+  ]
+}
