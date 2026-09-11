@@ -1,4 +1,6 @@
 # LLM-Language MVP — P0
+> **English TL;DR:** Executable MVP for agent-written, contract-verified programs — a synthesis agent generates code while an independent, SMT-backed checker (z3) decides acceptance against formal contracts. 178 tests passing, formal acceptance completed 2026-09-08.
+
 
 Ein ausführbares MVP für agentengeschriebene, vertragsgeprüfte Programme.
 Der Syntheseagent erzeugt Code; ein unabhängiger Checker entscheidet über dessen Annahme.
