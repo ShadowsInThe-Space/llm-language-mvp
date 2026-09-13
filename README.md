@@ -8,6 +8,8 @@ before you use it.
 
 That is what we are building. Our first small website already works.
 
+**[Try it yourself](docs/QUICKSTART.md)** · **[Compiler source](src/llmlang/web)** · **[How to contribute](CONTRIBUTING.md)**
+
 ## The idea, with an example
 
 You want:
@@ -21,6 +23,13 @@ Our language describes these pieces in **one shared blueprint**.
 The **compiler** is the translator: it turns that blueprint into code for
 the website and its connection to storage. Your browser displays an ordinary
 website. It does not need a special extension.
+
+## See the compiler in 30 seconds
+
+![Animated walkthrough: read the blueprint, generate web source, check generated files, and run the separate proof demo.](docs/assets/compiler-walkthrough.gif)
+
+*Illustrated output from actual commands, not a screen recording.
+[Text version and commands](docs/QUICKSTART.md) · [Run evidence](docs/launch/validation.json).*
 
 ## From an idea to a website
 
@@ -87,10 +96,10 @@ website. These extensions are **not implemented yet**.
 
 ## Want to look inside?
 
-The technical documentation is currently in German.
+Start with the English quickstart. The detailed language specifications are currently in German.
 
 - **Find the compiler:** [src/llmlang/web](src/llmlang/web) · [Start with build.py](src/llmlang/web/build.py)
-- **Run it yourself:** [Installation and technical guide](docs/TECHNICAL-GUIDE.md)
+- **Run it yourself:** [English quickstart](docs/QUICKSTART.md) · [Detailed technical guide (German)](docs/TECHNICAL-GUIDE.md)
 - **Build websites:** [Compiler, architecture and deployment](docs/W1-GUIDE.md)
 - **Explore the language:** [Calculation rules](docs/P0.md) · [Websites](docs/W1-SPEC.md) · [Saved text history](docs/W2-SPEC.md)
 - **Understand the checks:** [What the proofs cover](docs/ASSURANCE.md) · [Browser acceptance report](docs/W1-ABNAHME.md)

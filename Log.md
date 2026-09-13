@@ -361,3 +361,13 @@ Die einfache Projektübersicht einschließlich Ablaufplan und Bildbeschreibung w
 für internationale GitHub-Leser ins Englische übertragen. Die derzeit deutsche
 Demooberfläche und technische Dokumentation sind als solche gekennzeichnet.
 Funktionsumfang, Beweisgrenzen und Planungsstatus bleiben erhalten.
+
+## 2026-09-13 — Repository-Einstieg und Veröffentlichung vorbereiten
+
+Englischer Schnellstart, 30-Sekunden-GIF aus echten Compiler-Ausgaben,
+Beitragsleitfaden, Bug-Vorlage, Release-Notes und Outreach-Entwürfe ergänzt.
+Compiler, Dateiintegrität und P0-Demo erneut ausgeführt; Ausgabe in
+docs/launch/validation.json. Keine Änderung der Sprache. Die GIF erklärt
+aufgezeichnete Ergebnisse und ist keine Bildschirmaufnahme. Topics sind bereits
+passend gesetzt. About-Aktualisierung und GitHub-Release bleiben mangels passender
+Connector-Aktionen offen; keine Community-Nachricht wurde versandt.

@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-13",
+  "kind": "illustrated walkthrough from actual command output; not a screen recording",
+  "source": "examples/web/hello-history.llapp",
+  "compiler_status": "compiled",
+  "compiler_version": "web.0.4.0",
+  "profile": "w2",
+  "source_sha256": "396eca5a1b97da8205c4df3db148b30431410d8baf596050c87984cc32a920bf",
+  "generated_files": [
+    "app/api/store/[slot]/route.ts",
+    "app/globals.css",
+    "app/layout.tsx",
+    "app/page.tsx",
+    "db/schema.ts",
+    "db/w1.ts",
+    "lib/w1-server.ts",
+    "llmlang/ir.json",
+    "llmlang/migrate-w1-to-w2.sql",
+    "llmlang/source.llapp"
+  ],
+  "integrity": "Generated files match the compiler: True",
+  "proof_demo_output": "Hello World\nDefinition of Done passed: 10 golden programs, agent Hello World, agent repair.",
+  "browser_acceptance_repeated": false,
+  "fresh_dependency_install_tested": false
+}
