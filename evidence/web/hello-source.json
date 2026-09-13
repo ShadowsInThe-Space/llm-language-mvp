@@ -1,0 +1,6 @@
+{
+  "source": "examples/web/hello.llapp",
+  "author": "session-agent web_app_author",
+  "provenance": "Actual source authored in this task before compiler execution",
+  "sha256": "ae2823d7514d84febe732407d2a144e3b24f5915d020aa82fed81275a9abfa02"
+}

@@ -1,0 +1,6 @@
+{
+  "source": "examples/web/notes.llapp",
+  "author": "session-agent web_app_author",
+  "provenance": "Actual source authored in this task before compiler execution",
+  "sha256": "1e94d5b11cc57ac14d6dc07480c91273b143774ec05150ddf3e54766dd71dbbe"
+}

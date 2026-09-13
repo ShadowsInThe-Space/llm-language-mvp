@@ -1,0 +1,66 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________________ test_excess_widgets_are_resource_errors[65] __________________
+
+count = 65
+
+    @pytest.mark.parametrize("count", [65, 80])
+    def test_excess_widgets_are_resource_errors(count: int) -> None:
+        widgets = " ".join(f'(output value_{index} "Text")' for index in range(count))
+        source = (
+            '(app w1 notes (store memo (Text 32)) (action read_memo (read memo)) '
+            f'(page "/" (title "Notes") {widgets}))'
+        )
+>       assert_error(source, "W_LIMIT")
+
+tests/test_web_parser.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+source = '(app w1 notes (store memo (Text 32)) (action read_memo (read memo)) (page "/" (title "Notes") (output value_0 "Text")...value_60 "Text") (output value_61 "Text") (output value_62 "Text") (output value_63 "Text") (output value_64 "Text")))'
+code = 'W_LIMIT'
+limits = WebLimits(max_source_bytes=131072, max_nodes=4096, max_depth=32, max_stores=8, max_actions=16, max_widgets=64, max_text_bytes=4096, max_label_bytes=256, max_name_chars=64)
+
+    def assert_error(source: str, code: str, limits: WebLimits = DEFAULT_LIMITS) -> WebError:
+        with pytest.raises(WebError) as raised:
+            parse_app(source, limits)
+>       assert raised.value.code == code
+E       AssertionError: assert 'W_PARSE' == 'W_LIMIT'
+E         
+E         - W_LIMIT
+E         + W_PARSE
+
+tests/test_web_parser.py:34: AssertionError
+_________________ test_excess_widgets_are_resource_errors[80] __________________
+
+count = 80
+
+    @pytest.mark.parametrize("count", [65, 80])
+    def test_excess_widgets_are_resource_errors(count: int) -> None:
+        widgets = " ".join(f'(output value_{index} "Text")' for index in range(count))
+        source = (
+            '(app w1 notes (store memo (Text 32)) (action read_memo (read memo)) '
+            f'(page "/" (title "Notes") {widgets}))'
+        )
+>       assert_error(source, "W_LIMIT")
+
+tests/test_web_parser.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+source = '(app w1 notes (store memo (Text 32)) (action read_memo (read memo)) (page "/" (title "Notes") (output value_0 "Text")...value_75 "Text") (output value_76 "Text") (output value_77 "Text") (output value_78 "Text") (output value_79 "Text")))'
+code = 'W_LIMIT'
+limits = WebLimits(max_source_bytes=131072, max_nodes=4096, max_depth=32, max_stores=8, max_actions=16, max_widgets=64, max_text_bytes=4096, max_label_bytes=256, max_name_chars=64)
+
+    def assert_error(source: str, code: str, limits: WebLimits = DEFAULT_LIMITS) -> WebError:
+        with pytest.raises(WebError) as raised:
+            parse_app(source, limits)
+>       assert raised.value.code == code
+E       AssertionError: assert 'W_PARSE' == 'W_LIMIT'
+E         
+E         - W_LIMIT
+E         + W_PARSE
+
+tests/test_web_parser.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_web_parser.py::test_excess_widgets_are_resource_errors[65]
+FAILED tests/test_web_parser.py::test_excess_widgets_are_resource_errors[80]
+2 failed, 56 deselected in 0.19s

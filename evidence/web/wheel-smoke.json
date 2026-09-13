@@ -1,0 +1,26 @@
+{
+  "wheel": "llmlang_mvp-0.3.0-py3-none-any.whl",
+  "wheel_sha256": "30d6f03291bdc7b58da30517a367c96eb0b400b31f4ae95913ba0a08ad927328",
+  "isolated_import": "/workspace/scratch/a67318291dbe/w1-wheel-install/llmlang/web/build.py",
+  "hello_site_source_identical": true,
+  "programs": [
+    {
+      "source": "examples/web/hello.llapp",
+      "app": "hello_ai_world",
+      "stores": 1,
+      "actions": 2,
+      "widgets": 4,
+      "source_sha256": "8ebb5accb07ff866558f572c0deca63cdb6c625450b5ab6e146f212602dc11bd",
+      "verified": true
+    },
+    {
+      "source": "examples/web/notes.llapp",
+      "app": "workshop_notes",
+      "stores": 2,
+      "actions": 4,
+      "widgets": 8,
+      "source_sha256": "2f25a11307016d027cea75dbfd331eebe17091b9984af0eb6fa5575af7119bae",
+      "verified": true
+    }
+  ]
+}

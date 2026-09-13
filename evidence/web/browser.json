@@ -1,0 +1,35 @@
+{
+  "browser": "Chrome",
+  "qa": "internal preview, real local D1",
+  "steps": [
+    {
+      "step": "empty-database",
+      "result": "GET before first save returned no stored value"
+    },
+    {
+      "step": "hello-save",
+      "snapshot": "- main:\n  - region \"Hello AI World\":\n    - heading \"Hello AI World\" [level=1]\n    - paragraph: Text eingeben, speichern und wieder abrufen.\n    - generic: Dein Text\n    - generic: 18 / 4096 Bytes\n    - textbox \"Dein Text\": Hello new AI World\n    - button \"Speichern\"\n    - button \"Aus Datenbank laden\"\n    - region \"Gespeicherter Text\":\n      - heading \"Gespeicherter Text\" [level=2]\n      - generic: Hello new AI World\n    - status: Gespeichert."
+    },
+    {
+      "step": "load-independent-of-unsaved-input",
+      "snapshot": "- main:\n  - region \"Hello AI World\":\n    - heading \"Hello AI World\" [level=1]\n    - paragraph: Text eingeben, speichern und wieder abrufen.\n    - generic: Dein Text\n    - generic: 17 / 4096 Bytes\n    - textbox \"Dein Text\": NICHT GESPEICHERT\n    - button \"Speichern\"\n    - button \"Aus Datenbank laden\"\n    - region \"Gespeicherter Text\":\n      - heading \"Gespeicherter Text\" [level=2]\n      - generic: Hello new AI World\n    - status: Aus der Datenbank geladen."
+    },
+    {
+      "step": "unicode-hostile-text-reload",
+      "snapshot": "- main:\n  - region \"Hello AI World\":\n    - heading \"Hello AI World\" [level=1]\n    - paragraph: Text eingeben, speichern und wieder abrufen.\n    - generic: Dein Text\n    - generic: 18 / 4096 Bytes\n    - textbox \"Dein Text\": Hello new AI World\n    - button \"Speichern\"\n    - button \"Aus Datenbank laden\"\n    - region \"Gespeicherter Text\":\n      - heading \"Gespeicherter Text\" [level=2]\n      - generic: Grüße 🌍 — 漢字 <script>alert(\"xss\")</script> ' OR 1=1; --\n    - status: Aus der Datenbank geladen."
+    },
+    {
+      "step": "empty-string-roundtrip",
+      "snapshot": "- main:\n  - region \"Hello AI World\":\n    - heading \"Hello AI World\" [level=1]\n    - paragraph: Text eingeben, speichern und wieder abrufen.\n    - generic: Dein Text\n    - generic: 0 / 4096 Bytes\n    - textbox \"Dein Text\"\n    - button \"Speichern\"\n    - button \"Aus Datenbank laden\"\n    - region \"Gespeicherter Text\":\n      - heading \"Gespeicherter Text\" [level=2]\n      - paragraph: Leerer Text gespeichert.\n    - status: Aus der Datenbank geladen."
+    },
+    {
+      "step": "oversized-input-preserves-confirmed-output",
+      "message": "Bitte gültigen Text mit höchstens 4096 Bytes eingeben."
+    },
+    {
+      "step": "preview-process-restart-and-immediate-reload-click",
+      "snapshot": "- main:\n  - region \"Hello AI World\":\n    - heading \"Hello AI World\" [level=1]\n    - paragraph: Text eingeben, speichern und wieder abrufen.\n    - generic: Dein Text\n    - generic: 18 / 4096 Bytes\n    - textbox \"Dein Text\": Hello new AI World\n    - button \"Speichern\"\n    - button \"Aus Datenbank laden\"\n    - region \"Gespeicherter Text\":\n      - heading \"Gespeicherter Text\" [level=2]\n      - generic: Hello new AI World\n    - status: Aus der Datenbank geladen."
+    }
+  ],
+  "screenshot": "hello-ai-world-browser-1788911717457.jpg"
+}

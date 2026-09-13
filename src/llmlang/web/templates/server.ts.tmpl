@@ -1,0 +1,215 @@
+// Generated w1 runtime. Application values are data, never executable source.
+export interface StoreStatement {
+  bind(...values: string[]): StoreStatement;
+  first<T>(): Promise<T | null>;
+}
+
+export interface StoreDatabase {
+  prepare(sql: string): StoreStatement;
+}
+
+export interface StoreConfig {
+  maxBytes: number;
+  read: boolean;
+  write: boolean;
+}
+
+export interface AppConfig {
+  appId: string;
+  stores: Record<string, StoreConfig>;
+}
+
+export const appConfig: AppConfig = __W1_CONFIG__;
+
+const MAX_BODY_BYTES = 32768;
+const SELECT_VALUE =
+  "SELECT value FROM w1_values WHERE app_id = ? AND store_id = ?";
+const UPSERT_VALUE =
+  "INSERT INTO w1_values (app_id, store_id, value) VALUES (?, ?, ?) " +
+  "ON CONFLICT(app_id, store_id) DO UPDATE SET value = excluded.value RETURNING value";
+
+function respond(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
+function failure(status: number, code: string, message: string): Response {
+  return respond({ error: { code, message } }, status);
+}
+
+function storageFailure(): Response {
+  return failure(503, "STORAGE_UNAVAILABLE", "Speicher derzeit nicht verfügbar.");
+}
+
+function validText(value: unknown, maxBytes: number): value is string {
+  if (typeof value !== "string" || value.includes("\u0000")) return false;
+  for (let index = 0; index < value.length; index += 1) {
+    const unit = value.charCodeAt(index);
+    if (unit >= 0xd800 && unit <= 0xdbff) {
+      const next = value.charCodeAt(index + 1);
+      if (!(next >= 0xdc00 && next <= 0xdfff)) return false;
+      index += 1;
+    } else if (unit >= 0xdc00 && unit <= 0xdfff) {
+      return false;
+    }
+  }
+  return new TextEncoder().encode(value).length <= maxBytes;
+}
+
+function validMediaType(header: string | null): boolean {
+  if (header === null) return false;
+  const parts = header.split(";");
+  if (parts[0].trim().toLowerCase() !== "application/json") return false;
+  if (parts.length === 1) return true;
+  return parts.length === 2 &&
+    /^charset\s*=\s*(?:utf-8|"utf-8")$/i.test(parts[1].trim());
+}
+
+class BodyFailure extends Error {
+  status: number;
+  code: string;
+  constructor(status: number, code: string) {
+    super(code);
+    this.status = status;
+    this.code = code;
+  }
+}
+
+async function readBody(request: Request): Promise<string> {
+  const length = request.headers.get("content-length");
+  if (length !== null && /^\d+$/.test(length) && Number(length) > MAX_BODY_BYTES) {
+    throw new BodyFailure(413, "REQUEST_TOO_LARGE");
+  }
+  if (request.body === null) throw new BodyFailure(400, "INPUT_INVALID");
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+  let size = 0;
+  let source = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_BODY_BYTES) {
+        // Cancellation is advisory; never wait on an attacker-controlled stream.
+        void reader.cancel().catch(() => undefined);
+        throw new BodyFailure(413, "REQUEST_TOO_LARGE");
+      }
+      source += decoder.decode(value, { stream: true });
+    }
+    return source + decoder.decode();
+  } catch (error) {
+    if (error instanceof BodyFailure) throw error;
+    throw new BodyFailure(400, "INPUT_INVALID");
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+// The only accepted JSON shape is one string property named "value". Capturing
+// exactly two JSON string tokens rejects duplicate keys and all extra fields.
+const STRING_TOKEN = '"(?:[^"\\\\\\u0000-\\u001f]|\\\\(?:["\\\\/bfnrt]|u[0-9a-fA-F]{4}))*"';
+const VALUE_OBJECT = new RegExp(
+  "^[ \\t\\r\\n]*\\{[ \\t\\r\\n]*(" + STRING_TOKEN +
+  ")[ \\t\\r\\n]*:[ \\t\\r\\n]*(" + STRING_TOKEN +
+  ")[ \\t\\r\\n]*\\}[ \\t\\r\\n]*$",
+);
+
+function decodeValue(source: string): string | null {
+  const match = VALUE_OBJECT.exec(source);
+  if (match === null) return null;
+  try {
+    if (JSON.parse(match[1]) !== "value") return null;
+    return JSON.parse(match[2]) as string;
+  } catch {
+    return null;
+  }
+}
+
+async function load(
+  database: StoreDatabase,
+  config: AppConfig,
+  slot: string,
+  store: StoreConfig,
+): Promise<Response> {
+  try {
+    const row = await database.prepare(SELECT_VALUE)
+      .bind(config.appId, slot).first<{ value: unknown }>();
+    if (row === null) return respond({ found: false });
+    if (!validText(row.value, store.maxBytes)) return storageFailure();
+    return respond({ found: true, value: row.value });
+  } catch {
+    return storageFailure();
+  }
+}
+
+async function save(
+  request: Request,
+  database: StoreDatabase | null,
+  config: AppConfig,
+  slot: string,
+  store: StoreConfig,
+): Promise<Response> {
+  if (request.headers.get("origin") !== new URL(request.url).origin) {
+    return failure(403, "ORIGIN_REJECTED", "Anfrageursprung nicht erlaubt.");
+  }
+  if (!validMediaType(request.headers.get("content-type"))) {
+    return failure(415, "INPUT_INVALID", "JSON mit UTF-8 ist erforderlich.");
+  }
+  let source: string;
+  try {
+    source = await readBody(request);
+  } catch (error) {
+    if (error instanceof BodyFailure) {
+      return failure(error.status, error.code, "Ungültige oder zu große Anfrage.");
+    }
+    return failure(400, "INPUT_INVALID", "Anfrage konnte nicht gelesen werden.");
+  }
+  const value = decodeValue(source);
+  if (value === null) {
+    return failure(400, "INPUT_INVALID", "Genau ein Textfeld value ist erforderlich.");
+  }
+  if (!validText(value, store.maxBytes)) {
+    return failure(422, "INPUT_INVALID", "Text verletzt den Speichertyp.");
+  }
+  if (database === null) return storageFailure();
+  try {
+    const row = await database.prepare(UPSERT_VALUE)
+      .bind(config.appId, slot, value).first<{ value: unknown }>();
+    if (row === null || !validText(row.value, store.maxBytes) || row.value !== value) {
+      return storageFailure();
+    }
+    return respond({ found: true, value: row.value });
+  } catch {
+    return storageFailure();
+  }
+}
+
+export async function handleStore(
+  request: Request,
+  database: StoreDatabase | null,
+  config: AppConfig,
+  slot: string,
+): Promise<Response> {
+  if (!Object.hasOwn(config.stores, slot)) {
+    return failure(404, "SLOT_UNKNOWN", "Unbekannter Speicher.");
+  }
+  const store = config.stores[slot];
+  if (request.method === "GET" && store.read) {
+    if (database === null) return storageFailure();
+    return load(database, config, slot, store);
+  }
+  if (request.method === "PUT" && store.write) {
+    return save(request, database, config, slot, store);
+  }
+  const response = failure(405, "METHOD_NOT_ALLOWED", "Aktion nicht erlaubt.");
+  response.headers.set("Allow", [store.read ? "GET" : "", store.write ? "PUT" : ""]
+    .filter(Boolean).join(", "));
+  return response;
+}

@@ -1,0 +1,16 @@
+
+// Additive w2 schema; preserve w1_values for legacy sources and migration.
+export const w2Entries = sqliteTable("w2_entries", {
+  sequence: integer("sequence").primaryKey({ autoIncrement: true }),
+  appId: text("app_id").notNull(),
+  storeId: text("store_id").notNull(),
+  id: text("id").notNull(),
+  value: text("value").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("w2_entry_identity").on(table.appId, table.storeId, table.id),
+  index("w2_entry_page").on(table.appId, table.storeId, table.sequence),
+  check("w2_value_text", sql`typeof(${table.value}) = 'text'`),
+  check("w2_value_bytes", sql`length(CAST(${table.value} AS BLOB)) <= 4096`),
+  check("w2_value_no_nul", sql`instr(${table.value}, char(0)) = 0`),
+]);

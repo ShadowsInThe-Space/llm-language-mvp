@@ -227,3 +227,121 @@
 **Entscheidung:** Die vom Nutzer gesetzte Definition of Done ist erfüllt. Quellstand, Abhängigkeitspins, Beispiele, Tests, Dokumentation, Wheel und lokaler Git-Verlauf werden als ausführbarer Meilenstein bereitgestellt. Ein Git-Commit und Datei-Hashes sind kein A4-Siegel.
 
 **Reichweite:** `proved` bestätigt den P0-Core-Vertrag relativ zur dokumentierten TCB. Die Implementierung des Checkers und Interpreters ist nicht formal bewiesen. Nächster Ausbau ist P1 mit Nat, I64, Result und expliziter Division-/Overflow-Semantik; kein offener P1-Punkt verhindert die erreichte P0-Abnahme.
+
+### D-029: Webprofil vor Implementierung spezifiziert
+
+**Entscheidung:** Der Nutzer priorisiert einen Fullstack-Compiler und eine echte Browser-/DB-Anwendung. Vier Experten diskutierten Sprache, Zielarchitektur, Security und unabhängige Abnahme. Der Lead fror `docs/W1-SPEC.md` und `docs/W1-PLAN.md` vor dem ersten Implementierungsstand ein. w1 ist ein begrenztes persistentes Formularprofil; P0 bleibt semantisch unverändert.
+
+### D-030: Ein Quellprogramm, drei Zielbereiche
+
+**Umgesetzt:** `.llapp` deklariert Textspeicher, Lese-/Schreibaktionen und Widgets. Der Python-Compiler erzeugt React-Oberfläche, TypeScript-API, D1-Adapter und Drizzle-Schema. Vinext/Vite und Drizzle bilden den nachgelagerten Zielbuild. Keine manuell separat geschriebene Hello-Demo ersetzt diese Codegenerierung. Ein eigener Session-Agent schrieb Hello und eine zweite Anwendung mit zwei Speichern.
+
+### D-031: Persistenz und Trustgrenzen
+
+**Entscheidung:** Ein Slot enthält den letzten vollständigen String. Initialtexte sind nur Eingaben, keine DB-Seeds. Gebundener UPSERT RETURNING, UTF-8-Bytegrenzen, striktes JSON und Same-Origin-Schreibprüfung sind implementiert. Plattformseitiger privater Sitezugriff schützt die Bereitstellung; w1 selbst besitzt keine Benutzerkonten. Statische Prüfung und Tests verleihen w1 keinen P0-Beweis und kein A3-/A4-Siegel.
+
+### D-032: Browserbefund verbessert den Generator
+
+**Befund und Fix:** Ein Klick direkt nach einem Reload konnte vor React-Hydration verloren gehen. Der Generator erzeugt nun bis zur Clientbereitschaft deaktivierte Eingaben und Buttons sowie eine zusätzliche Request-Sperre. Regression zuerst fehlgeschlagen, nach Generatoränderung bestanden; die Site wurde aus unveränderter Agentenquelle neu kompiliert.
+
+### D-033: w1-Definition-of-Done erfüllt
+
+**Ausgeführt:** 297 Tests bestanden, unabhängige Runtime-Suite mit erzeugter Drizzle-Migration, Ruff/mypy/TypeScript/ESLint und Vinext-Zielbuild erfolgreich. Chrome speichert und lädt echte Texte, einschließlich Leerstrings und Unicode. Reload und Neustart des Preview-Servers erhalten den Datenbankwert. Das isoliert installierte Wheel kompiliert beide Agentenquellen; die Hello-Artefakte stimmen byteweise mit der Site überein. Private Bereitstellung erfolgreich bestätigt. Einzelheiten und Prüfgrenzen stehen in `docs/W1-ABNAHME.md`.
+
+### D-034: Sichtbarer Abruf und lokale Anzeigenleerung, w2-Eintragsspeicher
+
+**Nutzeranforderung:** Neue DB-Abrufe auch bei gleichem Text erkennen; nur Anzeige leeren; mehrere gespeicherte Texte nach ihren Anfängen auswählen.
+
+**Umsetzung:** w2-Spezifikation vor Implementierung festgehalten. `store` in w2 sammelt unveränderliche Einträge; w1 ersetzt weiterhin einen Einzelwert. Neues `clear`-Widget mit statisch geprüftem Outputverweis. Generierte UI mit Textanfang-Auswahl, Pagination, Uhrzeit und Abrufnummer; generierte API mit App-/Slotbindung und idempotentem POST. Additive Migration übernimmt den vorhandenen w1-Wert und behält die alte Tabelle. Quellprogramm: `examples/web/hello-history.llapp`, vom Lead aus der ursprünglichen Agentenquelle erweitert. HTML/JS der Site wird unverändert aus dem Compiler übernommen.
+
+**Prüfung:** 12 neue SQLite-/Compiler-Regressionen zunächst RED, dann GREEN; insgesamt 309 Tests erfolgreich mit tatsächlich erzeugter Drizzle-Migration. Ruff, mypy, TypeScript, ESLint und Zielbuild erfolgreich. Chrome bestätigt Übernahme, mehrere neue Einträge, Auswahl des vollständigen Texts, lokale Leerung ohne DB-Löschung und erneut veränderte Abrufbestätigung. Die UUID-Erzeugung wurde nach einem Browserbefund auf `crypto.getRandomValues` mit RFC-4122-Version-/Variantbits umgestellt; damit funktionieren die Tests auch im internen HTTP-Preview. Webprofil, Decoder und Server-Autorisierungsgrenzen bleiben explizit; keine formale Beweiszertifizierung von w2.
+
+### D-035: Wirtschaftlicher Nutzen bleibt eine zu messende Hypothese
+
+**Bewertung:** Für die einzelne Demo ist kein Kostenvorteil gegenüber konventioneller Entwicklung mit Framework und KI nachgewiesen. 16 Zeilen Anwendungsquelle stehen 1.769 Zeilen Web-Compiler/Vorlagen gegenüber; Zeilenzahlen sind keine Kostenquote. Token-/API-Kosten und ein kontrollierter Vergleich fehlen. Wiederverwendung und begrenzte Agentenentscheidungen bieten Potenzial, zusätzliche Sprachextensionen und Werkzeugpflege verursachen Kosten. Keine Behauptung vollständig bewiesener Webprogramme oder automatisch günstigerer Modelle.
+
+**Empfehlung:** Gleiche Aufgaben, Qualitätskriterien und KI-Unterstützung auf konventionellem Python-Stack, direkt auf dem bisherigen Zielstack und mit Factory vergleichen. Kostenmodell, Rechenbeispiel mit ausdrücklich hypothetischen Stunden und Messplan: `docs/KOSTEN-NUTZEN.md`.
+
+### D-036: Bibliotheksfähige allgemeine Sprache geplant, 2026-09-09
+
+**Auftrag und Umfang:** Sonny beauftragt eine Expertengruppe mit der Planung der Fortentwicklung für unterschiedliche Fullstack-Anwendungen und Bibliotheken. Vier Fachagenten untersuchen Semantik, Pakete, Compiler und Web-/DB-Sicherheit; ein fünfter prüft den konsolidierten Plan. Diese Runde ändert Dokumentation, keine Compilerimplementierung und keine Bereitstellung.
+
+**Grundlage:** Tatsächlicher v0.4.0-Quellstand `c54d3d92a9c830b73ddc1c1da3545b1508e63fdb`, anfangs sauberer Arbeitsbaum. Historische 309 Tests sind dokumentierte Release-Evidenz, in dieser Planung nicht neu ausgeführt. Lokaler Log und persistenter Log v6 waren vor Ergänzung bytegleich.
+
+### D-037: Neues allgemeines Profil a1, alte Semantik bleibt gebunden
+
+**Entscheidung:** P0/w1/w2 bleiben erhalten. Arbeitsname des allgemeinen Profils: a1; Paketformat unabhängig pkg1. Neue Fachfunktionen sollen normale Bibliotheksprogramme sein. Kern enthält allgemeine Typen, Funktionen, Effekte und typisierte UI-/Query-/Actionprimitive; kein Booking-/CRM-/Shop-Opcode.
+
+**Begründung:** w2 besitzt feste Widgetklassen und koppelt `read` an eine Auswahloberfläche. Allein Imports würden die Ausdrucksmächtigkeit nicht generalisieren. w1-Ersetzen und w2-Anhängen dürfen durch Refactoring nicht verwechselt werden. Neue Grundfähigkeiten brauchen weiterhin explizite Semantik-/Targetversionen.
+
+### D-038: Lokale Pakete mit expliziten Verträgen, Gesamtprüfung zuerst
+
+**Entscheidung:** M1 beginnt mit deklarativem Manifest, expliziten Exports/Imports, exakten Pins, transitiven Inhaltsbindungen und einem deterministischen DAG-Linker. Keine Registry, Downloads im Build, Buildhooks oder beliebigen Compilerplugins. Quellen werden einmal als begrenzter unveränderlicher Snapshot eingelesen. Öffentliche Exportnamen sind Teil der API, private Binder werden kanonisiert.
+
+**Mathematische Begründung:** P0-Zertifikate gelten für einen vollständig geordneten Core. Linken verändert Aufrufindizes und Bindungen; alte Teilzertifikate lassen sich deshalb nicht ungeprüft zusammensetzen. M1 rekonstruiert Source-/Vertrags-/Exportbindung und prüft anschließend das ganze verknüpfte P0-Programm erneut. Parametertausch, falscher Provider oder abgeschwächter gelinkter Vertrag muss unabhängig am Linkcheck scheitern.
+
+### D-039: Modulare Nachweise sind ein eigener Ausbau
+
+**Entscheidung:** Echte Beweiswiederverwendung später nach einer spezifizierten Assume/Guarantee-Regel. Caller beweist callee.requires, darf nur die nachgeprüfte callee.ensures verwenden; konkrete Implementierungen und transitive Annahmen werden gebunden. Keine zirkulären Vertragsannahmen.
+
+**Begründung:** Identischer Schnittstellenhash beweist keinen neuen Bibliothekskörper. Anfangs konservative Gesamtneuprüfung. Später können unveränderte Callerbelege nur bei identischer verwendeter Schnittstelle und erneut akzeptiertem Provider erhalten bleiben. Neue strukturelle Checkerregeln erweitern ausdrücklich die TCB.
+
+### D-040: Allgemeine Daten, begrenzte Generics und exakte Semantik
+
+**Entscheidung:** a1 erhält unveränderliche Records, Varianten, Option/Result, bounded Text/List, explizite Funktionen und begrenzte Monomorphisierung. Nichtrekursiver Graph und budgetierte Iteration zuerst. Nat als Verfeinerung; nominale Identitäten. P0-Int bleibt mathematisch. Targetcode nutzt exakte Integerdarstellung und kanonischen Wirecodec; SQL-Einengung ist geprüft.
+
+**Arithmetik-/Textentscheidung:** Geplantes Int-divmod ist euklidisch, geplante i64.div_checked truncating mit Null-/MIN/-1-Fehler; Operationen werden unterschiedlich benannt. Keine UB-/Wrap-Abkürzung. Text bezeichnet gültige Unicode-Skalarwerte ohne NUL mit expliziter UTF-8-Bytegrenze und ohne implizite Normalisierung. Allgemeine Multiplikation/Division erweitert nicht automatisch die Farkas-Beweisfähigkeit. P0-Auswertungsreihenfolge und Fehler bleiben erhalten.
+
+### D-041: Compiler bleibt Python, Referenztarget bleibt TypeScript/D1
+
+**Entscheidung:** Kein zweiter Backendstack. Gemeinsame Typ-/Symboltabelle verbindet kleine Pure-, UI-, Action- und Schema/Query-IRs. Die heutigen Parser bleiben zunächst kompatible Eingänge; Emitter werden inkrementell entkoppelt. `build._ir` ist heute nur eine AST-Serialisierung und wird nicht als bereits vollwertige allgemeine IR ausgegeben.
+
+**Begründung:** Der vorhandene React/Vinext/TypeScript/Drizzle/D1-Pfad funktioniert bereits. Eine Python-Server-Neuentwicklung würde gleichzeitig zusätzliche Semantik- und Integrationsgrenzen einführen. Browser erhalten weiterhin HTML/CSS/JavaScript; neue Sprache benötigt keine Browsererweiterung.
+
+### D-042: Effekte, Orte und Fremdadapter sind reale Vertrauensgrenzen
+
+**Entscheidung:** pure/client/server, transitive Effektprüfung, hostvergebene opake nicht serialisierbare Capabilities. Importe erteilen keine Rechte. HTTP-Antworten sind explizite Projektionen, Browserdaten erzeugen keinen authentischen Principal. Ein tatsächlicher Authadapter gehört zur CRM-Abnahme.
+
+**Grenze:** Eigene Bibliotheken laufen durch unsere Prüfungen. Fremd-TS-/JS-/Python-Code benötigt einen expliziten Adapter, Codec, Fehler-/Budgetvertrag und Integrationsabnahme. Eine Effektannotation sandboxed diesen Code nicht; er ist vertrauenswürdig vorausgesetzt oder tatsächlich zu isolieren. Python ist kein lokales Importformat des vorhandenen TS-Targets.
+
+### D-043: Globale DB-Invarianten benötigen atomare Pläne
+
+**Entscheidung:** Query-Algebra umfasst gebundene Parameter, explizite Projektion/Joins, Aggregation mit definierter Leerwert-/Integersemantik und begrenzte sortierte Seiten. Mandantenpolicies wirken vor Aggregation/Pagination und im atomischen Mutationsschritt; zusammengesetzte FKs sichern Beziehungen.
+
+**Mathematische Begründung:** `I(s) ∧ Pre(s,i) ∧ T(s,i,s') ⇒ I(s') ∧ Post(s,i,s')` beweist einen modellierten Schritt. Reale Konkurrenzsicherheit verlangt einen dazu passenden DB-Commit. Eine geladene Seite ist kein vollständiger Zustand. Erster Buchungsentwurf nutzt aktuelle Summe aktiver Reservierungen und ein bedingtes SQL-Statement; redundanter Zähler ist nicht nötig.
+
+**Konkreter Reviewbefund:** Null Treffer bei einem Conditional UPDATE sind kein SQL-Fehler und lösen keinen Batch-Rollback aus. Abhängige Mutationen und unveränderliche Befehlsbestätigung müssen wirksam atomar gekoppelt sein. D1-Pläne, die das nicht tragen, werden abgelehnt. Idempotenz bindet App/Tenant/Actor/Aktion/Parameter und bleibt auch bei Replay nach Stornierung korrekt. D1-Targetprobe bereits M3; vollständige Buchungsabnahme M4.
+
+### D-044: Getrennte Assurance und vollständige Artefaktbindung
+
+**Entscheidung:** Typprüfung, unterstützter Vertragsbeweis, getestete Übersetzung, tatsächliche formale Translation Validation, Integration und Integrität bleiben getrennt. Ein erforderlicher fehlender Nachweis blockiert; Agenten dürfen weder Baseline noch Lockfile oder Prüfpolicy zur Reparatur abschwächen.
+
+**Begründung:** Heutiges verify_build bindet generierte Compilerdateien, nicht automatisch den externen Starter, npm-Lock, endgültigen Worker oder angewendetes SQL. Geplant sind zwei Ebenen für Compiler- und Releaseartefakte. Hashes beweisen Herkunft/Integrität, nicht semantische Korrektheit. Formale Übersetzungsprüfung beginnt später beim begrenzten reinen Teil mit unabhängiger Zielsemantik.
+
+### D-045: Meilensteine und messbare Bibliotheksflexibilität
+
+**Entscheidung:** M0 Baseline/Norm; M1 lokale P0-Bibliotheken; M2 allgemeine Daten/Funktionen; M3 History aus Bibliotheken und generische Web-/DB-Primitiven; M4 mandantenfähiges CRM und konkurrenzsichere Buchung; M5 neue Domänenvariante bei eingefrorenem Compiler/Runtime/Adapter; M6 gezielte weitere Integrationen und modulare Beweiswiederverwendung.
+
+**Abnahme:** M1 verlangt zwei Programme mit gemeinsamer Bibliothek und transitiver Abhängigkeit, deterministische Ausgaben aus zwei Workspacepfaden sowie feindliche Import-/Linkfälle. M5 verbietet neue Parser-/Emitter-/Host-Sonderfälle und Ad-hoc-Fremdcode; geänderte App-/Bibliotheksquellen müssen CRM und Buchungsvariante erzeugen. Browserstände, echte Target-/DB-Tests, Migration und Fault-Injection werden konkret protokolliert. WebKit ist keine automatische Safari-Abnahme. Die Umsetzung folgt RED → GREEN → REFACTOR.
+
+**Planungsartefakt:** `LLM-Language-Weiterentwicklungsplan.md`, einschließlich Architekturdiagrammen, Dateiplan, Syntaxillustrationen, Risiken, Primärquellen und Definition of Done. Fachbeiträge und unabhängiges Review werden im zugehörigen Planungspaket archiviert. Keine neue Compiler-Version und kein vollständiger Webbeweis werden mit dieser Dokumentation behauptet.
+
+### D-046: Unabhängiges Gesamtplanreview präzisiert kritische Grenzen
+
+**Übernommene Korrekturen:** M1 erhält ein separates Source-to-Core-Bindungsgate samt unabhängiger Rekonstruktion; unveränderliche Snapshots und transitive Importe sind Pflicht. Atomare Receipts und D1-Nulltrefferverhalten werden vor Buchungsabnahme spezifiziert. M2 bekommt einen konkreten generischen Mehrconsumerfall mit negativen Typ-/Kapazitätstests.
+
+**Aggregationsgrenze:** Kapazität zählt alle aktiven Buchungen eines Events, obwohl öffentliche Benutzerlisten nur eigene Zeilen zeigen dürfen. Dafür erhält die Serveraktion eine ausdrückliche Invarianten-Aggregationsfähigkeit. Eine ownergefilterte SUM würde unterzählen und überbuchen; Mehrbenutzertest ist Pflicht. Die allgemeine Lesepolicy darf nicht blind auf interne Invarianten übertragen werden.
+
+**Treibergrenze:** JavaScript-Number-Präzision gilt auch für DB-Bindings/Rückgaben. Erste D1-Numerik bleibt im sicheren Integerbereich; große Int/I64 werden exakt als Decimaltext transportiert/gespeichert und besitzen dort zunächst keine numerischen SQL-Operatoren. Grenztests um 2^53 und I64-Min/Max müssen exakte Werte oder Ablehnung vor Mutation bestätigen. Ein späteres BigInt-Cast kann vorherige Rundung nicht reparieren.
+
+**Reviewabschluss:** Der unabhängige Reviewer hat R1–R6 nach der Korrektur erneut geprüft und auf Planungsebene geschlossen. Keine Implementierungstests ausgeführt. Drei neue Notion-Unterseiten dokumentieren den Plan: Sprache/Bibliotheken `3d62a8c3-23a2-81a7-b3a4-e1dc29156c59`, Compiler/Webarchitektur `3d62a8c3-23a2-8182-8c2d-de8b101cad74`, Meilensteine/Abnahme `3d62a8c3-23a2-81d7-9d2a-c82da101af70`.
+
+## 2026-09-13 — GitHub-Synchronisierung des vorhandenen Compilers
+
+GitHub enthielt v0.2.0; lokal lagen w1/w2 bis v0.4.0 sowie der Weiterentwicklungsplan
+im Commit 3af0b8b vor. Die fehlenden Dateien werden auf dem bestehenden GitHub-Verlauf
+aufgebaut; MIT-Lizenz und englische Projektzusammenfassung bleiben erhalten.
+Die v0.2.0-Archivmetadaten und das historische Bundle bleiben als solche gekennzeichnet.
+Keine Änderung der Sprachsemantik. Erneute Prüfung: 309 Tests bestanden (14,26 s),
+Ruff erfolgreich. Vorher wurde der fehlende Python-Interpreter-Verweis der lokalen
+virtuellen Umgebung wiederhergestellt. Keine erneute Browser-/Deploymentabnahme.

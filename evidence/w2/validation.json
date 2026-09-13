@@ -1,0 +1,17 @@
+{
+  "tests": 309,
+  "new_history_tests": 12,
+  "test_seconds": 15.32,
+  "schema": "actual Drizzle migration",
+  "red": "12 failed before w2 implementation; repeated read receipt unchanged in browser",
+  "green": "history tests, complete suite, browser checks",
+  "checks": [
+    "Ruff",
+    "strict mypy 19 files",
+    "tsc --noEmit",
+    "ESLint",
+    "Vinext build"
+  ],
+  "source": "examples/web/hello-history.llapp",
+  "source_author": "Lead extended original agent-authored hello.llapp"
+}

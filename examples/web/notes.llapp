@@ -1,0 +1,27 @@
+(app w1 workshop_notes
+  (store agenda (Text 1024))
+  (store retrospective (Text 2048))
+  (action save_agenda (write agenda))
+  (action load_agenda (read agenda))
+  (action save_retrospective (write retrospective))
+  (action load_retrospective (read retrospective))
+  (page "/"
+    (title "Werkstattnotizen")
+    (input agenda_text "Tagesplan" (for agenda)
+      (initial "Heute: Ideen sammeln und einen Prototyp entwerfen."))
+    (button agenda_save "Tagesplan speichern"
+      (invoke save_agenda (input agenda_text))
+      (into agenda_result))
+    (button agenda_load "Tagesplan laden"
+      (invoke load_agenda)
+      (into agenda_result))
+    (output agenda_result "Gespeicherter Tagesplan")
+    (input retrospective_text "Rückblick" (for retrospective)
+      (initial "Was hat gut funktioniert? Was möchten wir verbessern?"))
+    (button retrospective_save "Rückblick speichern"
+      (invoke save_retrospective (input retrospective_text))
+      (into retrospective_result))
+    (button retrospective_load "Rückblick laden"
+      (invoke load_retrospective)
+      (into retrospective_result))
+    (output retrospective_result "Gespeicherter Rückblick")))

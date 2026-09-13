@@ -28,6 +28,9 @@ def _positive(value: str) -> int:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="LLM-Language P0 proof-carrying function factory")
     commands = parser.add_subparsers(dest="command", required=True)
+    web = commands.add_parser("compile-web", help="Compile a w1 application to Vinext/D1")
+    web.add_argument("source", type=Path)
+    web.add_argument("--out", type=Path, required=True)
     for name in ("check", "run", "hello", "factory"):
         command = commands.add_parser(name)
         command.add_argument("--spec", type=Path, required=True)
@@ -150,6 +153,8 @@ def _execute(args: argparse.Namespace, program: Program, limits: Limits) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command == "compile-web":
+        return _compile_web(args.source, args.out)
     limits = Limits(max_branches=args.max_branches, solver_timeout_ms=args.solver_timeout_ms)
     try:
         spec = parse_spec(read_text(args.spec, limits.max_source_bytes), limits)
@@ -174,6 +179,25 @@ def main(argv: list[str] | None = None) -> int:
         _emit(
             {"status": "invalid", "diagnostics": [{"code": "E_IO", "message": "File I/O failed"}]}
         )
+        return 1
+
+
+def _compile_web(source_path: Path, output: Path) -> int:
+    from llmlang.web.build import compile_source, write_build
+    from llmlang.web.model import WebError
+
+    try:
+        with source_path.open("rb") as source:
+            data = source.read(131073)
+        build = compile_source(data.decode("utf-8"))
+        destination = write_build(build, output)
+        _emit({**build.manifest, "output": str(destination)})
+        return 0
+    except WebError as exc:
+        _emit({"status": "invalid", "diagnostics": [exc.to_dict()]})
+        return 1
+    except (OSError, UnicodeError):
+        _emit({"status": "invalid", "diagnostics": [{"code": "W_IO"}]})
         return 1
 
 

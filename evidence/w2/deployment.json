@@ -1,0 +1,33 @@
+{
+  "env_set_revision": 0,
+  "failure_message": null,
+  "id": "appgdep_6aa0a85170f08191b1dc78d14c9bda04",
+  "project_id": "appgprj_6aa09b2121d481919ccf3c5a19d966cd",
+  "provider_deployment_id": "site---6aa09b2121d481919ccf3c5a19d966cd",
+  "screenshot_asset_pointer": null,
+  "status": "succeeded",
+  "title": "Hello AI World",
+  "type": "publish",
+  "updated_at": "2026-09-09T00:29:26.930903+00:00",
+  "url": "https://hello-ai-world.adaptiveaisolutions.chatgpt.site",
+  "version_id": "appgprj_6aa09b2121d481919ccf3c5a19d966cd~appgver_ead3ba67f3ec8191934332293e63bc62",
+  "source_commit": "ec32944afb454efde01a64b0edb398ed5aa1e241",
+  "database": {
+    "bindings": [
+      "DB"
+    ],
+    "model_projection": {
+      "omitted_bindings": 0,
+      "omitted_project_id": false,
+      "omitted_selected_binding": false,
+      "omitted_tables": 0,
+      "truncated": false
+    },
+    "project_id": "appgprj_6aa09b2121d481919ccf3c5a19d966cd",
+    "selected_binding_name": "DB",
+    "tables": [
+      "w1_values",
+      "w2_entries"
+    ]
+  }
+}

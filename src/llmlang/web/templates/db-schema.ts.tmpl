@@ -1,0 +1,15 @@
+import { sql } from "drizzle-orm";
+import { check, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+// w1 schema version 1. Application-specific capacities are checked by the server.
+// No defaults or seeds: an unwritten store is absent, not an invented value.
+export const w1Values = sqliteTable("w1_values", {
+  appId: text("app_id").notNull(),
+  storeId: text("store_id").notNull(),
+  value: text("value").notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.appId, table.storeId] }),
+  check("w1_value_text", sql`typeof(${table.value}) = 'text'`),
+  check("w1_value_bytes", sql`length(CAST(${table.value} AS BLOB)) <= 4096`),
+  check("w1_value_no_nul", sql`instr(${table.value}, char(0)) = 0`),
+]);

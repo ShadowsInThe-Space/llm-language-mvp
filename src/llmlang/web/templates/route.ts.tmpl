@@ -1,0 +1,23 @@
+import { appConfig, handleStore, type StoreDatabase } from "@/lib/w1-server";
+import { getStoreDatabase } from "@/db/w1";
+
+type Context = { params: Promise<{ slot: string }> | { slot: string } };
+
+async function dispatch(request: Request, context: Context): Promise<Response> {
+  const { slot } = await context.params;
+  let database: StoreDatabase | null = null;
+  try {
+    database = getStoreDatabase();
+  } catch {
+    // The pure handler emits the same safe STORAGE_UNAVAILABLE response.
+  }
+  return handleStore(request, database, appConfig, slot);
+}
+
+export const GET = dispatch;
+export const PUT = dispatch;
+export const POST = dispatch;
+export const DELETE = dispatch;
+export const PATCH = dispatch;
+export const OPTIONS = dispatch;
+export const HEAD = dispatch;

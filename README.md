@@ -1,9 +1,46 @@
-# LLM-Language MVP — P0
-> **English TL;DR:** Executable MVP for agent-written, contract-verified programs — a synthesis agent generates code while an independent, SMT-backed checker (z3) decides acceptance against formal contracts. 178 tests passing, formal acceptance completed 2026-09-08.
+# LLM-Language MVP — P0 und Webprofile w1/w2
 
+> **English TL;DR:** Version 0.4.0 includes the contract-verified P0 core and a fullstack web compiler. Agent-written `.llapp` programs generate UI, API and database schema, including persistent text history. The web profiles are statically checked and tested; they do not carry P0 proof certificates.
 
-Ein ausführbares MVP für agentengeschriebene, vertragsgeprüfte Programme.
-Der Syntheseagent erzeugt Code; ein unabhängiger Checker entscheidet über dessen Annahme.
+Version 0.4.0 enthält den bisherigen P0-Proof-Core und einen Fullstack-Compiler für
+die Webprofile w1 und w2. Agenten schreiben `.llapp`; der Compiler prüft die Quelle
+und erzeugt Oberfläche, API und Datenbankschema für das Ziel `vinext-d1`.
+
+## Webanwendung kompilieren
+
+Neu in w2: Jeder Save erzeugt einen Eintrag; Laden öffnet eine paginierte Auswahl
+mit Textanfängen. `clear` leert ausschließlich die Anzeige. Bestätigte Einzelabrufe
+zeigen Uhrzeit und Abrufnummer. w1 behält seine Einzelwert-Semantik.
+Vertrag und Migration: [docs/W2-SPEC.md](docs/W2-SPEC.md).
+
+```bash
+llmlang compile-web examples/web/hello-history.llapp --out build/hello-history
+```
+
+Bei Umstellung einer bestehenden w1-Site erst das neue Drizzle-Schema generieren.
+Die vom Compiler erzeugte `llmlang/migrate-w1-to-w2.sql` nach dem Tabellen-/Index-DDL
+in dieselbe neue Migration aufnehmen. Dadurch bleibt der bisherige DB-Text als
+Eintrag erhalten. Bestehende Migrationsdateien niemals neu ausführen oder ersetzen.
+Die zwei folgenden Beispiele bleiben bewusst im alten Profil:
+
+```bash
+llmlang compile-web examples/web/hello.llapp --out build/hello-web
+llmlang compile-web examples/web/notes.llapp --out build/notes-web
+```
+
+Das Ausgabeziel muss neu oder leer sein. Enthalten sind React/TypeScript-Zielquellen,
+Drizzle-Schema, kanonische Quelle, IR und Hashmanifest. Der anschließende Vinext-/D1-
+Zielbuild benötigt den dokumentierten Hoststarter; Python allein startet keinen Webserver.
+
+Anleitung, Architektur und Betrieb: [docs/W1-GUIDE.md](docs/W1-GUIDE.md).
+Vor der Implementierung eingefrorene Sprache: [docs/W1-SPEC.md](docs/W1-SPEC.md).
+Expertenplan: [docs/W1-PLAN.md](docs/W1-PLAN.md).
+Browser- und Compilerabnahme: [docs/W1-ABNAHME.md](docs/W1-ABNAHME.md).
+
+w1 ist statisch geprüft und getestet. Es erhält kein P0-Beweiszertifikat und keinen
+A3-/A4-Anspruch. Der folgende Abschnitt dokumentiert den weiterhin enthaltenen P0-Core.
+
+## P0-Meilenstein
 
 **Abgenommen am 2026-09-08:** 178 Tests bestanden, zehn Golden Programs geprüft,
 Agenten-Hello-World ausgeführt und Agentenreparatur bestätigt.
@@ -112,4 +149,14 @@ sich mit `git clone history/llm-language-mvp.bundle checkout` erstellen.
 
 `specs/` und `REVIEW-2026-09-08.md` bewahren den Gesamtentwurf und sein Architekturreview.
 Für die konkret implementierte P0-Syntax gilt `docs/P0.md`; die darüber hinausgehenden
-Sprachmerkmale der Entwurfshistorie sind Ausbauziele. `Log.md` hält D-001 bis D-028 fest.
+Sprachmerkmale der Entwurfshistorie sind Ausbauziele. `Log.md` hält die Entscheidungen fest.
+
+## GitHub-Stand und Archiv
+
+Der Quellstand enthält v0.4.0 und den Weiterentwicklungsplan vom 09.09.2026.
+Die Bibliotheks- und allgemeinen Spracherweiterungen sind geplant, noch nicht implementiert.
+`RELEASE.json` und `history/llm-language-mvp.bundle` stammen aus dem ursprünglichen
+v0.2.0-Archiv und beschreiben ausschließlich diesen historischen Stand.
+
+Bei der GitHub-Synchronisierung am 13.09.2026 wurden 309 Tests und Ruff erneut
+erfolgreich ausgeführt. Ein neuer Browser- oder Deploymenttest fand dabei nicht statt.

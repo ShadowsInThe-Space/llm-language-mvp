@@ -1,0 +1,20 @@
+{
+  "time": "2026-09-08T23:38:45.830569+00:00",
+  "spec_sha256": "a72cd413c2c81a06eaf8bfa2d9fbd1d2fe71e7c5113b97741ce61d159857ea58",
+  "status": "frozen-before-implementation",
+  "reviewers": [
+    "web_language_design",
+    "web_compiler_architecture",
+    "web_security_design",
+    "web_acceptance_review"
+  ],
+  "lead_decisions": [
+    "w1 vs P0",
+    "Vinext/D1 target",
+    "input initial only",
+    "GET/PUT static slot API",
+    "exact UTF8 byte limits",
+    "no automatic migrations or seeds",
+    "private shared site scope"
+  ]
+}

@@ -1,0 +1,7 @@
+import { env } from "cloudflare:workers";
+import type { StoreDatabase } from "@/lib/w1-server";
+
+export function getStoreDatabase(): StoreDatabase {
+  if (!env.DB) throw new Error("Storage binding unavailable");
+  return env.DB;
+}

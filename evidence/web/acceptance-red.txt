@@ -1,0 +1,16 @@
+
+==================================== ERRORS ====================================
+________________ ERROR collecting tests/test_web_acceptance.py _________________
+ImportError while importing test module '/workspace/scratch/a67318291dbe/llm-language-mvp/tests/test_web_acceptance.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_web_acceptance.py:19: in <module>
+    from llmlang.web.build import compile_source
+E   ModuleNotFoundError: No module named 'llmlang.web.build'
+=========================== short test summary info ============================
+ERROR tests/test_web_acceptance.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.18s

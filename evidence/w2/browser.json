@@ -1,0 +1,30 @@
+{
+  "checks": [
+    {
+      "step": "legacy-loaded",
+      "receipt": "Aus der Datenbank geladen · Abruf #1 · 02:23:39 Uhr"
+    },
+    {
+      "step": "clear-only-display",
+      "status": "Anzeige geleert. Alle Einträge bleiben in der Datenbank gespeichert."
+    },
+    {
+      "step": "same-entry-reloaded-after-clear",
+      "receipt": "Aus der Datenbank geladen · Abruf #2 · 02:23:40 Uhr"
+    },
+    {
+      "step": "two-new-entries-plus-preserved-legacy",
+      "options": [
+        "Eintrag auswählen …",
+        "Zweiter Eintrag — Auswahl funktioniert. — 9.9.2026, 02:24:49 · e6654623",
+        "Erster neuer Eintrag 🌍 Dieser Text bleibt vollständig gespeichert. — 9.9.2026, 02:24:49 · 8cdf000d",
+        "Hello new AI World — 9.9.2026, 02:22:00 · übernommen"
+      ],
+      "selectedText": "Erster neuer Eintrag 🌍\nDieser Text bleibt vollständig gespeichert.",
+      "before": "Aus der Datenbank geladen · Abruf #1 · 02:25:54 Uhr",
+      "after": "Aus der Datenbank geladen · Abruf #2 · 02:25:55 Uhr"
+    }
+  ],
+  "snapshot": "- main:\n  - region \"Hello AI World\":\n    - heading \"Hello AI World\" [level=1]\n    - paragraph: Texte speichern, einen Eintrag auswählen und wieder abrufen.\n    - generic: Dein Text\n    - generic: 41 / 4096 Bytes\n    - textbox \"Dein Text\": Zweiter Eintrag — Auswahl funktioniert.\n    - button \"Speichern\"\n    - button \"Aus Datenbank laden\"\n    - generic: Gespeicherten Eintrag auswählen\n    - combobox \"Gespeicherten Eintrag auswählen\":\n      - option \"Eintrag auswählen …\" [disabled]\n      - option \"Zweiter Eintrag — Auswahl funktioniert. — 9.9.2026, 02:24:49 · e6654623\"\n      - option \"Erster neuer Eintrag 🌍 Dieser Text bleibt vollständig gespeichert. — 9.9.2026, 02:24:49 · 8cdf000d\" [selected]\n      - option \"Hello new AI World — 9.9.2026, 02:22:00 · übernommen\"\n    - region \"Gespeicherter Text\":\n      - heading \"Gespeicherter Text\" [level=2]\n      - generic: Erster neuer Eintrag 🌍 Dieser Text bleibt vollständig gespeichert.\n      - paragraph: \"Aus der Datenbank geladen · Abruf #2 · 02:25:55 Uhr\"\n    - button \"Anzeige leeren\"\n    - status: Aus der Datenbank geladen.",
+  "screenshot": "hello-ai-world-history-1788913555458.jpg"
+}

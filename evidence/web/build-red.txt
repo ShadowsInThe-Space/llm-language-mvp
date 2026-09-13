@@ -1,0 +1,4 @@
+Command: .venv/bin/python -m pytest -q tests/test_web_build.py
+Exit: 2
+ModuleNotFoundError: No module named llmlang.web.build
+Observed tool chunk: 8adc1a

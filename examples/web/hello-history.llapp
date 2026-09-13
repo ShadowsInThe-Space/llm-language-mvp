@@ -1,0 +1,16 @@
+(app w2 hello_ai_world
+  (store greeting (Text 4096))
+  (action save_greeting (write greeting))
+  (action load_greeting (read greeting))
+  (page "/"
+    (title "Hello AI World")
+    (input message "Dein Text" (for greeting)
+      (initial "Hello new AI World"))
+    (button save "Speichern"
+      (invoke save_greeting (input message))
+      (into result))
+    (button load "Aus Datenbank laden"
+      (invoke load_greeting)
+      (into result))
+    (output result "Gespeicherter Text")
+    (clear reset "Anzeige leeren" (output result))))

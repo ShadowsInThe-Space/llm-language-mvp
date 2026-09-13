@@ -1,0 +1,103 @@
+
+// w2 reuses the bounded request decoder and text validation above.
+const ENTRY_ID = /^(?:legacy|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/;
+const CURSOR = /^[1-9][0-9]{0,14}$/;
+const APPEND_ENTRY =
+  "INSERT INTO w2_entries (app_id,store_id,id,value,created_at) VALUES (?,?,?,?,?) " +
+  "ON CONFLICT(app_id,store_id,id) DO UPDATE SET value=w2_entries.value RETURNING value";
+
+async function appendEntry(
+  request: Request, database: StoreDatabase | null, config: AppConfig,
+  slot: string, store: StoreConfig,
+): Promise<Response> {
+  if (request.headers.get("origin") !== new URL(request.url).origin) {
+    return failure(403, "ORIGIN_REJECTED", "Anfrageursprung nicht erlaubt.");
+  }
+  const key = request.headers.get("Idempotency-Key");
+  if (key === null || key === "legacy" || !ENTRY_ID.test(key)) {
+    return failure(400, "INPUT_INVALID", "Gültige Anfragekennung erforderlich.");
+  }
+  if (!validMediaType(request.headers.get("content-type"))) {
+    return failure(415, "INPUT_INVALID", "JSON mit UTF-8 ist erforderlich.");
+  }
+  let value: string | null;
+  try {
+    value = decodeValue(await readBody(request));
+  } catch (error) {
+    return failure(error instanceof BodyFailure ? error.status : 400,
+      "INPUT_INVALID", "Ungültige oder zu große Anfrage.");
+  }
+  if (value === null) return failure(400, "INPUT_INVALID", "Genau ein Textfeld erforderlich.");
+  if (!validText(value, store.maxBytes)) {
+    return failure(422, "INPUT_INVALID", "Text verletzt den Speichertyp.");
+  }
+  if (database === null) return storageFailure();
+  try {
+    const row = await database.prepare(APPEND_ENTRY)
+      .bind(config.appId, slot, key, value, new Date().toISOString()).first<{value: unknown}>();
+    if (row === null || !validText(row.value, store.maxBytes)) return storageFailure();
+    if (row.value !== value) return failure(409, "REQUEST_CONFLICT", "Anfragekennung bereits verwendet.");
+    return respond({found: true, value: row.value});
+  } catch {
+    return storageFailure();
+  }
+}
+
+async function readHistory(
+  request: Request, database: StoreDatabase | null, config: AppConfig,
+  slot: string, store: StoreConfig,
+): Promise<Response> {
+  const query = new URL(request.url).searchParams;
+  const keys = [...query.keys()];
+  const id = query.get("id");
+  const before = query.get("before");
+  const listing = query.get("entries") === "1" && keys.length === (before === null ? 1 : 2)
+    && keys.every(key => key === "entries" || key === "before")
+    && new Set(keys).size === keys.length && (before === null || CURSOR.test(before));
+  const single = keys.length === 1 && id !== null && ENTRY_ID.test(id);
+  if (!listing && !single) return failure(400, "INPUT_INVALID", "Ungültige Auswahl.");
+  if (database === null) return storageFailure();
+  try {
+    if (single) {
+      const row = await database.prepare(
+        "SELECT value FROM w2_entries WHERE app_id=? AND store_id=? AND id=?",
+      ).bind(config.appId, slot, id!).first<{value: unknown}>();
+      if (row === null) return failure(404, "ENTRY_UNKNOWN", "Eintrag nicht gefunden.");
+      if (!validText(row.value, store.maxBytes)) return storageFailure();
+      return respond({found: true, value: row.value});
+    }
+    const result = await database.prepare(
+      "SELECT sequence,id,substr(value,1,80) AS preview,created_at AS createdAt " +
+      "FROM w2_entries WHERE app_id=? AND store_id=? AND sequence < CAST(? AS INTEGER) " +
+      "ORDER BY sequence DESC LIMIT 21",
+    ).bind(config.appId, slot, before ?? "9007199254740991")
+      .all<{sequence: number; id: string; preview: string; createdAt: string}>();
+    const rows = result.results;
+    if (!Array.isArray(rows) || rows.some(row => !Number.isSafeInteger(row.sequence)
+      || row.sequence <= 0 || typeof row.id !== "string" || !ENTRY_ID.test(row.id)
+      || !validText(row.preview, store.maxBytes) || typeof row.createdAt !== "string"
+      || !Number.isFinite(Date.parse(row.createdAt)))) return storageFailure();
+    const page = rows.slice(0, 20);
+    return respond({
+      entries: page.map(({id,preview,createdAt}) => ({id,preview,createdAt})),
+      nextCursor: rows.length > 20 ? String(page[page.length-1].sequence) : null,
+    });
+  } catch {
+    return storageFailure();
+  }
+}
+
+export async function handleStore(
+  request: Request, database: StoreDatabase | null, config: AppConfig, slot: string,
+): Promise<Response> {
+  if (!Object.hasOwn(config.stores, slot)) return failure(404, "SLOT_UNKNOWN", "Unbekannter Speicher.");
+  const store = config.stores[slot];
+  if (request.method === "GET" && store.read) return readHistory(request, database, config, slot, store);
+  if (request.method === "POST" && store.write) {
+    if (new URL(request.url).search) return failure(400, "INPUT_INVALID", "Ungültige Anfrage.");
+    return appendEntry(request, database, config, slot, store);
+  }
+  const response = failure(405, "METHOD_NOT_ALLOWED", "Aktion nicht erlaubt.");
+  response.headers.set("Allow", [store.read ? "GET" : "", store.write ? "POST" : ""].filter(Boolean).join(", "));
+  return response;
+}

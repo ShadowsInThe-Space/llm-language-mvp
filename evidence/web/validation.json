@@ -1,0 +1,15 @@
+{
+  "release": "0.3.0",
+  "profile": "w1",
+  "tests": {"passed": 297, "failed": 0, "seconds": 14.09, "junit": "tests-final.xml"},
+  "runtime_acceptance": {"tests": 44, "engine": "Node 24.19.0 node:sqlite", "schema": "generated-migration.sql", "actual_drizzle_migration": true},
+  "ruff": "passed: src tests scripts",
+  "mypy": "passed: strict, 19 source files; original pure-Python mypy distribution because native build SIGBUS",
+  "target_build": "passed: Vinext 1.0.0-beta.5 / Vite 8.0.13",
+  "target_typescript": "passed: tsc --noEmit",
+  "target_eslint": "passed",
+  "wheel": "wheel-smoke.json",
+  "browser": "browser.json",
+  "deployment": "deployment.json",
+  "assurance": "statically checked and tested; no w1 proof certificate or A3/A4 claim"
+}
