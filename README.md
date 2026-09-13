@@ -1,162 +1,96 @@
-# LLM-Language MVP — P0 und Webprofile w1/w2
+# LLM-Language · Die Software-Fabrik
 
-> **English TL;DR:** Version 0.4.0 includes the contract-verified P0 core and a fullstack web compiler. Agent-written `.llapp` programs generate UI, API and database schema, including persistent text history. The web profiles are statically checked and tested; they do not carry P0 proof certificates.
+**Eine eigene Programmiersprache, mit der KI Software bauen kann – und Werkzeuge, die ihre Arbeit überprüfen.**
 
-Version 0.4.0 enthält den bisherigen P0-Proof-Core und einen Fullstack-Compiler für
-die Webprofile w1 und w2. Agenten schreiben `.llapp`; der Compiler prüft die Quelle
-und erzeugt Oberfläche, API und Datenbankschema für das Ziel `vinext-d1`.
+Stell dir eine Werkstatt vor: Du sagst, was du brauchst. Die KI schreibt den Bauplan.
+Ein Übersetzer macht daraus eine Anwendung. Prüfwerkzeuge helfen dabei,
+Fehler zu finden, bevor du die Anwendung benutzt.
 
-## Webanwendung kompilieren
+Genau daran arbeiten wir. Die erste kleine Webseite funktioniert bereits.
 
-Neu in w2: Jeder Save erzeugt einen Eintrag; Laden öffnet eine paginierte Auswahl
-mit Textanfängen. `clear` leert ausschließlich die Anzeige. Bestätigte Einzelabrufe
-zeigen Uhrzeit und Abrufnummer. w1 behält seine Einzelwert-Semantik.
-Vertrag und Migration: [docs/W2-SPEC.md](docs/W2-SPEC.md).
+## Die Idee in einem Beispiel
 
-```bash
-llmlang compile-web examples/web/hello-history.llapp --out build/hello-history
+Du möchtest:
+
+> „Eine Webseite, auf der ich Texte speichern und später wieder lesen kann.“
+
+Normalerweise müssen dafür mehrere Teile zusammengebaut werden: die sichtbare
+Seite, die Arbeit im Hintergrund und ein Speicher für deine Texte.
+
+Mit unserer Sprache beschreiben wir diese Teile in **einem gemeinsamen Bauplan**.
+Der **Compiler** ist der Übersetzer: Er macht daraus den Code für die Webseite
+und ihre Verbindung zum Speicher. Dein Browser zeigt anschließend eine normale
+Webseite an. Er braucht dafür keine besondere Erweiterung.
+
+## Vom Wunsch zur Webseite
+
+So läuft die Entwicklung unserer kleinen Webanwendung ab:
+
+```mermaid
+flowchart TD
+    A["Du beschreibst deinen Wunsch"] --> B["Wir legen fest, was die App können soll"]
+    B --> C["Die KI schreibt den Bauplan in unserer Sprache"]
+    C --> D{"Versteht und akzeptiert der Compiler den Bauplan?"}
+    D -->|Nein| E["Fehler erklären und Bauplan verbessern"]
+    E --> C
+    D -->|Ja| F["Code für Webseite und Datenspeicher erzeugen"]
+    F --> G["Anwendung bauen und ausprobieren"]
+    G --> H{"Funktioniert das gewünschte Verhalten?"}
+    H -->|Nein| I["Ursache im Bauplan oder Compiler beheben"]
+    I --> C
+    H -->|Ja| J["Webseite bereitstellen und im Browser nutzen"]
 ```
 
-Bei Umstellung einer bestehenden w1-Site erst das neue Drizzle-Schema generieren.
-Die vom Compiler erzeugte `llmlang/migrate-w1-to-w2.sql` nach dem Tabellen-/Index-DDL
-in dieselbe neue Migration aufnehmen. Dadurch bleibt der bisherige DB-Text als
-Eintrag erhalten. Bestehende Migrationsdateien niemals neu ausführen oder ersetzen.
-Die zwei folgenden Beispiele bleiben bewusst im alten Profil:
+Heute gehören dazu noch Einrichtung und gemeinsame Abnahme. Eine Fabrik,
+die beliebige Apps ganz allein fertigstellt, ist unser langfristiges Ziel.
 
-```bash
-llmlang compile-web examples/web/hello.llapp --out build/hello-web
-llmlang compile-web examples/web/notes.llapp --out build/notes-web
-```
+## Das funktioniert schon
 
-Das Ausgabeziel muss neu oder leer sein. Enthalten sind React/TypeScript-Zielquellen,
-Drizzle-Schema, kanonische Quelle, IR und Hashmanifest. Der anschließende Vinext-/D1-
-Zielbuild benötigt den dokumentierten Hoststarter; Python allein startet keinen Webserver.
+Unsere Beispielseite ist wie ein kleines Notizbuch:
 
-Anleitung, Architektur und Betrieb: [docs/W1-GUIDE.md](docs/W1-GUIDE.md).
-Vor der Implementierung eingefrorene Sprache: [docs/W1-SPEC.md](docs/W1-SPEC.md).
-Expertenplan: [docs/W1-PLAN.md](docs/W1-PLAN.md).
-Browser- und Compilerabnahme: [docs/W1-ABNAHME.md](docs/W1-ABNAHME.md).
+1. **Text schreiben:** zum Beispiel `Hello new AI World`.
+2. **Speichern:** Der Text kommt in die Datenbank – das Gedächtnis der App.
+3. **Wiederfinden:** Die Auswahl zeigt die Anfänge der gespeicherten Texte.
+4. **Anzeigen:** Ein ausgewählter Text wird aus dem Speicher geladen.
+5. **Anzeige leeren:** Der Bildschirm wird geleert. Der Text bleibt gespeichert.
 
-w1 ist statisch geprüft und getestet. Es erhält kein P0-Beweiszertifikat und keinen
-A3-/A4-Anspruch. Der folgende Abschnitt dokumentiert den weiterhin enthaltenen P0-Core.
+**[Die Beispielseite öffnen](https://hello-ai-world.adaptiveaisolutions.chatgpt.site)**
 
-## P0-Meilenstein
+![Unsere erzeugte Webseite: oben die Texteingabe, darunter die Auswahl gespeicherter Einträge und der wieder geladene Text.](evidence/w2/browser.jpg)
 
-**Abgenommen am 2026-09-08:** 178 Tests bestanden, zehn Golden Programs geprüft,
-Agenten-Hello-World ausgeführt und Agentenreparatur bestätigt.
-Details: [docs/ABNAHME.md](docs/ABNAHME.md).
+*Screenshot aus der Browserprüfung. Die Seite wurde aus unserer Sprache erzeugt.*
 
-## Schnellstart
+## Warum lassen wir die KI nicht einfach machen?
 
-Python 3.12 oder neuer:
+Weil auch eine KI Fehler macht. „Sieht richtig aus“ reicht uns deshalb nicht.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[dev]'
-python scripts/demo.py
-```
+Für bestimmte Rechenregeln können unsere Werkzeuge schon mathematisch prüfen,
+ob ein Programm die festgelegte Regel einhält. Zum Beispiel:
+**„Du darfst höchstens so viele Punkte ausgeben, wie du besitzt.“**
 
-Die Demo prüft zehn Golden Programs, führt das tatsächlich von einem Session-Agenten
-geschriebene Hello-World-Programm aus und wiederholt dessen echte Reparatur eines falschen
-Kontingentprogramms. Erwartete Ausgabe:
+Das ist wie ein sehr genauer Schiedsrichter: Er prüft die vereinbarte Regel.
+Er kann aber nicht wissen, ob wir eine wichtige Regel vergessen haben.
 
-```text
-Hello World
-Definition of Done passed: 10 golden programs, agent Hello World, agent repair.
-```
+**Die ganze Webseite ist noch nicht mathematisch bewiesen.** Sie wird mit
+Codeprüfungen und Tests kontrolliert. Beim letzten vollständigen Testlauf am
+13. September 2026 bestanden **309 Tests**.
 
-Sie speichert die neu geprüften Belege und Ergebnisse unter `build/demo/`.
-Die mitgelieferten Agentenantworten sind ein nachvollziehbarer Replay; neue Generierung
-über ein konfiguriertes Modell ist ebenfalls möglich.
+## Was kommt als Nächstes?
 
-## Ein Programm prüfen und ausführen
+Wir wollen aus der kleinen Werkstatt eine vielseitige Software-Fabrik machen.
+Dafür planen wir **Bibliotheken**: wiederverwendbare Bausteine, ähnlich wie LEGO.
+Mit ihnen sollen neue Apps entstehen, ohne den Übersetzer jedes Mal umzubauen.
 
-```bash
-llmlang check --spec examples/golden/minimum.llspec --candidate examples/golden/minimum.ll --write-certificate build/minimum-proof.json
-llmlang run --spec examples/golden/minimum.llspec --candidate examples/golden/minimum.ll --certificate build/minimum-proof.json --inputs '[{"type":"Int","value":"7"},{"type":"Int","value":"3"}]'
-llmlang hello --spec examples/hello/hello.llspec --candidate examples/hello/hello.ll
-```
+Geplante Beispiele sind eine Kundenverwaltung und eine Seite zum Buchen von
+Veranstaltungen. Diese Erweiterungen sind **noch nicht umgesetzt**.
 
-`run` prüft vorhandene Zertifikate unabhängig erneut; ohne Zertifikat sucht und prüft
-es einen neuen Beleg. Ein beschädigtes Zertifikat wird abgelehnt und nicht still ersetzt.
-Die Textausgabe stammt aus zwölf vom P0-Programm berechneten Zeichencodes. Der Host
-übernimmt stdout. P0 selbst besitzt keine Strings oder versteckten I/O-Effekte.
+## Du möchtest tiefer einsteigen?
 
-## Automatische Generierung und Reparatur
+- **Compiler-Code finden:** [src/llmlang/web](src/llmlang/web) · [Einstiegspunkt: build.py](src/llmlang/web/build.py)
+- **Selbst starten:** [Installation und technische Anleitung](docs/TECHNICAL-GUIDE.md)
+- **Webseiten bauen:** [Compiler, Aufbau und Betrieb](docs/W1-GUIDE.md)
+- **Die Sprache verstehen:** [Rechenregeln](docs/P0.md) · [Webseiten](docs/W1-SPEC.md) · [Textverlauf](docs/W2-SPEC.md)
+- **Prüfungen nachvollziehen:** [Was die Beweise abdecken](docs/ASSURANCE.md) · [Browserabnahme](docs/W1-ABNAHME.md)
+- **Den Ausbau verfolgen:** [Weiterentwicklungsplan](docs/LLM-Language-Weiterentwicklungsplan.md) · [Entscheidungen](Log.md)
 
-Mit den echten, mitgelieferten Agentenantworten:
-
-```bash
-llmlang factory --spec examples/agent-repair/grant.llspec --candidate-file examples/agent-repair/wrong.ll --candidate-file examples/agent-repair/repaired.ll --output build/grant.ll --report build/repair.json
-```
-
-Mit einem vorhandenen lokalen OpenAI-kompatiblen Server:
-
-```bash
-llmlang factory --spec examples/golden/minimum.llspec --endpoint http://127.0.0.1:8080/v1/chat/completions --model local-model --output build/minimum.ll --report build/model-run.json
-```
-
-Der Endpoint ist die vollständige Chat-Completions-URL. Externe Endpoints brauchen HTTPS.
-Falls erforderlich wird der Schlüssel aus `LLMLANG_API_KEY` gelesen; mit
-`--api-key-env NAME` lässt sich eine andere vorhandene Umgebungsvariable auswählen.
-Der Schlüssel gehört nicht in Quelltext oder Kommandoargumente. Das Modell erhält
-die Grammatik, den festen Vertrag und tatsächliches Feedback. Höchstens drei Kandidaten
-sind erlaubt. Modellnutzung kann abhängig vom konfigurierten Anbieter Kosten verursachen.
-Diese Abnahme verwendete reale Session-Agents und einen lokal getesteten HTTP-Adapter;
-es wurde kein kostenpflichtiger externer Modellaufruf durchgeführt.
-
-## Enthaltene Sprache
-
-`Int`, `Bool`, unveränderliche Werte, De-Bruijn-Binder, `let`, `if`, exakte lineare
-Arithmetik, strikte boolesche Operatoren und ausschließlich rückwärts gerichtete
-Funktionsaufrufe. Jeder öffentliche Einstieg besitzt Vor- und Nachbedingungen.
-Verträge und Kandidaten stehen in getrennten Dateien; der Kandidat kann Verträge nicht ersetzen.
-
-Grammatik und Regelübersicht: [docs/P0.md](docs/P0.md).
-Beispielaufgaben: [docs/GOLDEN-PROGRAMS.md](docs/GOLDEN-PROGRAMS.md).
-Architektur und Vertrauensgrenzen: [docs/ASSURANCE.md](docs/ASSURANCE.md).
-
-## Prüfungen
-
-```bash
-python -m pytest -q
-python -m ruff check src tests scripts
-python -m mypy --no-incremental src
-python scripts/demo.py
-```
-
-`requirements.lock` hält die in der Entwicklungsumgebung tatsächlich verwendeten
-Abhängigkeitsversionen fest. Der native mypy-Build dieser Umgebung verursachte beim
-Start einen Bus Error; die Typprüfung wurde deshalb mit den unveränderten mitgelieferten
-Python-Sourcen derselben mypy-Version ausgeführt. Es wurden keine Typregeln abgeschaltet.
-
-## Reichweite
-
-`proved` bedeutet: Der Checker hat den konkreten Core-Vertrag im P0-Modell akzeptiert.
-Das ist ein A2-Anspruch relativ zur dokumentierten TCB, kein Beweis der Python-Implementierung,
-kein nativer Compiler und kein A3/A4-Release. Ein fehlender Beleg bleibt `unverified`.
-Vertragsdomäne und tatsächlicher Laufstatus werden getrennt ausgegeben.
-Beispielsweise bleibt `2*x=1` in dieser beschränkten Zertifikatssprache `domain_unknown`.
-
-Prüfprotokolle und die Herkunft der echten Agentenprogramme stehen in `evidence/`.
-
-## Quellpaket und Entwurfshistorie
-
-Das Release-Paket enthält zusätzlich das installierbare Wheel unter `dist/` und
-den lokalen Git-Verlauf als `history/llm-language-mvp.bundle`. Ein Git-Checkout lässt
-sich mit `git clone history/llm-language-mvp.bundle checkout` erstellen.
-
-`specs/` und `REVIEW-2026-09-08.md` bewahren den Gesamtentwurf und sein Architekturreview.
-Für die konkret implementierte P0-Syntax gilt `docs/P0.md`; die darüber hinausgehenden
-Sprachmerkmale der Entwurfshistorie sind Ausbauziele. `Log.md` hält die Entscheidungen fest.
-
-## GitHub-Stand und Archiv
-
-Der Quellstand enthält v0.4.0 und den Weiterentwicklungsplan vom 09.09.2026.
-Die Bibliotheks- und allgemeinen Spracherweiterungen sind geplant, noch nicht implementiert.
-`RELEASE.json` und `history/llm-language-mvp.bundle` stammen aus dem ursprünglichen
-v0.2.0-Archiv und beschreiben ausschließlich diesen historischen Stand.
-
-Bei der GitHub-Synchronisierung am 13.09.2026 wurden 309 Tests und Ruff erneut
-erfolgreich ausgeführt. Ein neuer Browser- oder Deploymenttest fand dabei nicht statt.
+*Aktueller Stand: Version 0.4.0 · [MIT-Lizenz](LICENSE)*

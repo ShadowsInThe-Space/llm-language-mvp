@@ -345,3 +345,12 @@ Die v0.2.0-Archivmetadaten und das historische Bundle bleiben als solche gekennz
 Keine Änderung der Sprachsemantik. Erneute Prüfung: 309 Tests bestanden (14,26 s),
 Ruff erfolgreich. Vorher wurde der fehlende Python-Interpreter-Verweis der lokalen
 virtuellen Umgebung wiederhergestellt. Keine erneute Browser-/Deploymentabnahme.
+
+## 2026-09-13 — Verständliche Projektübersicht
+
+Die README erklärt Ziel, Beispiel und Entwicklungsablauf ohne vorausgesetztes
+Compilerwissen. Ein Mermaid-Ablaufplan und der vorhandene Browser-Screenshot
+veranschaulichen den Weg zur Anwendung und das Ergebnis. Technische Befehle,
+Sprachdetails und Archivhinweise sind nach docs/TECHNICAL-GUIDE.md verschoben.
+Bestehende Beweisgrenzen und der Unterschied zwischen Umsetzung und Planung
+bleiben ausdrücklich erhalten. Reine Dokumentationsänderung.
