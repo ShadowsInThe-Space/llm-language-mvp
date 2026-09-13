@@ -1,96 +1,99 @@
-# LLM-Language · Die Software-Fabrik
+# LLM-Language · The Software Factory
 
-**Eine eigene Programmiersprache, mit der KI Software bauen kann – und Werkzeuge, die ihre Arbeit überprüfen.**
+**A programming language that helps AI build software — with tools that check its work.**
 
-Stell dir eine Werkstatt vor: Du sagst, was du brauchst. Die KI schreibt den Bauplan.
-Ein Übersetzer macht daraus eine Anwendung. Prüfwerkzeuge helfen dabei,
-Fehler zu finden, bevor du die Anwendung benutzt.
+Imagine a workshop: you describe what you need. AI writes the blueprint.
+A translator turns it into an application. Checking tools help find mistakes
+before you use it.
 
-Genau daran arbeiten wir. Die erste kleine Webseite funktioniert bereits.
+That is what we are building. Our first small website already works.
 
-## Die Idee in einem Beispiel
+## The idea, with an example
 
-Du möchtest:
+You want:
 
-> „Eine Webseite, auf der ich Texte speichern und später wieder lesen kann.“
+> “A website where I can save notes and read them again later.”
 
-Normalerweise müssen dafür mehrere Teile zusammengebaut werden: die sichtbare
-Seite, die Arbeit im Hintergrund und ein Speicher für deine Texte.
+Normally, several pieces need to fit together: the page you see, the work
+happening behind it, and a place to store your notes.
 
-Mit unserer Sprache beschreiben wir diese Teile in **einem gemeinsamen Bauplan**.
-Der **Compiler** ist der Übersetzer: Er macht daraus den Code für die Webseite
-und ihre Verbindung zum Speicher. Dein Browser zeigt anschließend eine normale
-Webseite an. Er braucht dafür keine besondere Erweiterung.
+Our language describes these pieces in **one shared blueprint**.
+The **compiler** is the translator: it turns that blueprint into code for
+the website and its connection to storage. Your browser displays an ordinary
+website. It does not need a special extension.
 
-## Vom Wunsch zur Webseite
+## From an idea to a website
 
-So läuft die Entwicklung unserer kleinen Webanwendung ab:
+This is the development workflow for our small web application:
 
 ```mermaid
 flowchart TD
-    A["Du beschreibst deinen Wunsch"] --> B["Wir legen fest, was die App können soll"]
-    B --> C["Die KI schreibt den Bauplan in unserer Sprache"]
-    C --> D{"Versteht und akzeptiert der Compiler den Bauplan?"}
-    D -->|Nein| E["Fehler erklären und Bauplan verbessern"]
+    A["You describe your idea"] --> B["We agree on what the app should do"]
+    B --> C["AI writes a blueprint in our language"]
+    C --> D{"Does the compiler understand and accept it?"}
+    D -->|No| E["Explain the error and improve the blueprint"]
     E --> C
-    D -->|Ja| F["Code für Webseite und Datenspeicher erzeugen"]
-    F --> G["Anwendung bauen und ausprobieren"]
-    G --> H{"Funktioniert das gewünschte Verhalten?"}
-    H -->|Nein| I["Ursache im Bauplan oder Compiler beheben"]
+    D -->|Yes| F["Generate code for the website and storage"]
+    F --> G["Build and test the application"]
+    G --> H{"Does it behave as intended?"}
+    H -->|No| I["Fix the cause in the blueprint or compiler"]
     I --> C
-    H -->|Ja| J["Webseite bereitstellen und im Browser nutzen"]
+    H -->|Yes| J["Publish the website and use it in a browser"]
 ```
 
-Heute gehören dazu noch Einrichtung und gemeinsame Abnahme. Eine Fabrik,
-die beliebige Apps ganz allein fertigstellt, ist unser langfristiges Ziel.
+Today, setup and human review are still part of the process. A factory that
+can finish many different kinds of apps on its own is our long-term goal.
 
-## Das funktioniert schon
+## What already works
 
-Unsere Beispielseite ist wie ein kleines Notizbuch:
+Our example website is a small notebook:
 
-1. **Text schreiben:** zum Beispiel `Hello new AI World`.
-2. **Speichern:** Der Text kommt in die Datenbank – das Gedächtnis der App.
-3. **Wiederfinden:** Die Auswahl zeigt die Anfänge der gespeicherten Texte.
-4. **Anzeigen:** Ein ausgewählter Text wird aus dem Speicher geladen.
-5. **Anzeige leeren:** Der Bildschirm wird geleert. Der Text bleibt gespeichert.
+1. **Write something:** for example, `Hello new AI World`.
+2. **Save it:** the text goes into a database — the app's memory.
+3. **Find it again:** a list shows the beginning of each saved note.
+4. **Read it:** your chosen note is loaded from storage.
+5. **Clear the display:** the note disappears from the screen, but stays saved.
 
-**[Die Beispielseite öffnen](https://hello-ai-world.adaptiveaisolutions.chatgpt.site)**
+**[Open the example website](https://hello-ai-world.adaptiveaisolutions.chatgpt.site)**
 
-![Unsere erzeugte Webseite: oben die Texteingabe, darunter die Auswahl gespeicherter Einträge und der wieder geladene Text.](evidence/w2/browser.jpg)
+![Our generated website: a text box, a list of saved notes, and a note loaded from storage.](evidence/w2/browser.jpg)
 
-*Screenshot aus der Browserprüfung. Die Seite wurde aus unserer Sprache erzeugt.*
+*Screenshot from browser testing. The page was generated from our language.
+The demo interface is currently in German.*
 
-## Warum lassen wir die KI nicht einfach machen?
+## Why check the AI's work?
 
-Weil auch eine KI Fehler macht. „Sieht richtig aus“ reicht uns deshalb nicht.
+Because AI makes mistakes too. “Looks right” is not enough.
 
-Für bestimmte Rechenregeln können unsere Werkzeuge schon mathematisch prüfen,
-ob ein Programm die festgelegte Regel einhält. Zum Beispiel:
-**„Du darfst höchstens so viele Punkte ausgeben, wie du besitzt.“**
+For certain calculation rules, our tools can already check mathematically
+whether a program follows the agreed rule. For example:
+**“You cannot spend more points than you have.”**
 
-Das ist wie ein sehr genauer Schiedsrichter: Er prüft die vereinbarte Regel.
-Er kann aber nicht wissen, ob wir eine wichtige Regel vergessen haben.
+Think of a very precise referee: it checks the rule we wrote down.
+It cannot know whether we forgot an important rule.
 
-**Die ganze Webseite ist noch nicht mathematisch bewiesen.** Sie wird mit
-Codeprüfungen und Tests kontrolliert. Beim letzten vollständigen Testlauf am
-13. September 2026 bestanden **309 Tests**.
+**The whole website is not mathematically proven correct.** It is checked
+with code analysis and tests. The last full test run, on September 13, 2026,
+passed **309 tests**.
 
-## Was kommt als Nächstes?
+## What comes next?
 
-Wir wollen aus der kleinen Werkstatt eine vielseitige Software-Fabrik machen.
-Dafür planen wir **Bibliotheken**: wiederverwendbare Bausteine, ähnlich wie LEGO.
-Mit ihnen sollen neue Apps entstehen, ohne den Übersetzer jedes Mal umzubauen.
+We want to turn this small workshop into a more flexible software factory.
+We are planning **libraries**: reusable building blocks, a bit like LEGO.
+They should let us build new apps without changing the translator each time.
 
-Geplante Beispiele sind eine Kundenverwaltung und eine Seite zum Buchen von
-Veranstaltungen. Diese Erweiterungen sind **noch nicht umgesetzt**.
+Planned examples include a customer management app and an event booking
+website. These extensions are **not implemented yet**.
 
-## Du möchtest tiefer einsteigen?
+## Want to look inside?
 
-- **Compiler-Code finden:** [src/llmlang/web](src/llmlang/web) · [Einstiegspunkt: build.py](src/llmlang/web/build.py)
-- **Selbst starten:** [Installation und technische Anleitung](docs/TECHNICAL-GUIDE.md)
-- **Webseiten bauen:** [Compiler, Aufbau und Betrieb](docs/W1-GUIDE.md)
-- **Die Sprache verstehen:** [Rechenregeln](docs/P0.md) · [Webseiten](docs/W1-SPEC.md) · [Textverlauf](docs/W2-SPEC.md)
-- **Prüfungen nachvollziehen:** [Was die Beweise abdecken](docs/ASSURANCE.md) · [Browserabnahme](docs/W1-ABNAHME.md)
-- **Den Ausbau verfolgen:** [Weiterentwicklungsplan](docs/LLM-Language-Weiterentwicklungsplan.md) · [Entscheidungen](Log.md)
+The technical documentation is currently in German.
 
-*Aktueller Stand: Version 0.4.0 · [MIT-Lizenz](LICENSE)*
+- **Find the compiler:** [src/llmlang/web](src/llmlang/web) · [Start with build.py](src/llmlang/web/build.py)
+- **Run it yourself:** [Installation and technical guide](docs/TECHNICAL-GUIDE.md)
+- **Build websites:** [Compiler, architecture and deployment](docs/W1-GUIDE.md)
+- **Explore the language:** [Calculation rules](docs/P0.md) · [Websites](docs/W1-SPEC.md) · [Saved text history](docs/W2-SPEC.md)
+- **Understand the checks:** [What the proofs cover](docs/ASSURANCE.md) · [Browser acceptance report](docs/W1-ABNAHME.md)
+- **Follow the plans:** [Development roadmap](docs/LLM-Language-Weiterentwicklungsplan.md) · [Decision log](Log.md)
+
+*Current version: 0.4.0 · [MIT license](LICENSE)*

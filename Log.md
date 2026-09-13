@@ -354,3 +354,10 @@ veranschaulichen den Weg zur Anwendung und das Ergebnis. Technische Befehle,
 Sprachdetails und Archivhinweise sind nach docs/TECHNICAL-GUIDE.md verschoben.
 Bestehende Beweisgrenzen und der Unterschied zwischen Umsetzung und Planung
 bleiben ausdrücklich erhalten. Reine Dokumentationsänderung.
+
+## 2026-09-13 — Englische README
+
+Die einfache Projektübersicht einschließlich Ablaufplan und Bildbeschreibung wurde
+für internationale GitHub-Leser ins Englische übertragen. Die derzeit deutsche
+Demooberfläche und technische Dokumentation sind als solche gekennzeichnet.
+Funktionsumfang, Beweisgrenzen und Planungsstatus bleiben erhalten.
