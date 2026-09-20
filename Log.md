@@ -371,3 +371,26 @@ docs/launch/validation.json. Keine Änderung der Sprache. Die GIF erklärt
 aufgezeichnete Ergebnisse und ist keine Bildschirmaufnahme. Topics sind bereits
 passend gesetzt. About-Aktualisierung und GitHub-Release bleiben mangels passender
 Connector-Aktionen offen; keine Community-Nachricht wurde versandt.
+
+
+## 2026-09-20 — KPDL für LLM-Language mit eigener Rechteinhaberschaft
+
+Auf ausdrücklichen Wunsch des Projektinhabers wird main auf eine
+projektbezogene KPDL-1.1-Fassung für LLM-Language umgestellt. Alleiniger
+Rechteinhaber in dieser Fassung ist Marc-Dennis Haberland. Titel und Kennung
+KPDL-1.1-LLM-Language unterscheiden die Anpassung vom fremden Originaltext.
+Projektbezeichnung, Softwareumfang und gemeinsame Zustimmungsregeln wurden
+in Deutsch und Englisch an die alleinige Rechteinhaberschaft angepasst.
+Umsatzschwellen, Entgelte, Evaluationszeitraum, Forschungsregelung und übrige
+Nutzungsbedingungen folgen der KPDL-1.1-Vorlage. Der Text bleibt ein
+Lizenzentwurf ohne behauptete anwaltliche Prüfung.
+
+NOTICE, README, Beitragshinweise und Paketmetadaten entsprechen dieser
+Entscheidung. Bisheriger MIT-Text und Urhebervermerk bleiben zur historischen
+Zuordnung erhalten. Keine Änderung der Sprachsemantik oder Compilerquellen.
+
+Validierung: Wheel und Quellarchiv erfolgreich gebaut; Lizenz-/Hinweisdateien
+und Paketmetadaten geprüft, alleiniger Rechteinhaber in beiden Sprachfassungen,
+Zahlenwerte der Gebühren-/Evaluations-/Forschungsabschnitte unverändert. Kein
+Compiler-Code-Diff. Build meldet bekannte Deprecation-Hinweise zur mit
+setuptools>=68 kompatiblen Lizenzmetadaten-Syntax. git diff --check bestanden.

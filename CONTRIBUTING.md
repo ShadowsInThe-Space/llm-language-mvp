@@ -31,3 +31,9 @@ Change the compiler or source program rather than editing generated app files by
 A pull request should explain the problem, the change, checks actually run,
 and any remaining limitation. Do not describe the generated website as formally proven.
 Please avoid including credentials, private user data or production database dumps.
+
+## License
+
+This revision uses [KPDL-1.1-LLM-Language](LICENSE), the project-specific
+LLM-Language edition of KPDL 1.1. Read Section 7 before contributing.
+[NOTICE](NOTICE) records the scope and historical MIT attribution.

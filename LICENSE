@@ -1,21 +1,435 @@
-MIT License
+KPDL — LLM-Language Edition
+Version 1.1 — projektbezogene Fassung (KPDL-1.1-LLM-Language)
 
 Copyright (c) 2026 Marc-Dennis Haberland
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Projektbezogene Anpassung der KPDL 1.1: Projektname, Rechteinhaber und
+Beschreibung der geschützten Software beziehen sich auf LLM-Language.
+Die Bedingungen zu Nutzung, Attribution, Unternehmensentgelten und Forschung
+folgen der Vorlage. Dies ist eine eigene Fassung, nicht der unveränderte
+Lizenztext eines anderen Projekts.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Hinweis: Die deutsche Fassung ist die verbindliche Fassung dieser Lizenz.
+Die englische Fassung unten dient der Verständlichkeit; bei Abweichungen
+gilt die deutsche Fassung. Dieser Text ist ein vom Rechteinhaber
+formulierter Lizenzentwurf und ersetzt keine anwaltliche Prüfung.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+===========================================================================
+DEUTSCHE FASSUNG (verbindlich)
+===========================================================================
+
+Präambel
+
+LLM-Language ist eine eigenständige Programmiersprache (Spezifikation,
+Compiler, Referenzimplementierung, Werkzeuge und
+Dokumentation). Diese Lizenz trennt ausdrücklich drei Dinge:
+
+  (a) Die Rechte an LLM-Language als Sprache und Technologie verbleiben bei dem
+      ursprünglichen Rechteinhaber.
+  (b) Entwickler dürfen LLM-Language frei nutzen, erweitern und darauf auch
+      proprietäre Anwendungen bauen — unter der Bedingung, dass LLM-Language
+      und der Rechteinhaber bei Nutzung und Weitergabe ausdrücklich
+      genannt werden und die LLM-Language-Basis nicht als fremdes Original
+      ausgegeben wird.
+  (c) Unternehmen ab einem Jahresumsatz von 3 Millionen Euro benötigen
+      für die Nutzung eine kostenpflichtige Unternehmenslizenz vom
+      Rechteinhaber (Abschnitt 10). Forschungseinrichtungen und
+      Institute nutzen LLM-Language unentgeltlich (Abschnitt 11).
+
+1. Begriffe
+
+1.1 „Rechteinhaber" ist Marc-Dennis Haberland als alleiniger Rechteinhaber
+    von LLM-Language für diese Lizenz. Rechte nach dieser Lizenz werden
+    von ihm gewährt; erforderliche Zustimmungen erteilt er allein.
+1.2 „LLM-Language" bezeichnet die Programmiersprache LLM-Language in allen
+    Bestandteilen: die Sprachspezifikation, die Zwischenrepräsentationen,
+    die Referenzimplementierung (Quellcode und
+    Binärformen), Compiler, Interpreter, Werkzeuge, Testsuiten und
+    Dokumentation, wie sie unter dieser Lizenz veröffentlicht sind.
+1.3 „Geschützte Bestandteile" sind alle Teile von LLM-Language nach 1.2.
+1.4 „Abgeleitetes Werk" ist jede Implementierung, Erweiterung,
+    Modifikation, Übersetzung, Portierung oder sonstige abgeleitete
+    Fassung, die auf der LLM-Language-Spezifikation, der Referenz-
+    implementierung oder geschützten Bestandteilen beruht — unabhängig
+    von der Programmiersprache oder Zielplattform.
+1.5 „Auf LLM-Language basierendes Werk" ist jede Software oder jedes Produkt,
+    das LLM-Language verwendet, einbettet, kompiliert, ausführt oder in LLM-Language
+    geschriebene Programme enthält, ohne selbst LLM-Language zu verändern.
+1.6 „Weitergabe" ist jede Veröffentlichung, Verbreitung, Bereitstellung
+    (auch als Dienst über ein Netzwerk) oder Übergabe an Dritte, in
+    Quell- oder Binärform, entgeltlich oder unentgeltlich.
+1.7 „Sie" ist jede natürliche oder juristische Person, die Rechte nach
+    dieser Lizenz ausübt.
+1.8 „Unternehmen" ist jede juristische Person oder Personengesellschaft,
+    die gewerblich oder unternehmerisch tätig ist, einschließlich aller
+    mit ihr im Sinne von § 15 AktG verbundenen Unternehmen
+    (Unternehmensgruppe).
+1.9 „Jahresumsatz" ist der konsolidierte Gesamtumsatz der Unternehmens-
+    gruppe im letzten abgeschlossenen Geschäftsjahr, in Euro oder dem
+    Gegenwert in anderer Währung zum Jahresdurchschnittskurs.
+1.10 „Forschungseinrichtung" ist eine Hochschule, eine öffentliche oder
+    gemeinnützige Forschungseinrichtung oder ein Forschungsinstitut,
+    einschließlich ihrer Institute, Lehrstühle, Arbeitsgruppen und
+    An-Institute. Forschungs- und Entwicklungsabteilungen von
+    Unternehmen sind keine Forschungseinrichtungen im Sinne dieser
+    Lizenz.
+
+2. Rechtevorbehalt
+
+2.1 Alle Rechte an LLM-Language als Sprache und Technologie, insbesondere das
+    Urheberrecht an Spezifikation und Referenzimplementierung sowie das
+    Recht am Namen „LLM-Language" für diese Sprache, verbleiben beim
+    Rechteinhaber.
+2.2 Diese Lizenz überträgt keine Rechte an der LLM-Language-Sprache. Sie
+    gewährt ausschließlich die in Abschnitt 3 genannten Nutzungsrechte.
+2.3 Kein Abgeleitetes Werk und kein auf LLM-Language basierendes Werk darf die
+    LLM-Language-Basis als eigenes oder fremdes Original ausgeben oder den
+    Eindruck erwecken, LLM-Language stamme von jemand anderem als dem
+    Rechteinhaber.
+
+3. Gewährte Rechte
+
+Unter den Bedingungen dieser Lizenz gewährt der Rechteinhaber Ihnen
+weltweit und nicht ausschließlich das Recht,
+
+3.1 LLM-Language zu nutzen, zu vervielfältigen und auszuführen — privat,
+    gewerblich und kommerziell;
+3.2 LLM-Language zu verändern, zu erweitern, zu portieren und Abgeleitete
+    Werke zu erstellen;
+3.3 auf LLM-Language basierende Werke zu erstellen, auch proprietär und unter
+    beliebiger eigener Lizenz, und diese entgeltlich oder unentgeltlich
+    weiterzugeben;
+3.4 Abgeleitete Werke weiterzugeben, sofern Abschnitt 4 (Attribution)
+    und Abschnitt 5 (Kennzeichnung) eingehalten werden.
+3.5 Diese Rechte sind unentgeltlich für natürliche Personen,
+    Forschungseinrichtungen (Abschnitt 11) und Unternehmen unterhalb der
+    Umsatzschwelle in Abschnitt 10. Unternehmen ab dieser Schwelle üben
+    die Rechte nach 3.1 bis 3.4 nur mit einer gültigen Unternehmens-
+    lizenz nach Abschnitt 10 aus.
+
+4. Attributionspflicht
+
+4.1 Jede Weitergabe einer Implementierung, Erweiterung, Modifikation
+    oder abgeleiteten Fassung, die auf der LLM-Language-Spezifikation, der
+    LLM-Language-Referenzimplementierung oder geschützten Bestandteilen von
+    LLM-Language basiert, muss LLM-Language als Grundlage kenntlich machen und den
+    ursprünglichen Entwickler und Rechteinhaber (Marc-Dennis Haberland) namentlich nennen.
+4.2 Jede Weitergabe eines auf LLM-Language basierenden Werks muss LLM-Language als
+    zugrunde liegende Programmiersprache erkennbar nennen und den
+    Rechteinhaber namentlich nennen.
+4.3 Die Nennung erfolgt an einer für Empfänger üblichen und zumutbar
+    auffindbaren Stelle (z. B. Lizenz-/NOTICE-Datei, „Über"-Dialog,
+    Dokumentation, Produktseite). Mindestinhalt:
+
+        Dieses Produkt verwendet die Programmiersprache LLM-Language.
+
+        LLM-Language
+        Copyright (c) 2026 Marc-Dennis Haberland
+        Licensed under the KPDL — LLM-Language Edition (KPDL-1.1-LLM-Language).
+
+        LLM-Language ist eine eigenständige Programmiersprache. Diese Software
+        ist ein auf LLM-Language basierendes Werk und stellt keine Übertragung
+        der Rechte an der LLM-Language-Sprache dar.
+
+4.4 Vorhandene Urheber-, Lizenz- und Hinweisvermerke in geschützten
+    Bestandteilen dürfen nicht entfernt oder verändert werden; eine
+    Kopie dieser Lizenz ist Abgeleiteten Werken beizufügen.
+
+5. Name und Kennzeichnung
+
+5.1 Der Name „LLM-Language" ist als Bezeichnung der Sprache bei Nutzung und
+    Weitergabe zu erhalten. Abgeleitete Werke dürfen eigene Namen tragen,
+    müssen aber LLM-Language gemäß Abschnitt 4 als Grundlage nennen.
+5.2 Der Name „LLM-Language" und der Name des Rechteinhabers dürfen nicht
+    verwendet werden, um Abgeleitete Werke oder auf LLM-Language basierende
+    Werke als vom Rechteinhaber stammend, geprüft oder empfohlen
+    darzustellen, sofern keine ausdrückliche schriftliche Zustimmung
+    vorliegt.
+5.3 Eine Fassung, die von der veröffentlichten LLM-Language-Spezifikation
+    abweicht, darf nicht als „LLM-Language" ohne unterscheidenden Zusatz
+    bezeichnet werden, wenn dies zu Verwechslungen mit dem Original
+    führen kann.
+
+6. Eigene Rechte an Erweiterungen
+
+6.1 Rechte an eigenen, von Ihnen geschaffenen Erweiterungen, Programmen,
+    Anwendungen und Werkzeugen verbleiben bei Ihnen; diese Lizenz
+    verlangt keine Offenlegung Ihres eigenen Quellcodes und keine
+    Weitergabe unter dieser Lizenz.
+6.2 Ausgenommen davon ist die LLM-Language-Basis selbst: geschützte
+    Bestandteile, die Sie unverändert oder verändert weitergeben, bleiben
+    dieser Lizenz unterworfen (Abschnitte 2, 4 und 5).
+
+7. Beiträge
+
+Wer Beiträge (Patches, Erweiterungen, Korrekturen) zur Referenz-
+implementierung oder Spezifikation einreicht, räumt dem Rechteinhaber
+ein einfaches, unwiderrufliches, weltweites, unentgeltliches Recht ein,
+diese Beiträge als Teil von LLM-Language unter dieser Lizenz oder späteren
+Fassungen zu nutzen; die eigenen Rechte des Beitragenden an seinem
+Beitrag bleiben davon unberührt.
+
+8. Gewährleistungs- und Haftungsausschluss
+
+LLM-Language wird „wie besehen" bereitgestellt, ohne jede ausdrückliche oder
+stillschweigende Gewährleistung, insbesondere ohne Zusicherung der
+Marktgängigkeit, der Eignung für einen bestimmten Zweck oder der
+Freiheit von Rechten Dritter. Der Rechteinhaber haftet, soweit
+gesetzlich zulässig, nicht für Schäden aus der Nutzung oder Unmöglichkeit
+der Nutzung von LLM-Language. Zwingende gesetzliche Haftung (insbesondere für
+Vorsatz, grobe Fahrlässigkeit und Verletzung von Leben, Körper oder
+Gesundheit) bleibt unberührt. Dies gilt auch für Unternehmenslizenzen
+nach Abschnitt 10.
+
+9. Beendigung
+
+9.1 Verstoßen Sie gegen die Abschnitte 2, 4, 5 oder 10, erlöschen Ihre
+    Rechte aus dieser Lizenz automatisch. Sie leben wieder auf, wenn der
+    Verstoß innerhalb von 30 Tagen nach Kenntnis vollständig beseitigt
+    wird (bei Abschnitt 10 durch Erwerb der fälligen Unternehmenslizenz
+    einschließlich der Nutzungszeit seit Ablauf der Evaluationsfrist),
+    sofern der Rechteinhaber die Lizenz nicht zuvor schriftlich
+    endgültig gekündigt hat.
+9.2 Rechte, die Dritte vor der Beendigung rechtmäßig von Ihnen erhalten
+    haben, bleiben bestehen, solange diese Dritten die Lizenz einhalten.
+
+10. Unternehmenslizenz ab 3 Millionen Euro Jahresumsatz
+
+10.1 Ein Unternehmen mit einem Jahresumsatz von 3.000.000 Euro oder mehr
+     benötigt für jede Nutzung von LLM-Language nach Abschnitt 3 (Entwicklung,
+     Betrieb, Einbettung in Produkte, Bereitstellung als Dienst) eine
+     kostenpflichtige Unternehmenslizenz, die bei dem Rechteinhaber zu
+     erwerben ist. Die Umsatzschwelle bezieht sich auf die Unternehmens-
+     gruppe (1.8, 1.9); eine Aufteilung auf Tochtergesellschaften, um
+     die Schwelle zu unterschreiten, ist unbeachtlich.
+10.2 Die Unternehmenslizenz wird je nutzendem Rechtsträger erteilt und
+     gilt für alle Mitarbeiter, Standorte und Produkte dieses Rechts-
+     trägers ohne Begrenzung der Entwickler- oder Installationszahl.
+     Eine Gruppenlizenz für mehrere Rechtsträger kann schriftlich
+     vereinbart werden.
+10.3 Lizenzentgelte (netto, zuzüglich gesetzlicher Umsatzsteuer, Stand
+     20. September 2026):
+
+     | Jahresumsatz der Unternehmensgruppe        | Monatslizenz | Jahreslizenz |
+     |--------------------------------------------|--------------|--------------|
+     | ab 3.000.000 Euro bis unter 50.000.000 Euro|    49 Euro   |   490 Euro   |
+     | ab 50.000.000 Euro                         |   199 Euro   | 1.990 Euro   |
+
+     Der Rechteinhaber kann die Entgelte für neue Lizenzzeiträume
+     anpassen; laufende Lizenzzeiträume bleiben zum vereinbarten Entgelt
+     bestehen. Die Jahreslizenz verlängert sich nicht automatisch.
+10.4 Evaluation: Ein Unternehmen nach 10.1 darf LLM-Language 60 Tage ab der
+     ersten Nutzung unentgeltlich prüfen und testen, sofern in dieser
+     Zeit kein auf LLM-Language basierendes Werk produktiv betrieben oder
+     weitergegeben wird. Danach ist eine Unternehmenslizenz erforderlich.
+10.5 Beiträge zur Referenzimplementierung (Abschnitt 7), das bloße
+     Lesen der Spezifikation und das Ausführen der Testsuite zur
+     Prüfung von Beiträgen bedürfen keiner Unternehmenslizenz.
+10.6 Die Unternehmenslizenz ändert nichts an den Abschnitten 2, 4, 5
+     und 6; insbesondere bleiben Attributionspflicht und Rechtevorbehalt
+     bestehen.
+10.7 Lizenzanfragen sind an den Rechteinhaber zu richten (Kontakt siehe
+     README des Repositories). Die Unternehmenslizenz kommt mit
+     schriftlicher Bestätigung des Rechteinhabers und Zahlung des
+     Entgelts zustande.
+
+11. Forschungseinrichtungen und Institute
+
+11.1 Forschungseinrichtungen (1.10) dürfen LLM-Language unabhängig von ihrem
+     Umsatz oder Budget unentgeltlich nach Abschnitt 3 nutzen — für
+     Forschung, Lehre, Veröffentlichungen und Prototypen —, sofern sie
+     einer Forschungspartnerschaft mit dem Rechteinhaber grundsätzlich
+     offen gegenüberstehen. Dafür genügt die Bereitschaft, auf Anfrage
+     des Rechteinhabers über eine Zusammenarbeit zu sprechen (etwa
+     gemeinsame Auswertung von Ergebnissen, Erfahrungsaustausch,
+     Mitwirkung an der Spezifikation). Eine Verpflichtung, eine
+     Partnerschaft abzuschließen, besteht nicht.
+11.2 Veröffentlichungen, die auf LLM-Language beruhen, nennen LLM-Language und den
+     Rechteinhaber nach Abschnitt 4 (Zitat oder Danksagung genügt).
+11.3 Wird LLM-Language aus einer Forschungseinrichtung heraus in ein Produkt
+     eines Unternehmens nach 10.1 überführt (Ausgründung, Lizenzierung,
+     Auftragsforschung mit produktiver Nutzung beim Auftraggeber), gilt
+     für dieses Unternehmen Abschnitt 10.
+
+12. Sonstiges
+
+12.1 Der Rechteinhaber kann neue Fassungen dieser Lizenz
+     veröffentlichen. Unter „KPDL-1.1-LLM-Language" veröffentlichte Bestandteile
+     bleiben unter dieser Fassung nutzbar.
+12.2 Sollte eine Bestimmung unwirksam sein, bleibt die Wirksamkeit der
+     übrigen Bestimmungen unberührt.
+12.3 Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss
+     des UN-Kaufrechts; Gerichtsstand ist, soweit zulässig, der Sitz des
+     Rechteinhabers.
+
+===========================================================================
+ENGLISH VERSION (for convenience; the German version prevails)
+===========================================================================
+
+KPDL — LLM-Language Edition, Version 1.1 (KPDL-1.1-LLM-Language)
+Copyright (c) 2026 Marc-Dennis Haberland
+
+Preamble. LLM-Language is an independent programming language (specification,
+compilers, reference implementation, tools, documentation).
+This license separates three things: (a) the rights in LLM-Language as a
+language and technology remain with the original rights holder; (b)
+developers may use and extend LLM-Language and build proprietary applications
+on it, provided LLM-Language and the rights holder are expressly credited on
+use and distribution and the LLM-Language base is never presented as someone
+else's original work; (c) companies with annual revenue of EUR 3 million
+or more need a paid Enterprise License from the rights holder (Section
+10), while research institutions use LLM-Language free of charge (Section 11).
+
+1. Definitions. "Rights Holder" means Marc-Dennis Haberland as the sole
+rights holder of LLM-Language for this license. Rights under this license
+are granted by him; any consent required under this license is his alone.
+"LLM-Language" means the language in all its parts (specification,
+intermediate representations, reference implementation in source and
+binary form, compilers, interpreters, tools, test suites, documentation).
+"Protected Components" are all parts of LLM-Language. "Derivative Work" is any
+implementation, extension, modification, translation, port or other
+derived version based on the LLM-Language specification, reference
+implementation or Protected Components, regardless of language or
+platform. "Work Based on LLM-Language" is any software or product that uses,
+embeds, compiles or executes LLM-Language or contains programs written in
+LLM-Language without modifying LLM-Language itself. "Distribution" is any
+publication, provision (including as a network service) or transfer to
+third parties, in source or binary form, for a fee or free of charge.
+"Company" is any legal entity or partnership engaged in commercial or
+business activity, including all affiliated entities of its corporate
+group. "Annual Revenue" is the consolidated total revenue of the
+corporate group in the last completed fiscal year, in EUR or the
+equivalent at the annual average exchange rate. "Research Institution"
+is a university, public or non-profit research organisation or research
+institute, including its institutes, chairs, working groups and
+affiliated institutes; R&D departments of companies are not Research
+Institutions under this license.
+
+2. Reservation of Rights. All rights in LLM-Language as a language and
+technology, including copyright in the specification and reference
+implementation and the right in the name "LLM-Language" for this language,
+remain with the Rights Holder. This license transfers no rights in the
+LLM-Language language; it only grants the permissions in Section 3. No
+Derivative Work or Work Based on LLM-Language may present the LLM-Language base as
+its own or a third party's original, or suggest that LLM-Language originates
+from anyone other than the Rights Holder.
+
+3. Grant. Subject to this license, the Rights Holder grants you a
+worldwide, non-exclusive right to (3.1) use, copy and run LLM-Language,
+privately and commercially; (3.2) modify, extend and port LLM-Language and
+create Derivative Works; (3.3) create Works Based on LLM-Language, including
+proprietary ones under any license of your choice, and distribute them;
+(3.4) distribute Derivative Works provided Sections 4 and 5 are met.
+(3.5) These rights are royalty-free for natural persons, Research
+Institutions (Section 11) and Companies below the revenue threshold in
+Section 10; Companies at or above that threshold exercise the rights in
+3.1 to 3.4 only under a valid Enterprise License (Section 10).
+
+4. Attribution. Any published or distributed implementation, extension,
+modification or derived version based on the LLM-Language specification, the
+LLM-Language reference implementation or Protected Components of LLM-Language must
+identify LLM-Language as its basis and name the original developer and Rights Holder (Marc-Dennis Haberland). Any distributed
+Work Based on LLM-Language must recognizably name LLM-Language as the underlying
+programming language and name the Rights Holder. The notice must appear
+where recipients customarily find it (license/NOTICE file, about dialog,
+documentation, product page), with at least:
+
+    This product uses the LLM-Language programming language.
+
+    LLM-Language
+    Copyright (c) 2026 Marc-Dennis Haberland
+    Licensed under the KPDL — LLM-Language Edition (KPDL-1.1-LLM-Language).
+
+    LLM-Language is an independent programming language. This software is a
+    work based on LLM-Language and does not transfer any rights in the LLM-Language
+    language.
+
+Existing copyright, license and notice statements in Protected
+Components may not be removed or altered; a copy of this license must
+accompany Derivative Works.
+
+5. Name and Identification. The name "LLM-Language" must be preserved as the
+designation of the language on use and distribution. Derivative Works
+may carry their own names but must credit LLM-Language under Section 4.
+Neither "LLM-Language" nor the Rights Holder's name may be used to suggest
+that Derivative Works or Works Based on LLM-Language originate from, were
+reviewed by or are endorsed by the Rights Holder without express written
+consent. A version deviating from the published LLM-Language specification may
+not be called "LLM-Language" without a distinguishing addition where confusion
+with the original is possible.
+
+6. Your Own Rights. Rights in your own extensions, programs,
+applications and tools remain yours; this license requires neither
+disclosure of your source code nor distribution under this license. The
+LLM-Language base itself remains subject to this license (Sections 2, 4, 5)
+whenever you distribute it, modified or unmodified.
+
+7. Contributions. Contributors to the reference implementation or
+specification grant the Rights Holder a non-exclusive, irrevocable,
+worldwide, royalty-free right to use their contribution as part of
+LLM-Language under this or later versions of this license; contributors keep
+their own rights in their contribution.
+
+8. No Warranty; Limitation of Liability. LLM-Language is provided "as is",
+without warranty of any kind, express or implied, including
+merchantability, fitness for a particular purpose and non-infringement.
+To the extent permitted by law, the Rights Holder is not liable for
+any damages arising from the use of or inability to use LLM-Language.
+Mandatory statutory liability (in particular for intent, gross
+negligence and injury to life, body or health) remains unaffected. This
+also applies to Enterprise Licenses under Section 10.
+
+9. Termination. Your rights terminate automatically upon breach of
+Sections 2, 4, 5 or 10; they are reinstated if the breach is fully cured
+within 30 days of becoming aware of it (for Section 10, by purchasing
+the Enterprise License due, including the period of use since the end
+of the evaluation period), unless the Rights Holder has terminated the
+license in writing beforehand. Rights lawfully obtained by third parties
+before termination survive as long as those parties comply with this
+license.
+
+10. Enterprise License from EUR 3 million Annual Revenue. (10.1) A
+Company with Annual Revenue of EUR 3,000,000 or more requires a paid
+Enterprise License from the Rights Holder for any use of LLM-Language under
+Section 3 (development, operation, embedding in products, provision as
+a service). The threshold applies to the corporate group; splitting use
+across subsidiaries to stay below it is disregarded. (10.2) The
+Enterprise License is granted per using legal entity and covers all its
+employees, sites and products without limit on developers or
+installations; a group license for several entities may be agreed in
+writing. (10.3) Fees (net, plus applicable VAT, as of 20 September
+2026): Annual Revenue from EUR 3,000,000 to below EUR 50,000,000 —
+EUR 49 per month or EUR 490 per year; EUR 50,000,000 and above — EUR 199
+per month or EUR 1,990 per year. The Rights Holder may adjust fees for
+new license periods; running periods keep the agreed fee. Annual
+licenses do not renew automatically. (10.4) Evaluation: such a Company
+may evaluate and test LLM-Language free of charge for 60 days from first use,
+provided no Work Based on LLM-Language is operated productively or distributed
+during that time; afterwards an Enterprise License is required. (10.5)
+Contributions under Section 7, merely reading the specification and
+running the test suite to verify contributions require no Enterprise
+License. (10.6) The Enterprise License does not alter Sections 2, 4, 5
+and 6; attribution and reservation of rights remain. (10.7) License
+requests go to the Rights Holder (contact: see the repository README);
+the Enterprise License is concluded upon the Rights Holder's written
+confirmation and payment of the fee.
+
+11. Research Institutions. (11.1) Research Institutions may use LLM-Language
+under Section 3 free of charge regardless of revenue or budget — for
+research, teaching, publications and prototypes — provided they are in
+principle open to a research partnership with the Rights Holder. It is
+sufficient to be willing to talk about cooperation upon request (e.g.
+joint evaluation of results, exchange of experience, participation in
+the specification); there is no obligation to conclude a partnership.
+(11.2) Publications based on LLM-Language credit LLM-Language and the Rights Holder
+under Section 4 (a citation or acknowledgement suffices). (11.3) If
+LLM-Language is transferred from a Research Institution into a product of a
+Company under 10.1 (spin-off, licensing, contract research with
+productive use at the client), Section 10 applies to that Company.
+
+12. Miscellaneous. The Rights Holder may publish new versions of this
+license; components published under "KPDL-1.1-LLM-Language" remain usable under this
+version. If any provision is invalid, the remainder stays in force. The
+laws of the Federal Republic of Germany apply, excluding the UN
+Convention on Contracts for the International Sale of Goods; venue, where
+permissible, is the seat of the Rights Holder.

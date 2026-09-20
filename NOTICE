@@ -1,0 +1,16 @@
+LLM-Language · The Software Factory
+Copyright (c) 2026 Marc-Dennis Haberland
+Licensed under KPDL-1.1-LLM-Language; see LICENSE.
+
+This is the project-specific LLM-Language edition of KPDL 1.1.
+The sole project rights holder named in this edition is Marc-Dennis Haberland.
+It covers this revision's LLM-Language sources, compiler, tools, tests,
+templates and documentation, except separately licensed components.
+
+Earlier repository revisions through 837e7ba9a3331cb0b9d17ed982f8581ef6d896dd
+were published under MIT. The previous license and copyright notice are
+preserved in LICENSES/MIT-previous.txt. Historical archives and Git history
+retain their original contents. Third-party licenses remain separate.
+
+License enquiries: open an issue titled "Lizenzanfrage" at
+https://github.com/ShadowsInThe-Space/llm-language-mvp/issues

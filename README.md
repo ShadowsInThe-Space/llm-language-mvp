@@ -105,4 +105,13 @@ Start with the English quickstart. The detailed language specifications are curr
 - **Understand the checks:** [What the proofs cover](docs/ASSURANCE.md) · [Browser acceptance report](docs/W1-ABNAHME.md)
 - **Follow the plans:** [Development roadmap](docs/LLM-Language-Weiterentwicklungsplan.md) · [Decision log](Log.md)
 
-*Current version: 0.4.0 · [MIT license](LICENSE)*
+*Current version: 0.4.0 · [KPDL 1.1 — LLM-Language edition](LICENSE)*
+
+Copyright © 2026 Marc-Dennis Haberland, the sole project rights holder named
+in this license. This project-specific KPDL edition permits use, modification
+and proprietary applications subject to its attribution and licensing terms.
+Companies with annual group revenue of EUR 3 million or more require an
+enterprise license; research use is governed by Section 11. See [LICENSE](LICENSE)
+for the complete terms and [NOTICE](NOTICE) for scope and historical attribution.
+
+For licensing enquiries, [open an issue titled “Lizenzanfrage”](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/new?title=Lizenzanfrage).
