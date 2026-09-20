@@ -233,3 +233,25 @@ def test_result_host_values_reject_extra_fields():
             "main",
             [{"tag": "Ok", "value": 1, "error": "unexpected"}],
         )
+
+
+def test_list_empty_requires_explicit_element_type():
+    missing = module(
+        [{"op": "list_empty", "dest": "out", "capacity": 2}],
+        result={"kind": "list", "elem": "Int", "capacity": 2},
+    )
+    with pytest.raises(A1TypeError, match="explicit list type"):
+        validate_module(missing)
+
+    valid = module(
+        [
+            {
+                "op": "list_empty",
+                "dest": "out",
+                "capacity": 2,
+                "type": {"kind": "list", "elem": "Int", "capacity": 2},
+            }
+        ],
+        result={"kind": "list", "elem": "Int", "capacity": 2},
+    )
+    validate_module(valid)

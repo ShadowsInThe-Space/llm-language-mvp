@@ -323,7 +323,11 @@ def validate_module(module: Mapping[str, Any]) -> None:
                 capacity = instruction.get("capacity")
                 if type(capacity) is not int or capacity < 0:
                     _fail("E_A1_TYPE_CAPACITY", "invalid list capacity", location)
-                result_type = ("list", UNKNOWN, capacity)
+                if "type" not in instruction:
+                    _fail("E_A1_TYPE", "list_empty requires an explicit list type", location)
+                result_type = _type(instruction["type"], set(records), set(variants))
+                if result_type[0] != "list" or result_type[2] != capacity:
+                    _fail("E_A1_TYPE", "list_empty type and capacity differ", location)
             elif op == "list_index":
                 source = _lookup(instruction.get("list"), env, None, location)
                 _lookup(instruction.get("index"), env, NAT, location)

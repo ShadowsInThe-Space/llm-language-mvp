@@ -573,7 +573,7 @@ nominale Records und Kapazitäten; Unicode-Ergebnisse werden gegen Node.js
 differential geprüft. Ausführung, struktureller Beweis und Targetvergleich
 bleiben drei getrennte Aussagen.
 
-Lokale Zwischenabnahme nach adversarialer Review-Reparatur: 529 Tests, Ruff und
+Lokale Zwischenabnahme nach adversarialer Review-Reparatur: 530 Tests, Ruff und
 striktes Mypy grün. Der erste Review verweigerte die Freigabe wegen gemeinsamer
 Zertifikatslogik, unvollständiger IR-Typprüfung, Schema-/Hashabweichung und
 Target-Divergenzen. Unabhängige Evidenzrekonstruktion, vollständige statische
@@ -584,5 +584,7 @@ Reparatur validiert auch Option/Result-Werte, unbekannte Nominaltypen,
 Target-Eingaben und verpflichtende Parameter-/Resulttypen fail-closed.
 Der dritte Re-Review ergänzte Callback-Elementtypen, korrekte verschachtelte
 Variantauflösung, verpflichtende Const-Typen und exakt geschlossene Resultwerte.
+Der vierte Durchgang schloss den letzten Wildcardpfad: `list_empty` verlangt
+jetzt einen expliziten Elementtyp mit übereinstimmender Kapazität.
 Vor Release folgen frische Wheel-Installation, GitHub-CI und unabhängiger
 KI-Fachreview.
