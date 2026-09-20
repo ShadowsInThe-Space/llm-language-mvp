@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
+from llmlang.diagnostics import diagnostic
+
 
 @dataclass(frozen=True)
 class Span:
@@ -21,11 +23,13 @@ class WebError(Exception):
         self.span = span
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            "code": self.code,
-            "message": self.message,
-            "span": {"start": self.span.start, "end": self.span.end},
-        }
+        return diagnostic(
+            {
+                "code": self.code,
+                "message": self.message,
+                "span": {"start": self.span.start, "end": self.span.end},
+            }
+        )
 
 
 @dataclass(frozen=True)

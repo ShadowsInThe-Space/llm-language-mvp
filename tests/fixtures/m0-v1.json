@@ -1,0 +1,276 @@
+{
+  "baseline": "m0-v1",
+  "p0": {
+    "examples/golden/abs.llspec": {
+      "baseline_hash": "d9c1f878569c5f8f0ff8fae9139850a4eafdda1343c0ca77cee5ec37133c7d74",
+      "candidate_hash": "f5f9867cb2ad05b5b95c71ec2b37f93f13dcc1324d7215a8b7a92fa5364f5553",
+      "canonical_candidate": "(candidate p0 (body (if (int.le 0 (var 0)) (var 0) (int.mul -1 (var 0)))))",
+      "canonical_spec": "(spec p0 (fn (params Int) (result Int) (requires true) (ensures (int.eq result (if (int.lt (var 0) 0) (int.sub 0 (var 0)) (var 0))))))"
+    },
+    "examples/golden/access_rule.llspec": {
+      "baseline_hash": "83068c16e16cdebabc2751f89cf18404e6e696435dba9ca5d1f6a85a38ede816",
+      "candidate_hash": "f5b59b4baa9dbce9877d4013f1fddc2ba245c0a3839e25d84e028714a8285ad6",
+      "canonical_candidate": "(candidate p0 (body (and (var 0) (not (int.lt (var 1) 18)))))",
+      "canonical_spec": "(spec p0 (fn (params Int Bool) (result Bool) (requires (int.le 0 (var 1))) (ensures (bool.eq result (and (int.le 18 (var 1)) (var 0))))))"
+    },
+    "examples/golden/clamp.llspec": {
+      "baseline_hash": "54fc49d421461d2abf1cad5a1ff6dd220c9a3a8dda96783cab37b7f24dd5253a",
+      "candidate_hash": "41e5f21f626265c48b0361a3587f31d7c5523cdd9685585d2aef707700caf2de",
+      "canonical_candidate": "(candidate p0 (body (if (int.le (var 2) (var 1)) (var 1) (if (int.le (var 0) (var 2)) (var 0) (var 2)))))",
+      "canonical_spec": "(spec p0 (fn (params Int Int Int) (result Int) (requires (int.le (var 1) (var 0))) (ensures (int.eq result (if (int.lt (var 2) (var 1)) (var 1) (if (int.lt (var 0) (var 2)) (var 0) (var 2)))))))"
+    },
+    "examples/golden/grant.llspec": {
+      "baseline_hash": "3c1db0d49960939d41e6fddd9b0c4379a0cc4ca9dacc293b18cc1006fde7b6d9",
+      "candidate_hash": "5da37285a45ee066cfaa20d9114368a8aedb66bd49b1acc5ff0f43d2f90eccdb",
+      "canonical_candidate": "(candidate p0 (body (if (int.lt (var 0) (var 1)) (var 0) (var 1))) (body (call 0 (var 1) (var 0))))",
+      "canonical_spec": "(spec p0 (fn (params Int Int) (result Int) (requires (and (int.le 0 (var 1)) (int.le 0 (var 0)))) (ensures (int.eq result (if (int.le (var 1) (var 0)) (var 1) (var 0))))) (fn (params Int Int) (result Int) (requires (and (int.le 0 (var 1)) (int.le 0 (var 0)))) (ensures (int.eq result (if (int.le (var 1) (var 0)) (var 1) (var 0))))))"
+    },
+    "examples/golden/identity.llspec": {
+      "baseline_hash": "90a0eca127184c23e2d819ae1282fe967d5bd347ca963022cfcb8e48873c564b",
+      "candidate_hash": "a60321ddce142f713a8990a4b0bca07f22b43c4c4be170c3cd6cd063a892d98e",
+      "canonical_candidate": "(candidate p0 (body (var 0)))",
+      "canonical_spec": "(spec p0 (fn (params Int) (result Int) (requires true) (ensures (int.eq result (var 0)))))"
+    },
+    "examples/golden/maximum.llspec": {
+      "baseline_hash": "5c8a6e8cd0d96b6e98810fa15e65168b744cb788e5b6e83e683897e28ef931ec",
+      "candidate_hash": "cf533f08a18f01c343b37ff48d75ee6ef7d1fd875f6d959ecf8f21eba85d9299",
+      "canonical_candidate": "(candidate p0 (body (if (int.lt (var 0) (var 1)) (var 1) (var 0))))",
+      "canonical_spec": "(spec p0 (fn (params Int Int) (result Int) (requires true) (ensures (int.eq result (if (int.le (var 1) (var 0)) (var 0) (var 1))))))"
+    },
+    "examples/golden/minimum.llspec": {
+      "baseline_hash": "33142c13b6962d0b50bb6c912c53a8e561a7afd7f48c75f4f3fba4b188ae1a54",
+      "candidate_hash": "12ea272ab673ef59a8cb36ecf048687581aaf5c4b4408da7a945bb91d24424a1",
+      "canonical_candidate": "(candidate p0 (body (if (int.le (var 1) (var 0)) (var 1) (var 0))))",
+      "canonical_spec": "(spec p0 (fn (params Int Int) (result Int) (requires true) (ensures (int.eq result (if (int.le (var 1) (var 0)) (var 1) (var 0))))))"
+    },
+    "examples/golden/nonnegative_difference.llspec": {
+      "baseline_hash": "cfaddf2c06b2e1d95588faf19040621d20d0eb683606c653ae016f3a2dc69d44",
+      "candidate_hash": "11fcf9fc051aba56f0034a11808e441e5e7ac1fe16738bcbec9cc68c2f869907",
+      "canonical_candidate": "(candidate p0 (body (let (int.sub (var 1) (var 0)) (if (int.lt 0 (var 0)) (var 0) 0))))",
+      "canonical_spec": "(spec p0 (fn (params Int Int) (result Int) (requires true) (ensures (int.eq result (if (int.le (var 1) (var 0)) 0 (int.sub (var 1) (var 0)))))))"
+    },
+    "examples/golden/overlap_length.llspec": {
+      "baseline_hash": "406540a35ee2d541cd7e6d4df4cdfb6f8668cb13cfbe0afae19b3b179b476752",
+      "candidate_hash": "f20683977e51fb0c7c48d9237d96e82ecd7a06250197793e112529a4104537de",
+      "canonical_candidate": "(candidate p0 (body (let (if (int.le (var 2) (var 0)) (var 2) (var 0)) (let (if (int.le (var 4) (var 2)) (var 2) (var 4)) (let (int.sub (var 1) (var 0)) (if (int.le (var 0) 0) 0 (var 0)))))))",
+      "canonical_spec": "(spec p0 (fn (params Int Int Int Int) (result Int) (requires (and (int.le (var 3) (var 2)) (int.le (var 1) (var 0)))) (ensures (let (if (int.le (var 3) (var 1)) (var 1) (var 3)) (let (if (int.le (var 3) (var 1)) (var 3) (var 1)) (int.eq result (if (int.lt (var 1) (var 0)) (int.sub (var 0) (var 1)) 0)))))))"
+    },
+    "examples/golden/tiered_fee.llspec": {
+      "baseline_hash": "657cf2866d012591affe9816b4eb1d743a04ac0d7f1ea5efc316162f14661037",
+      "candidate_hash": "366ffc35d95b26941bcf2245a9b8b83ec8aa4edcada03f23c9a5c97539b2099f",
+      "canonical_candidate": "(candidate p0 (body (let (int.sub (var 0) 10) (if (int.le (var 0) 0) (int.mul 2 (var 1)) (int.add 20 (var 0))))))",
+      "canonical_spec": "(spec p0 (fn (params Int) (result Int) (requires (int.le 0 (var 0))) (ensures (int.eq result (if (int.le (var 0) 10) (int.mul 2 (var 0)) (int.add 20 (int.sub (var 0) 10)))))))"
+    },
+    "examples/hello/hello.llspec": {
+      "baseline_hash": "0ae7e1d4afdf776a06e0c9248d4c222c3bebb62ee11f9ab260c99a0514af341b",
+      "candidate_hash": "52073e750c8b981efac01a31aeafea90a5e898e009674ec5db14c10b20a1015c",
+      "canonical_candidate": "(candidate p0 (body (if (int.eq (var 0) 0) 72 (if (int.eq (var 0) 1) 101 (if (int.eq (var 0) 2) 108 (if (int.eq (var 0) 3) 108 (if (int.eq (var 0) 4) 111 (if (int.eq (var 0) 5) 32 (if (int.eq (var 0) 6) 87 (if (int.eq (var 0) 7) 111 (if (int.eq (var 0) 8) 114 (if (int.eq (var 0) 9) 108 (if (int.eq (var 0) 10) 100 10)))))))))))))",
+      "canonical_spec": "(spec p0 (fn (params Int) (result Int) (requires (and (int.le 0 (var 0)) (int.lt (var 0) 12))) (ensures (int.eq result (if (int.eq (var 0) 0) 72 (if (int.eq (var 0) 1) 101 (if (int.eq (var 0) 2) 108 (if (int.eq (var 0) 3) 108 (if (int.eq (var 0) 4) 111 (if (int.eq (var 0) 5) 32 (if (int.eq (var 0) 6) 87 (if (int.eq (var 0) 7) 111 (if (int.eq (var 0) 8) 114 (if (int.eq (var 0) 9) 108 (if (int.eq (var 0) 10) 100 10)))))))))))))))"
+    }
+  },
+  "raw_sha256": {
+    "docs/ASSURANCE.md": "9a91f451cbd4b2307c808537b61710f871d2c4ef73865c39c15c536b97727d9a",
+    "docs/P0.md": "1b4a6590b612aee507030c998bc413baffe05a478592d3a9021a9f8af0b6c94a",
+    "docs/W1-SPEC.md": "a72cd413c2c81a06eaf8bfa2d9fbd1d2fe71e7c5113b97741ce61d159857ea58",
+    "docs/W2-SPEC.md": "c3c636d5fe65dfb6ad56b52f10c161218401fc5d17b80eada20368b08263c96a",
+    "evidence/acceptance/abs-proof.json": "e4fd69ac2645cbb7846a7fb28e3f5178fdede2371f42f2ce0f95f37252dd9134",
+    "evidence/acceptance/access_rule-proof.json": "543490fe6e523befce090575b2c90d48a39eadfda75d0237d4cf32b82212110b",
+    "evidence/acceptance/clamp-proof.json": "e73d0f3a125dde0e3a1e1a664118ab67b2aed4c26308d8889ddfbbd72bf9c081",
+    "evidence/acceptance/grant-proof.json": "341d87a764b6a00a0a1489e026d6cbd8cf00c61b3d04fdf58f617459b8dd1131",
+    "evidence/acceptance/hello-proof.json": "0a535eee516824bd8359d28391ada2a547974cf137f6e3255b56dec6a7dfed71",
+    "evidence/acceptance/identity-proof.json": "81cfb3bffadc9cdb77df022b264252375894e28cb759312fb96f513ad4667623",
+    "evidence/acceptance/maximum-proof.json": "41e64b3285e274efe0ab4487c048c56d94413e289ad5cb25dd6df056afd0f9c3",
+    "evidence/acceptance/minimum-proof.json": "9ed741c7fc31cfbff054e843fa4f60d082069f9772a0436ac0ccfaee580009b1",
+    "evidence/acceptance/nonnegative_difference-proof.json": "e6d93e8c724a8acdfb1880be067bf58e8907e01230823b8b0c2ec19f84729572",
+    "evidence/acceptance/overlap_length-proof.json": "f89d0a03a7b777131eb82f7447637d1e2f3994ac3987a0e3aa3641c531c6624c",
+    "evidence/acceptance/tiered_fee-proof.json": "a9bf5a6aa6ab15a89dcf4ae92166cb4b14aa9fe66d45b62930c4be59c8bee2c6",
+    "examples/agent-repair/grant.llspec": "79573242c619134f11201dfc3543922afc07a5c01c4e4dc2b2f055430bd0db3d",
+    "examples/agent-repair/repaired.ll": "6eb051112e16d7fb19b67972bb3307719e58ecf0e802c9f56d8346bc2e54d053",
+    "examples/agent-repair/wrong.ll": "1a47f05135b70b43e97ee7c03d382ab6a786bbdf6584c1be0ac8b33b7ac8c14f",
+    "examples/golden/abs.json": "36adfd2ee30f7b4457c0f3e8634d37a67189d074ee631408e8169d62e3e9c042",
+    "examples/golden/abs.ll": "a4517793ff79468535295586686f5fb4a927bd09f08945d75bf6f796f33a553b",
+    "examples/golden/abs.llspec": "39240cbf4e0df69f956fdb2ebb6f7a11c232d28fe425526361da3d1c54204085",
+    "examples/golden/access_rule.json": "45776a584b9c5769939610dfe1a0954b586015859d9255f97519977b4e0a90b6",
+    "examples/golden/access_rule.ll": "4ed90f54f88e85917eab95f051c9f8e9b7f19a5c6f9228313d9741b4fd83019d",
+    "examples/golden/access_rule.llspec": "c174fe37e8af30013606ca7741c3ab746249c002d82494a998e1d8ba2d101a8c",
+    "examples/golden/clamp.json": "d1ee7ced088aaab0e6bbb5d2844e8b8f31078b6bdca83b35916d85309741e192",
+    "examples/golden/clamp.ll": "bde604f29b86e6a28eb7b29bb507328f4c2b320a26a8a9efa4ad32b123416a19",
+    "examples/golden/clamp.llspec": "e325ecc53127cad9dd6488a0be387bb75e277c7234d89de722d65398dba92a00",
+    "examples/golden/grant.json": "361fe1bacc1bd6dc4ce9d848da31614c15c5a901a2979d21e5e0aa52f955cc51",
+    "examples/golden/grant.ll": "6eb051112e16d7fb19b67972bb3307719e58ecf0e802c9f56d8346bc2e54d053",
+    "examples/golden/grant.llspec": "79573242c619134f11201dfc3543922afc07a5c01c4e4dc2b2f055430bd0db3d",
+    "examples/golden/identity.json": "02410609cb6450233f597c22bb77d2650c345c3fba18f467e7abc4a3a11e5365",
+    "examples/golden/identity.ll": "69d9d3ce85a921054b35b0b8eeeca52461ef932b48110daaeb25a2d8787e8395",
+    "examples/golden/identity.llspec": "1dbfb9aaa47467b58edd4c24de4f95592563453fc14d646f539a60d30cf1c26f",
+    "examples/golden/maximum.json": "78d06c8b84cd569b71c0a00e61ed6ebb9bbd635fa7cbc558f37b20d97d920a60",
+    "examples/golden/maximum.ll": "47464273ec592e0ca27eb76a9073caf3c2873ef8ee3a782a55e3f7105fcd00ff",
+    "examples/golden/maximum.llspec": "3bb5a6d613f437a0460713ee7b367b7948ee2efc4cd6a9c1f0367dac16888174",
+    "examples/golden/minimum.json": "092ff932ffe1e3e8ce1afb42fc414ba40b7090555acec8388ade3751a8fc837a",
+    "examples/golden/minimum.ll": "9287151dc7ddd81644d0f91765d1421e4f173aeb57f6d54bcd152b0781d650da",
+    "examples/golden/minimum.llspec": "57ed387989442443bcdafed3deb5ff09c1080dc18123ae46cd7196b4071de341",
+    "examples/golden/nonnegative_difference.json": "589769874fb0bb9556b98b69f653d7febc2af8efd0bbe829429c794824f768a8",
+    "examples/golden/nonnegative_difference.ll": "b8b16fce3282a70ffe9ad3ab90dd3bd18d3f82429421ccd3b24fd13871e6807a",
+    "examples/golden/nonnegative_difference.llspec": "fd6d50a8505d825f672edaa2bf05e276ecc76ecb831465a2f3b5e62df5c71057",
+    "examples/golden/overlap_length.json": "d36773eddd2d195afed27017628e955beaa9d37651b74831223e63b2e481362b",
+    "examples/golden/overlap_length.ll": "2b9457edbbdc8ec7e8a7b6f3906ed4e52629c78b910f37db929a6dc00b4ac4a5",
+    "examples/golden/overlap_length.llspec": "70647bbb5f2d900d57610352bc3b7b10882dc60f4376a76a69326bc6692233f3",
+    "examples/golden/tiered_fee.json": "effe9fca5d4e8e876a9218420988071dc2ac73bfbe0ee5e6d2cf72f29d5d66ff",
+    "examples/golden/tiered_fee.ll": "0521bd4fe709a849a3000c611cd6ef63040a619dcd4213a9000b9e57918fbff9",
+    "examples/golden/tiered_fee.llspec": "62cf20d4e5fed47dbb9e2364c7825540bbe57b993e837719d39b0e00ef90500d",
+    "examples/hello/expected.txt": "d2a84f4b8b650937ec8f73cd8be2c74add5a911ba64df27458ed8229da804a26",
+    "examples/hello/hello.ll": "f34306dbc896051761f48134e122c047e9e83acf0616ac3a737cf1d86a0fc984",
+    "examples/hello/hello.llspec": "7925be9564f9e7d15f3f03f2458bdb799c3820bbc39ae1ae717895638d38dd06",
+    "examples/web/AUTHOR.md": "3fd30920ed1ca1bec2302f5f9c4db8eb3f71f3138c2d778c82c23ad7d3ce8f5b",
+    "examples/web/hello-history.llapp": "08ddd0eac34fa865588650ba5b2cf597b0d8c5a9492e3e26f7c0c6c44d3dec2f",
+    "examples/web/hello.llapp": "ae2823d7514d84febe732407d2a144e3b24f5915d020aa82fed81275a9abfa02",
+    "examples/web/notes.llapp": "1e94d5b11cc57ac14d6dc07480c91273b143774ec05150ddf3e54766dd71dbbe"
+  },
+  "source_commit": "149553a",
+  "web": {
+    "examples/web/hello-history.llapp": {
+      "assurance": "statically-checked; compiler-and-runtime-tested; no-A3-or-A4-proof",
+      "compiler_version": "web.0.4.0",
+      "files": {
+        "app/api/store/[slot]/route.ts": {
+          "bytes": 772,
+          "sha256": "af3b83269517afbba29e9fdc76a7ba899e2ddb722b6545373dfc5ec8ec2e6073"
+        },
+        "app/globals.css": {
+          "bytes": 4886,
+          "sha256": "b49f3d6c233a121b5907d9317f79e05dd1e34eed564bf6935f7b6146baecbf30"
+        },
+        "app/layout.tsx": {
+          "bytes": 305,
+          "sha256": "67e66197bce9faffab70165519751540e7b02d5cb3ea26879866e8adddc2773a"
+        },
+        "app/page.tsx": {
+          "bytes": 12970,
+          "sha256": "626d354591b913936d2f80b78a8b6f59fda59b986cf7e2287c1b602cd9002e20"
+        },
+        "db/schema.ts": {
+          "bytes": 1512,
+          "sha256": "0717a1539da9d3a7364b5f1d37871054fd1756a87fe9b3e7daa2715de4ee5135"
+        },
+        "db/w1.ts": {
+          "bytes": 231,
+          "sha256": "53467454a437c4188b75e9b841b98dfe41493cacf1b5ce033e35827bf1771e7b"
+        },
+        "lib/w1-server.ts": {
+          "bytes": 12185,
+          "sha256": "b655f819d0a96fe67c81b0fc6ca85e59f8ecc81a661fedecd922125e3ffb8b74"
+        },
+        "llmlang/ir.json": {
+          "bytes": 1208,
+          "sha256": "94b6f3db5b169042126188cbd13069e12f0806ad443d77b25decfef771809597"
+        },
+        "llmlang/migrate-w1-to-w2.sql": {
+          "bytes": 202,
+          "sha256": "5f3ff768ec657ae0332057abe3c98ad50dce267f43add71d8be25c18a8d906d8"
+        },
+        "llmlang/source.llapp": {
+          "bytes": 478,
+          "sha256": "768e8a593c4664a801b8bb32a79506219e225b83ef381504305941606b366cf0"
+        }
+      },
+      "profile": "w2",
+      "schema_version": 2,
+      "source_sha256": "396eca5a1b97da8205c4df3db148b30431410d8baf596050c87984cc32a920bf",
+      "status": "compiled",
+      "target": "vinext-d1"
+    },
+    "examples/web/hello.llapp": {
+      "assurance": "statically-checked; compiler-and-runtime-tested; no-A3-or-A4-proof",
+      "compiler_version": "web.0.4.0",
+      "files": {
+        "app/api/store/[slot]/route.ts": {
+          "bytes": 772,
+          "sha256": "af3b83269517afbba29e9fdc76a7ba899e2ddb722b6545373dfc5ec8ec2e6073"
+        },
+        "app/globals.css": {
+          "bytes": 4886,
+          "sha256": "b49f3d6c233a121b5907d9317f79e05dd1e34eed564bf6935f7b6146baecbf30"
+        },
+        "app/layout.tsx": {
+          "bytes": 305,
+          "sha256": "67e66197bce9faffab70165519751540e7b02d5cb3ea26879866e8adddc2773a"
+        },
+        "app/page.tsx": {
+          "bytes": 7101,
+          "sha256": "ebcb579c5dd591fa503706b4a2f5db4a0179caa3e3666b55d33e918db9e95a5b"
+        },
+        "db/schema.ts": {
+          "bytes": 724,
+          "sha256": "d978dee44efa5de0d3a4302bfa3aa419cccebe57e3951c4878e2381d2bde67ba"
+        },
+        "db/w1.ts": {
+          "bytes": 231,
+          "sha256": "53467454a437c4188b75e9b841b98dfe41493cacf1b5ce033e35827bf1771e7b"
+        },
+        "lib/w1-server.ts": {
+          "bytes": 7045,
+          "sha256": "a095a466057c97af6ae0fcf0a47c55da35d3c0c99abaab1e9c663d2731c50760"
+        },
+        "llmlang/ir.json": {
+          "bytes": 1079,
+          "sha256": "c80325dc6949071181f59709613210ef6a2bb901a996d3f8433637c8ad0e50de"
+        },
+        "llmlang/source.llapp": {
+          "bytes": 431,
+          "sha256": "9ca5cd8b44549ca1c806bda7fd93ba77ec3bbd3ebe8b8dcc67a72cd5b24d9e67"
+        }
+      },
+      "profile": "w1",
+      "schema_version": 1,
+      "source_sha256": "8ebb5accb07ff866558f572c0deca63cdb6c625450b5ab6e146f212602dc11bd",
+      "status": "compiled",
+      "target": "vinext-d1"
+    },
+    "examples/web/notes.llapp": {
+      "assurance": "statically-checked; compiler-and-runtime-tested; no-A3-or-A4-proof",
+      "compiler_version": "web.0.4.0",
+      "files": {
+        "app/api/store/[slot]/route.ts": {
+          "bytes": 772,
+          "sha256": "af3b83269517afbba29e9fdc76a7ba899e2ddb722b6545373dfc5ec8ec2e6073"
+        },
+        "app/globals.css": {
+          "bytes": 4886,
+          "sha256": "b49f3d6c233a121b5907d9317f79e05dd1e34eed564bf6935f7b6146baecbf30"
+        },
+        "app/layout.tsx": {
+          "bytes": 307,
+          "sha256": "f12038e9dac6a1a41c92f29f4b27a1ca54eb6d1d5b6a9d2778627bb98ef78aeb"
+        },
+        "app/page.tsx": {
+          "bytes": 9798,
+          "sha256": "3df75dfbf911e7b0928dd0a571f79407d91cf02d11b024b83c7a04c22df9e486"
+        },
+        "db/schema.ts": {
+          "bytes": 724,
+          "sha256": "d978dee44efa5de0d3a4302bfa3aa419cccebe57e3951c4878e2381d2bde67ba"
+        },
+        "db/w1.ts": {
+          "bytes": 231,
+          "sha256": "53467454a437c4188b75e9b841b98dfe41493cacf1b5ce033e35827bf1771e7b"
+        },
+        "lib/w1-server.ts": {
+          "bytes": 7102,
+          "sha256": "4549ad93570b616d352b9f03d9ec8e5f4cfccb88298b1891daa44ca92025f10a"
+        },
+        "llmlang/ir.json": {
+          "bytes": 2260,
+          "sha256": "5c002bb26a37fc55d904f96b8de6abbd93dc9e47521c17377ebcb5651f0fa581"
+        },
+        "llmlang/source.llapp": {
+          "bytes": 1057,
+          "sha256": "80d4b70705fe64bea878c955c6a210ca3f525dd844332b45c021c8907e75bfeb"
+        }
+      },
+      "profile": "w1",
+      "schema_version": 1,
+      "source_sha256": "2f25a11307016d027cea75dbfd331eebe17091b9984af0eb6fa5575af7119bae",
+      "status": "compiled",
+      "target": "vinext-d1"
+    }
+  }
+}

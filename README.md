@@ -96,6 +96,10 @@ website. These extensions are **not implemented yet**.
 
 ## Want to look inside?
 
+The current compatibility contract is [M0 baseline](specs/M0-BASELINE.md).
+It defines which existing profiles are normative and the gates required before
+package/module development begins.
+
 Start with the English quickstart. The detailed language specifications are currently in German.
 
 - **Find the compiler:** [src/llmlang/web](src/llmlang/web) · [Start with build.py](src/llmlang/web/build.py)
