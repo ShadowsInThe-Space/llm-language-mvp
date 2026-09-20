@@ -462,7 +462,7 @@ Reviewbefund zu permutationsabhängigen Zyklusdiagnosen zuerst rot reproduziert,
 mit sortierter Graphtraversierung behoben. Private vs. unbekannte Exports haben
 unterschiedliche stabile Diagnosen; Negativfall zuerst nachgewiesen.
 
-Abnahme lokal: 413 Tests bestanden, Ruff und Mypy (27 Quelldateien) grün.
+Abnahme lokal: 414 Tests bestanden, Ruff und Mypy (27 Quelldateien) grün.
 CLI-Anleitung tatsächlich ausgeführt: locked → linked → proved → returned,
 Minimum(7,3)=3; Bound-Hash c219d9cf575e9ad2ad97cc2c5ee131e5c7e713263ea86f029c9293d60c2991b9.
 Zwei Testconsumer mit gemeinsamer transitiver Bibliothek verwerfen nach Änderung
@@ -470,3 +470,6 @@ deren alte Paketbelege; umbenannte Workspaces erzeugen identische semantische By
 Historische P0-/w1-/w2-Fixtures bleiben erhalten. Notion-Importvorlage lokal unter
 docs/notion/PKG1.md; kein Upload behauptet. GitHub-Abnahme/Merge folgt am PR.
 Issue #16 bleibt eigener Tracker, obwohl Integrationsfixtures sein Szenario vorbereiten.
+Zusätzlicher RED-Fall: zwei zulässige Quelldateien ergeben mehr als 128 KiB Core;
+der Artefaktleser muss das Gesamtbudget verwenden. Getrennte Source-/Artefaktlimits
+beheben den Fehler, ohne historische P0-Dateilimits zu verändern.

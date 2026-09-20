@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import cast
 
 from llmlang.core import evaluate, validate
-from llmlang.model import LanguageError, encode_value
+from llmlang.model import LanguageError, Limits, encode_value
 from llmlang.parser import canonical_candidate, canonical_spec, parse_candidate, parse_spec
 from llmlang.transport import decode_inputs, load_json, read_text
 
@@ -14,6 +14,9 @@ from .binding import check_package_certificate, verify_package
 from .linker import link
 from .model import BoundProgram, PkgError
 from .resolver import freeze, resolve
+
+ARTIFACT_BYTES = 16 * 1024 * 1024
+LINKED_SOURCE_LIMITS = Limits(max_source_bytes=4 * 1024 * 1024)
 
 
 def _write(path: Path, value: object) -> None:
@@ -24,7 +27,7 @@ def _write(path: Path, value: object) -> None:
 
 
 def _load(path: Path) -> object:
-    return load_json(read_text(path, 8 * 1024 * 1024), 8 * 1024 * 1024)
+    return load_json(read_text(path, ARTIFACT_BYTES), ARTIFACT_BYTES)
 
 
 def _bound(path: Path) -> BoundProgram:
@@ -39,7 +42,9 @@ def _bound(path: Path) -> BoundProgram:
     ):
         raise PkgError("P_BINDING", "Malformed bound artifact", "bind")
     return BoundProgram(
-        parse_spec(value["spec"]), parse_candidate(value["candidate"]), value["manifest"]
+        parse_spec(value["spec"], LINKED_SOURCE_LIMITS),
+        parse_candidate(value["candidate"], LINKED_SOURCE_LIMITS),
+        value["manifest"],
     )
 
 

@@ -92,3 +92,37 @@ def test_cli_duplicate_selection_rejected(tmp_path, capsys):
         == 1
     )
     assert json.loads(capsys.readouterr().out)["diagnostics"][0]["code"] == "P_DUPLICATE"
+
+
+def test_linked_artifact_may_exceed_one_source_file_budget(tmp_path):
+    from llmlang.model import Candidate, Expr, FunctionSpec, Specification
+    from llmlang.parser import canonical_candidate, canonical_spec
+    from llmlang.pkg.binding import check_binding
+    from llmlang.pkg.cli import _bound
+    from llmlang.pkg.linker import link
+    from llmlang.pkg.model import Module, Package, Snapshot
+
+    body = Expr("int", value=int("9" * 1000))
+    for _ in range(7):
+        body = Expr("int.add", (body, body))
+    # Each module is below 128 KiB; their combined Core is larger.
+    candidate = Candidate((body,))
+    assert len(canonical_candidate(candidate)) < 131072
+    fn = FunctionSpec((), "Int", Expr("bool", value=True), Expr("bool", value=True))
+    modules = tuple(
+        Module(name, ("run",), (), ("run",), Specification((fn,)), candidate) for name in ("a", "b")
+    )
+    snapshot = Snapshot("app", (Package("app", "1.0.0", (), modules),))
+    bound = link(snapshot)
+    artifact = tmp_path / "large.json"
+    artifact.write_text(
+        json.dumps(
+            {
+                "format": "pkg1-artifact",
+                "spec": canonical_spec(bound.spec),
+                "candidate": canonical_candidate(bound.candidate),
+                "manifest": bound.manifest,
+            }
+        )
+    )
+    assert check_binding(snapshot, _bound(artifact))

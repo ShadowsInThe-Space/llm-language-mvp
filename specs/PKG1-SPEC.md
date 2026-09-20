@@ -78,6 +78,11 @@ Keine Inlining-Expansion; jedes Modul/jede Funktion wird einmal eingefügt.
 Nichtpositive, boolesche oder über den Defaults liegende Budgetwerte sind ungültig;
 kleinere positive Budgets sind für Tests und restriktivere Hosts zulässig.
 
+Das serialisierte gebundene Artefakt (Core plus Herkunftsmanifest) ist auf 16 MiB
+begrenzt. Sein zusammengeführter spec-/candidate-Text darf jeweils 4 MiB umfassen;
+das 128-KiB-Limit einzelner Quelldateien gilt nicht erneut für deren Verkettung.
+AST-, Tiefe-, Integer- und Checkerbudgets bleiben unverändert.
+
 ## Kanonische Bytes
 
 JSON ist ASCII-escaped, Schlüssel sortiert, Separatoren `,` und `:`, ohne Newline.

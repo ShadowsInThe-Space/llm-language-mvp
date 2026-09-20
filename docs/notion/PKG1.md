@@ -29,7 +29,7 @@ werden nicht verändert. Neue Datentypen und Webkomposition folgen erst später.
 
 ## Abnahme
 
-413 lokale Tests, Ruff und striktes Mypy bestanden. Die dokumentierte CLI-Kette
+414 lokale Tests, Ruff und striktes Mypy bestanden. Die dokumentierte CLI-Kette
 lief tatsächlich bis zur zertifizierten Ausführung: Minimum von 7 und 3 ergibt 3.
 Historische M0-Werte unverändert. Manipulierte Verträge/Körper/Binder/Exports und
 alte Belege bei transitiven Änderungen werden abgelehnt. Pfad-/Symlink-/FIFO-
