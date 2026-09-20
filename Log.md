@@ -431,3 +431,42 @@ dokumentiert. GitHub-Matrix und Merge werden am Pull Request nachgewiesen.
 Nachreview: Eingehende Diagnosefelder dürfen schema/phase nicht überschreiben;
 ungültige span/symbol/message-Werte werden normalisiert. Eigenen RED-Test
 nachgewiesen, danach vollständige Suite grün.
+
+## 2026-09-20 — M1: pkg1-Quellen, DAG-Linker und Source-to-Core-Gate (#13–#15)
+
+Vor Implementierung wurden PKG1-SPEC, PKG1-LINKING und PKG1-ACCEPTANCE im
+separaten Commit 37472f7 eingefroren. Die M0-Basis 9ba73e1 bleibt unverändert.
+Die Modulhülle bildet explizite Namen/Imports/Exports auf P0-Funktionsplätze ab;
+Verträge und Körper bleiben getrennte Quellen, exact-version-Dependencies werden
+lokal in einem autorisierten Lock gebunden. Kein neuer P0-Fachopcode.
+
+Parser, Resolver, Linker und unabhängiger Linkcheck sind separate Module. Der
+Linker ändert nur call-Indizes. Der Checker rekonstruiert Provider-/Exportidentität,
+Vertrag, Quellkörper und Parameter-/Binderzuordnung ohne Aufruf des Linkers.
+Erst nach dieser Prüfung zählt der unabhängige cert-v0.1-Gesamtbeleg. Ein selbst
+konsistent neu gehashtes, korrekt bewiesenes anderes Programm bleibt abgelehnt.
+
+Mathematische Begründung: Aus einem Beweis über Zielprogramm C folgt keine
+Aussage über autorisierte Quelle S ohne überprüfte Relation zwischen S und C.
+Die strukturelle Relation erhält jede Ausdrucksform und jeden Binder; ausschließlich
+Funktionsreferenzen werden durch eine rekonstruierte Export-/Slotabbildung ersetzt.
+Ihre Python-Implementierung gehört zur TCB; ein formaler Beweis des Checkers
+selbst oder ein A3/A4-Siegel wird nicht behauptet.
+
+TDD und günstige Worker: Parser/Resolver und Linker getrennt umgesetzt; Bindungs-
+tests zunächst wegen fehlender Implementierung rot. Integration deckte voreilige
+lokale P0-Prüfung importierter Calls auf; korrektes Prüfen nach Providerauflösung
+behebt sie. Gemeinsamer Bytezähler/Readcache, no-follow-Komponententraversierung,
+O_NONBLOCK/FIFO-Ablehnung und globale AST-Budgets verhindern Pfad-/Budgetumgehung.
+Reviewbefund zu permutationsabhängigen Zyklusdiagnosen zuerst rot reproduziert,
+mit sortierter Graphtraversierung behoben. Private vs. unbekannte Exports haben
+unterschiedliche stabile Diagnosen; Negativfall zuerst nachgewiesen.
+
+Abnahme lokal: 413 Tests bestanden, Ruff und Mypy (27 Quelldateien) grün.
+CLI-Anleitung tatsächlich ausgeführt: locked → linked → proved → returned,
+Minimum(7,3)=3; Bound-Hash c219d9cf575e9ad2ad97cc2c5ee131e5c7e713263ea86f029c9293d60c2991b9.
+Zwei Testconsumer mit gemeinsamer transitiver Bibliothek verwerfen nach Änderung
+deren alte Paketbelege; umbenannte Workspaces erzeugen identische semantische Bytes.
+Historische P0-/w1-/w2-Fixtures bleiben erhalten. Notion-Importvorlage lokal unter
+docs/notion/PKG1.md; kein Upload behauptet. GitHub-Abnahme/Merge folgt am PR.
+Issue #16 bleibt eigener Tracker, obwohl Integrationsfixtures sein Szenario vorbereiten.

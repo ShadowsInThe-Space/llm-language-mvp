@@ -29,6 +29,23 @@ def _positive(value: str) -> int:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="LLM-Language P0 proof-carrying function factory")
     commands = parser.add_subparsers(dest="command", required=True)
+    for name in ("lock-pkg", "link-pkg", "check-pkg", "run-pkg"):
+        package = commands.add_parser(name, help="Local pkg1 package workflow")
+        package.add_argument("--workspace", type=Path, required=True)
+        package.add_argument("--lock", type=Path)
+        if name == "lock-pkg":
+            package.add_argument("--root", required=True)
+            package.add_argument("--package", action="append", required=True)
+        if name in {"lock-pkg", "link-pkg"}:
+            package.add_argument("--out", type=Path, required=True)
+        if name in {"check-pkg", "run-pkg"}:
+            package.add_argument("--bound", type=Path, required=True)
+        if name == "check-pkg":
+            package.add_argument("--write-certificate", type=Path)
+        if name == "run-pkg":
+            package.add_argument("--certificate", type=Path, required=True)
+            package.add_argument("--entry", required=True, help="Root package module.export")
+            package.add_argument("--inputs", required=True)
     web = commands.add_parser("compile-web", help="Compile a w1 application to Vinext/D1")
     web.add_argument("source", type=Path)
     web.add_argument("--out", type=Path, required=True)
@@ -154,6 +171,10 @@ def _execute(args: argparse.Namespace, program: Program, limits: Limits) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command in {"lock-pkg", "link-pkg", "check-pkg", "run-pkg"}:
+        from llmlang.pkg.cli import execute
+
+        return execute(args)
     if args.command == "compile-web":
         return _compile_web(args.source, args.out)
     limits = Limits(max_branches=args.max_branches, solver_timeout_ms=args.solver_timeout_ms)
