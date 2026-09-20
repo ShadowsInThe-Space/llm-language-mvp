@@ -1,0 +1,1 @@
+{"format":"pkg1","name":"base","version":"1.0.0","dependencies":{},"modules":[{"name":"math","names":["minimum"],"imports":[],"exports":["minimum"],"spec":"math.llapi","source":"math.llmod"}]}

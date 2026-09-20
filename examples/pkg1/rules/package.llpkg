@@ -1,0 +1,1 @@
+{"format":"pkg1","name":"rules","version":"1.0.0","dependencies":{"base":"1.0.0"},"modules":[{"name":"quota","names":["grant"],"imports":[{"alias":"minimum","package":"base","module":"math","export":"minimum"}],"exports":["grant"],"spec":"quota.llapi","source":"quota.llmod"}]}
