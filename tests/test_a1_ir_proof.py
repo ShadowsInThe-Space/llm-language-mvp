@@ -58,6 +58,7 @@ def sample_module():
                     {
                         "op": "match_value",
                         "dest": "%3",
+                        "type": {"kind": "text", "capacity": 16},
                         "variant": "Choice",
                         "value": {"ref": "%2"},
                         "arms": {"Some": {"ref": "%0"}, "None": "none"},

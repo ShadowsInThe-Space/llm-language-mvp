@@ -268,10 +268,11 @@ def validate_module(module: Mapping[str, Any]) -> None:
                     or set(arms) != set(variants[variant_name])
                 ):
                     _fail("E_A1_MATCH", "match must be exhaustive", location)
-                arm_types = [_lookup(arm, env, None, location) for arm in arms.values()]
-                result_type = arm_types[0] if arm_types else UNIT
-                for arm_type in arm_types[1:]:
-                    _same(result_type, arm_type, location)
+                if "type" not in instruction:
+                    _fail("E_A1_TYPE", "match requires an explicit result type", location)
+                result_type = _type(instruction["type"], set(records), set(variants))
+                for arm in arms.values():
+                    _lookup(arm, env, result_type, location)
             elif op == "add":
                 left = _lookup(instruction.get("left"), env, None, location)
                 right = _lookup(instruction.get("right"), env, left, location)

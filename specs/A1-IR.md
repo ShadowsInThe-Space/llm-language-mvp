@@ -93,7 +93,8 @@ Example:
 
 An instruction always has `op` and unique `dest`. Its result type is inferred
 by the checker. If `type` is present, it is an explicit assertion and must equal
-the inferred type. This deliberately replaces the earlier unimplemented CFG
+the inferred type. `match_value` always requires this assertion so literal arms
+are checked against one explicit result type. This deliberately replaces the earlier unimplemented CFG
 sketch: `a1-ir-v1` is a linear A-normal IR, not a general block IR.
 
 ## Operations
