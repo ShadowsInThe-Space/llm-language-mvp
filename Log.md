@@ -573,5 +573,10 @@ nominale Records und Kapazitäten; Unicode-Ergebnisse werden gegen Node.js
 differential geprüft. Ausführung, struktureller Beweis und Targetvergleich
 bleiben drei getrennte Aussagen.
 
-Lokale Zwischenabnahme: 502 Tests, Ruff und striktes Mypy grün. Vor Release
+Lokale Zwischenabnahme nach adversarialer Review-Reparatur: 521 Tests, Ruff und
+striktes Mypy grün. Der erste Review verweigerte die Freigabe wegen gemeinsamer
+Zertifikatslogik, unvollständiger IR-Typprüfung, Schema-/Hashabweichung und
+Target-Divergenzen. Unabhängige Evidenzrekonstruktion, vollständige statische
+und Hostgrenzen-Prüfung, normativer Frame-Hash sowie fail-closed Text-/Integer-
+Targetregeln beheben diese Befunde. Vor Release
 folgen frische Wheel-Installation, GitHub-CI und unabhängiger KI-Fachreview.

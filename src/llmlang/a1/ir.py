@@ -6,6 +6,9 @@ import hashlib
 import json
 from typing import Any
 
+from llmlang.a1.typecheck import A1TypeError
+from llmlang.a1.typecheck import validate_module as validate_types
+
 
 class A1IRError(ValueError):
     """Stable fail-closed IR diagnostic."""
@@ -29,7 +32,15 @@ def canonical_bytes(value: object) -> bytes:
 
 
 def module_hash(module: dict[str, Any]) -> str:
-    return hashlib.sha256(canonical_bytes(module)).hexdigest()
+    parts = (
+        b"llmlang:a1-ir",
+        str(module.get("format", "")).encode("utf-8"),
+        str(module.get("profile", "")).encode("utf-8"),
+        str(module.get("checker", "")).encode("utf-8"),
+        canonical_bytes(module),
+    )
+    framed = b"".join(len(part).to_bytes(8, "big") + part for part in parts)
+    return hashlib.sha256(framed).hexdigest()
 
 
 _OPS = {
@@ -61,13 +72,47 @@ def _require(condition: bool, code: str, message: str, location: str) -> None:
 def validate_module(module: object) -> dict[str, Any]:
     _require(isinstance(module, dict), "E_A1_MODULE", "module must be an object", "module")
     assert isinstance(module, dict)
+    required = {
+        "checker",
+        "entrypoints",
+        "format",
+        "functions",
+        "limits",
+        "profile",
+        "specializations",
+        "types",
+    }
+    _require(set(module) == required, "E_A1_MODULE_KEYS", "top-level keys differ", "module")
     _require(module.get("format") == "a1-ir-v1", "E_A1_FORMAT", "unsupported format", "format")
+    _require(module.get("profile") == "a1", "E_A1_PROFILE", "unsupported profile", "profile")
+    _require(
+        module.get("checker") == "a1-check-v1",
+        "E_A1_CHECKER",
+        "unsupported checker",
+        "checker",
+    )
     types = module.get("types", [])
     functions = module.get("functions")
-    entries = module.get("entries", [])
+    entries = module.get("entrypoints", [])
+    specializations = module.get("specializations")
+    limits = module.get("limits")
     _require(isinstance(types, list), "E_A1_TYPES", "types must be a list", "types")
     _require(isinstance(functions, list), "E_A1_FUNCTIONS", "functions must be a list", "functions")
     _require(isinstance(entries, list), "E_A1_ENTRIES", "entries must be a list", "entries")
+    _require(
+        isinstance(specializations, list),
+        "E_A1_SPECIALIZATIONS",
+        "specializations must be a list",
+        "specializations",
+    )
+    _require(
+        isinstance(limits, dict)
+        and set(limits) == {"max_call_depth", "max_collection_expansion", "max_steps"}
+        and all(type(value) is int and value > 0 for value in limits.values()),
+        "E_A1_LIMITS",
+        "positive explicit limits required",
+        "limits",
+    )
     assert isinstance(types, list) and isinstance(functions, list) and isinstance(entries, list)
 
     type_names: set[str] = set()
@@ -219,7 +264,12 @@ def validate_module(module: object) -> dict[str, Any]:
                 )
         result = function.get("return")
         _require(result in values, "E_A1_RETURN", "return references unknown value", location)
-    _require(all(entry in names for entry in entries), "E_A1_ENTRY", "unknown entry", "entries")
+    _require(
+        all(entry in names for entry in entries),
+        "E_A1_ENTRY",
+        "unknown entry",
+        "entrypoints",
+    )
     function_table = {function["name"]: function for function in functions}
     graph: dict[str, set[str]] = {name: set() for name in function_table}
     for function in functions:
@@ -280,4 +330,8 @@ def validate_module(module: object) -> dict[str, Any]:
 
     for name in sorted(graph):
         visit(name)
+    try:
+        validate_types(module)
+    except A1TypeError as exc:
+        raise A1IRError(exc.code, str(exc), exc.location) from exc
     return module

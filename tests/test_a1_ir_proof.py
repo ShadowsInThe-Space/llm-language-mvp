@@ -9,6 +9,14 @@ from llmlang.a1.ir import A1IRError, validate_module
 def sample_module():
     return {
         "format": "a1-ir-v1",
+        "profile": "a1",
+        "checker": "a1-check-v1",
+        "specializations": [],
+        "limits": {
+            "max_steps": 10000,
+            "max_collection_expansion": 1000,
+            "max_call_depth": 64,
+        },
         "types": [
             {
                 "kind": "record",
@@ -21,11 +29,12 @@ def sample_module():
                 "cases": [{"tag": "Some", "type": "Customer"}, {"tag": "None"}],
             },
         ],
-        "entries": ["main"],
+        "entrypoints": ["main"],
         "functions": [
             {
                 "name": "main",
                 "params": [],
+                "result": "Nat",
                 "body": [
                     {
                         "op": "const",
@@ -70,9 +79,7 @@ def test_ir_is_canonical_executable_and_certified():
     assert interpret(module, "main", []) == 7
 
 
-@pytest.mark.parametrize(
-    "field", ["module_hash", "rule_version", "evidence", "evidence_hash", "required_rules"]
-)
+@pytest.mark.parametrize("field", ["ir_hash", "rule_set", "obligations", "checker", "limits"])
 def test_mutated_or_incomplete_evidence_is_rejected(field):
     module = sample_module()
     certificate = deepcopy(verify(module)["certificate"])
@@ -91,12 +98,21 @@ def test_non_exhaustive_match_fails_closed():
 def test_collection_budget_is_separate_from_proof():
     module = {
         "format": "a1-ir-v1",
+        "profile": "a1",
+        "checker": "a1-check-v1",
+        "specializations": [],
+        "limits": {
+            "max_steps": 10000,
+            "max_collection_expansion": 1000,
+            "max_call_depth": 64,
+        },
         "types": [],
-        "entries": ["main"],
+        "entrypoints": ["main"],
         "functions": [
             {
                 "name": "identity",
                 "params": [{"name": "x", "type": "Int"}],
+                "result": "Int",
                 "body": [],
                 "return": "x",
             },
@@ -111,6 +127,7 @@ def test_collection_budget_is_separate_from_proof():
                         "callback": "identity",
                     }
                 ],
+                "result": {"kind": "list", "elem": "Int", "capacity": 3},
                 "return": "%0",
             },
         ],
@@ -151,3 +168,26 @@ def test_nat_refinement_requires_explicit_checker_evidence():
         "rule": "A1-C004",
     }
     assert verify(module)["status"] == "proved"
+
+
+def test_proof_path_rejects_wrong_literal_field_and_unbound_operand_types():
+    module = sample_module()
+    module["functions"][0]["body"][0] = {
+        "op": "const",
+        "dest": "%0",
+        "type": "Bool",
+        "value": "not-a-bool",
+    }
+    assert verify(module)["diagnostics"][0]["code"] == "E_A1_TYPE"
+
+    module = sample_module()
+    module["functions"][0]["body"][1]["fields"]["name"] = {"ref": "%missing"}
+    assert verify(module)["diagnostics"][0]["code"] == "E_A1_BINDING"
+
+    module = sample_module()
+    module["functions"][0]["body"].append(
+        {"op": "add", "dest": "%5", "left": {"ref": "%missing"}, "right": 1}
+    )
+    module["functions"][0]["return"] = "%5"
+    module["functions"][0]["result"] = "Int"
+    assert verify(module)["diagnostics"][0]["code"] == "E_A1_BINDING"

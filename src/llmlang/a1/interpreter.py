@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from llmlang.a1.ir import A1IRError, validate_module
+from llmlang.a1.typecheck import A1TypeError, validate_runtime_arguments
 
 
 @dataclass(frozen=True)
@@ -40,9 +41,28 @@ def interpret(
     module: dict[str, Any], entry: str, arguments: list[Any], limits: A1Limits | None = None
 ) -> Any:
     validated = validate_module(module)
+    try:
+        validate_runtime_arguments(validated, entry, arguments)
+    except A1TypeError as exc:
+        raise A1IRError(exc.code, str(exc), exc.location) from exc
     functions = {function["name"]: function for function in validated["functions"]}
     budget = {"steps": 0, "collection": 0}
-    configured = limits or A1Limits()
+    declared = A1Limits(
+        max_steps=validated["limits"]["max_steps"],
+        max_collection_expansion=validated["limits"]["max_collection_expansion"],
+        max_call_depth=validated["limits"]["max_call_depth"],
+    )
+    configured = (
+        declared
+        if limits is None
+        else A1Limits(
+            max_steps=min(declared.max_steps, limits.max_steps),
+            max_collection_expansion=min(
+                declared.max_collection_expansion, limits.max_collection_expansion
+            ),
+            max_call_depth=min(declared.max_call_depth, limits.max_call_depth),
+        )
+    )
 
     def call(name: str, args: list[Any], depth: int) -> Any:
         if depth > configured.max_call_depth:

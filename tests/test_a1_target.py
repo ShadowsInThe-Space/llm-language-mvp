@@ -8,9 +8,17 @@ from llmlang.a1 import interpret
 from llmlang.a1.target import emit_javascript
 
 
-def consumer_module(record, entry):
+def consumer_module(record, entry, capacity):
     return {
         "format": "a1-ir-v1",
+        "profile": "a1",
+        "checker": "a1-check-v1",
+        "specializations": [],
+        "limits": {
+            "max_steps": 10000,
+            "max_collection_expansion": 1000,
+            "max_call_depth": 64,
+        },
         "types": [
             {
                 "kind": "record",
@@ -18,11 +26,12 @@ def consumer_module(record, entry):
                 "fields": [{"name": "label", "type": {"kind": "text", "capacity": 32}}],
             }
         ],
-        "entries": [entry],
+        "entrypoints": [entry],
         "functions": [
             {
                 "name": "label",
                 "params": [{"name": "item", "type": record}],
+                "result": {"kind": "text", "capacity": 32},
                 "body": [
                     {
                         "op": "record_get",
@@ -42,7 +51,17 @@ def consumer_module(record, entry):
             },
             {
                 "name": entry,
-                "params": [{"name": "items", "type": {"kind": "list", "capacity": 4}}],
+                "params": [
+                    {
+                        "name": "items",
+                        "type": {"kind": "list", "elem": record, "capacity": capacity},
+                    }
+                ],
+                "result": {
+                    "kind": "list",
+                    "elem": {"kind": "text", "capacity": 32},
+                    "capacity": capacity,
+                },
                 "body": [
                     {
                         "op": "bounded_map",
@@ -66,7 +85,7 @@ def consumer_module(record, entry):
     ],
 )
 def test_two_consumers_match_generated_target(record, entry, capacity, labels):
-    module = consumer_module(record, entry)
+    module = consumer_module(record, entry, capacity)
     value = {
         "list": [{"record": record, "fields": {"label": item}} for item in labels],
         "capacity": capacity,
