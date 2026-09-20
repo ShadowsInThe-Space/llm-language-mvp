@@ -82,14 +82,18 @@ Think of a very precise referee: it checks the rule we wrote down.
 It cannot know whether we forgot an important rule.
 
 **The whole website is not mathematically proven correct.** It is checked
-with code analysis and tests. The last full test run, on September 13, 2026,
-passed **309 tests**.
+with code analysis and tests. See the [v0.5.0 release notes](docs/releases/v0.5.0.md)
+for the release scope and validation, and [GitHub Actions](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions)
+for the current regression checks.
 
 ## What comes next?
 
 We want to turn this small workshop into a more flexible software factory.
-We are planning **libraries**: reusable building blocks, a bit like LEGO.
-They should let us build new apps without changing the translator each time.
+Local **libraries** for pure calculation rules now work: reusable building blocks,
+a bit like LEGO. Two different example programs share the same library, with
+complete-program proof checks and rejection of stale evidence after changes.
+Run the [library reuse demo](docs/PKG1-GUIDE.md#reproduzierbare-m1-abnahme).
+General web libraries remain a later milestone.
 
 Planned examples include a customer management app and an event booking
 website. These extensions are **not implemented yet**.
@@ -113,7 +117,7 @@ Start with the English quickstart. The detailed language specifications are curr
 - **Understand the checks:** [What the proofs cover](docs/ASSURANCE.md) · [Browser acceptance report](docs/W1-ABNAHME.md)
 - **Follow the plans:** [Development roadmap](docs/LLM-Language-Weiterentwicklungsplan.md) · [Decision log](Log.md)
 
-*Current version: 0.4.0 · [KPDL 1.1 — LLM-Language edition](LICENSE)*
+*Current version: 0.5.0 — Developer Preview · [KPDL 1.1 — LLM-Language edition](LICENSE)*
 
 Copyright © 2026 Marc-Dennis Haberland, the sole project rights holder named
 in this license. This project-specific KPDL edition permits use, modification
