@@ -132,7 +132,7 @@ Start with the English quickstart. The detailed language specifications are curr
 - **Understand the checks:** [What the proofs cover](docs/ASSURANCE.md) · [Browser acceptance report](docs/W1-ABNAHME.md)
 - **Follow the plans:** [Development roadmap](docs/LLM-Language-Weiterentwicklungsplan.md) · [Decision log](Log.md)
 
-*Current package version: 0.6.0 — Developer Preview candidate · [KPDL 1.1 — LLM-Language edition](LICENSE)*
+*Current version: 0.6.0 — Developer Preview candidate · [KPDL 1.1 — LLM-Language edition](LICENSE)*
 
 Copyright © 2026 Marc-Dennis Haberland, the sole project rights holder named
 in this license. This project-specific KPDL edition permits use, modification
