@@ -5,7 +5,7 @@
   "branch": "milestone/m2",
   "version": "0.6.0",
   "prerelease": true,
-  "ready": false,
+  "ready": true,
   "required_issues": [17, 18, 19, 20, 30, 31],
   "review_file": "docs/reviews/M2-REVIEW.md",
   "notes_file": "docs/releases/v0.6.0.md"
