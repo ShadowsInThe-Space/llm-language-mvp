@@ -58,7 +58,9 @@ def _type(raw: Any, records: set[str], variants: set[str]) -> Type:
         cap = raw.get("capacity")
         if type(cap) is not int or cap < 0:
             _fail("E_A1_TYPE_CAPACITY", "list capacity must be a non-negative integer", "type")
-        return ("list", _type(raw.get("elem", "Unit"), records, variants), cap)
+        if "elem" not in raw:
+            _fail("E_A1_TYPE", "list element type is required", "type")
+        return ("list", _type(raw["elem"], records, variants), cap)
     if kind == "option":
         return ("option", _type(raw.get("elem"), records, variants))
     if kind == "result":
@@ -89,7 +91,16 @@ def _declarations(
     raw_names = {item.get("name") for item in declarations if isinstance(item, Mapping)}
     if any(not isinstance(name, str) for name in raw_names):
         _fail("E_A1_TYPE", "every declaration needs a name", "types")
-    names = {str(name) for name in raw_names}
+    record_names = {
+        str(item.get("name"))
+        for item in declarations
+        if isinstance(item, Mapping) and item.get("kind") == "record"
+    }
+    variant_names = {
+        str(item.get("name"))
+        for item in declarations
+        if isinstance(item, Mapping) and item.get("kind") == "variant"
+    }
     for index, declaration in enumerate(declarations):
         if not isinstance(declaration, Mapping):
             _fail("E_A1_TYPE", "declaration must be an object", f"types[{index}]")
@@ -101,9 +112,10 @@ def _declarations(
             field_names = [field.get("name") for field in fields if isinstance(field, Mapping)]
             if len(field_names) != len(fields) or len(set(field_names)) != len(field_names):
                 _fail("E_A1_NAME", "record fields must be unique", f"types[{index}]")
+            if any("type" not in field for field in fields):
+                _fail("E_A1_TYPE", "record field type is required", f"types[{index}]")
             records[name] = {
-                field["name"]: _type(field.get("type", "Unit"), set(names), set())
-                for field in fields
+                field["name"]: _type(field["type"], record_names, variant_names) for field in fields
             }
         elif declaration.get("kind") == "variant":
             cases = declaration.get("cases")
@@ -114,20 +126,10 @@ def _declarations(
                 _fail("E_A1_NAME", "variant tags must be unique", f"types[{index}]")
             variants[name] = {
                 case["tag"]: (
-                    _type(case["type"], set(names), set(variants)) if "type" in case else None
+                    _type(case["type"], record_names, variant_names) if "type" in case else None
                 )
                 for case in cases
             }
-    # Resolve cross-references after both nominal namespaces are known.
-    records = {
-        name: {
-            field: _type(raw_type, set(records), set(variants))
-            if isinstance(raw_type, (str, Mapping))
-            else raw_type
-            for field, raw_type in fields.items()
-        }
-        for name, fields in records.items()
-    }
     return records, variants
 
 
@@ -229,7 +231,9 @@ def validate_module(module: Mapping[str, Any]) -> None:
                 _fail("E_A1_SSA", "destination must be unique", location)
             op = instruction.get("op")
             if op == "const":
-                result_type = _type(instruction.get("type", "Unit"), set(records), set(variants))
+                if "type" not in instruction:
+                    _fail("E_A1_TYPE", "const type is required", location)
+                result_type = _type(instruction["type"], set(records), set(variants))
                 _check_literal(instruction.get("value"), result_type, location)
             elif op == "record_make":
                 record_name = instruction.get("record")
@@ -350,13 +354,18 @@ def validate_module(module: Mapping[str, Any]) -> None:
                 if len(callback_params) != wanted:
                     _fail("E_A1_CALLBACK", "callback arity differs", location)
                 callback_result = function_results.get(callback_name, UNKNOWN)
+                first_type = _type(callback_params[0].get("type"), set(records), set(variants))
                 if op == "bounded_map":
+                    _same(source[1], first_type, location)
                     result_type = ("list", callback_result, source[2])
                 else:
+                    second_type = _type(callback_params[1].get("type"), set(records), set(variants))
+                    _same(source[1], second_type, location)
+                    _same(first_type, callback_result, location)
                     _lookup(
                         instruction.get("initial"),
                         env,
-                        _type(callback_params[0].get("type"), set(records), set(variants)),
+                        first_type,
                         location,
                     )
                     result_type = callback_result
@@ -398,6 +407,8 @@ def _runtime(
     kind = expected[0]
     if kind == "int" and type(value) is not int:
         _fail("E_A1_TYPE", "exact Int required", location)
+    elif kind == "unit" and value is not None:
+        _fail("E_A1_TYPE", "Unit requires null", location)
     elif kind == "nat" and (type(value) is not int or value < 0):
         _fail("E_A1_NAT", "non-negative Nat required", location)
     elif kind == "bool" and type(value) is not bool:
@@ -407,6 +418,7 @@ def _runtime(
     elif kind == "record":
         if (
             not isinstance(value, Mapping)
+            or set(value) != {"record", "fields"}
             or value.get("record") != expected[1]
             or set(value.get("fields", {})) != set(records[expected[1]])
         ):
@@ -421,11 +433,17 @@ def _runtime(
         ):
             _fail("E_A1_TYPE", "nominal variant mismatch", location)
         payload = variants[expected[1]][value["tag"]]
-        if payload is not None:
+        if payload is None:
+            if set(value) - {"variant", "tag", "value"} or value.get("value") is not None:
+                _fail("E_A1_TYPE", "unit variant has invalid representation", location)
+        else:
+            if set(value) != {"variant", "tag", "value"}:
+                _fail("E_A1_TYPE", "variant payload is required", location)
             _runtime(value.get("value"), payload, records, variants, location)
     elif kind == "list":
         if (
             not isinstance(value, Mapping)
+            or set(value) != {"capacity", "list"}
             or value.get("capacity") != expected[2]
             or not isinstance(value.get("list"), list)
         ):
@@ -442,14 +460,14 @@ def _runtime(
             if set(value) - {"tag", "value"} or value.get("value") is not None:
                 _fail("E_A1_TYPE", "None cannot carry a payload", location)
         else:
-            if "value" not in value:
+            if set(value) != {"tag", "value"}:
                 _fail("E_A1_TYPE", "Some payload is required", location)
             _runtime(value["value"], expected[1], records, variants, location)
     elif kind == "result":
         if not isinstance(value, Mapping) or value.get("tag") not in {"Ok", "Err"}:
             _fail("E_A1_TYPE", "Result tagged value required", location)
-        if "value" not in value:
-            _fail("E_A1_TYPE", "Result payload is required", location)
+        if set(value) != {"tag", "value"}:
+            _fail("E_A1_TYPE", "Result has an invalid closed representation", location)
         payload_type = expected[1] if value["tag"] == "Ok" else expected[2]
         _runtime(value["value"], payload_type, records, variants, location)
 

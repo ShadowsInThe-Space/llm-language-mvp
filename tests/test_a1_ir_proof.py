@@ -119,7 +119,12 @@ def test_collection_budget_is_separate_from_proof():
             },
             {
                 "name": "main",
-                "params": [{"name": "items", "type": {"kind": "list", "capacity": 3}}],
+                "params": [
+                    {
+                        "name": "items",
+                        "type": {"kind": "list", "elem": "Int", "capacity": 3},
+                    }
+                ],
                 "body": [
                     {
                         "op": "bounded_map",

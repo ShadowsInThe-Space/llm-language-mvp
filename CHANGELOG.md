@@ -29,7 +29,7 @@ No changes yet.
 
 ### Validation and scope
 
-- 527 tests expected at final acceptance; Python 3.12/3.13 CI, Ruff, strict
+- 529 tests expected at final acceptance; Python 3.12/3.13 CI, Ruff, strict
   Mypy, installed-wheel and independent AI PL review remain release gates.
 - Developer Preview. A1 proves structural well-formedness and supported local
   contracts; target equivalence is differential-tested, not formally proved.

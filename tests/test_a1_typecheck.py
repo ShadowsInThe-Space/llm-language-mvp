@@ -155,3 +155,81 @@ def test_unknown_nominal_ids_and_missing_explicit_types_fail_closed():
     missing_param = module([], params=({"name": "value"},))
     with pytest.raises(A1TypeError, match="parameter type"):
         validate_module(missing_param)
+
+    missing_const = module([{"op": "const", "dest": "out", "value": None}], result="Unit")
+    with pytest.raises(A1TypeError, match="const type"):
+        validate_module(missing_const)
+
+
+def test_variant_fields_and_callback_element_types_are_checked():
+    declarations = (
+        {
+            "kind": "variant",
+            "name": "Choice",
+            "cases": [{"tag": "None"}, {"tag": "Some", "type": "Int"}],
+        },
+        {"kind": "record", "name": "Box", "fields": [{"name": "choice", "type": "Choice"}]},
+    )
+    nested = module(
+        [
+            {"op": "variant_make", "dest": "choice", "variant": "Choice", "tag": "None"},
+            {
+                "op": "record_make",
+                "dest": "out",
+                "record": "Box",
+                "fields": {"choice": {"ref": "choice"}},
+            },
+        ],
+        result="Box",
+        types=declarations,
+    )
+    validate_module(nested)
+
+    bad_map = {
+        "format": "a1-ir-v1",
+        "types": [],
+        "entries": ["main"],
+        "functions": [
+            {
+                "name": "callback",
+                "params": [{"name": "value", "type": "Bool"}],
+                "result": "Int",
+                "body": [{"op": "const", "dest": "out", "type": "Int", "value": 1}],
+                "return": "out",
+            },
+            {
+                "name": "main",
+                "params": [
+                    {
+                        "name": "items",
+                        "type": {"kind": "list", "elem": "Int", "capacity": 2},
+                    }
+                ],
+                "result": {"kind": "list", "elem": "Int", "capacity": 2},
+                "body": [
+                    {
+                        "op": "bounded_map",
+                        "dest": "out",
+                        "list": {"ref": "items"},
+                        "callback": "callback",
+                    }
+                ],
+                "return": "out",
+            },
+        ],
+    }
+    with pytest.raises(A1TypeError, match="incompatible"):
+        validate_module(bad_map)
+
+
+def test_result_host_values_reject_extra_fields():
+    checked = module(
+        [],
+        params=({"name": "value", "type": {"kind": "result", "ok": "Int", "error": "Bool"}},),
+    )
+    with pytest.raises(A1TypeError, match="closed representation"):
+        validate_runtime_arguments(
+            checked,
+            "main",
+            [{"tag": "Ok", "value": 1, "error": "unexpected"}],
+        )
