@@ -5,8 +5,27 @@ import json
 import pytest
 
 from llmlang.cli import main
+from llmlang.diagnostics import diagnostic
 from llmlang.model import LanguageError
 from llmlang.web.model import Span, WebError
+
+
+def test_supplied_feedback_cannot_override_envelope_contract():
+    item = diagnostic(
+        {
+            "code": "E_PARSE",
+            "schema": "foreign",
+            "phase": "evil",
+            "span": {"start": -1, "end": False},
+            "symbol": 123,
+            "message": [],
+        }
+    )
+    assert item["schema"] == "diagnostic-v1"
+    assert item["phase"] == "parse"
+    assert item["span"] is None
+    assert item["symbol"] is None
+    assert item["message"] == ""
 
 
 @pytest.mark.parametrize(

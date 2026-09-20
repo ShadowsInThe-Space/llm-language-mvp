@@ -422,9 +422,12 @@ Kompatibilitäts- und Fehlereinbringungstests; unabhängiger Review prüft Lück
 CI führt Pytest/Ruff/Mypy unter Python 3.12/3.13 und Node 24 für PRs und main aus.
 M1 setzt diese gemergte grüne Basis voraus; Profile/Checker werden hier nicht erweitert.
 
-Abnahme lokal: 350 Tests bestanden; Ruff und Mypy (20 Quelldateien) ohne Befund.
+Abnahme lokal: 351 Tests bestanden; Ruff und Mypy (20 Quelldateien) ohne Befund.
 Vier kontrollierte Fehlereinbringungen decken Quellen-/Hashdrift, akzeptierte alte
 Zertifikate und akzeptierte Fremdprofile ab. Reviewbefund zu unvollständigen
 verschachtelten Factory-Diagnosen mit eigenem RED-Test reproduziert und behoben.
 Historische WebError-Spans und bisher span-lose CLI-I/O-Diagnosen explizit getrennt
 dokumentiert. GitHub-Matrix und Merge werden am Pull Request nachgewiesen.
+Nachreview: Eingehende Diagnosefelder dürfen schema/phase nicht überschreiben;
+ungültige span/symbol/message-Werte werden normalisiert. Eigenen RED-Test
+nachgewiesen, danach vollständige Suite grün.

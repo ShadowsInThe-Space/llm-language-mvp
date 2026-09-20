@@ -22,13 +22,25 @@ def diagnostic(item: dict[str, object]) -> dict[str, object]:
         phase = "execute"
     else:
         phase = "validate"
+    span = item.get("span")
+    if not (
+        isinstance(span, dict)
+        and set(span) == {"start", "end"}
+        and type(span["start"]) is int
+        and type(span["end"]) is int
+        and 0 <= span["start"] <= span["end"]
+    ):
+        span = None
+    message = item.get("message")
+    symbol = item.get("symbol")
     return {
+        **item,
+        "code": code,
         "schema": "diagnostic-v1",
         "phase": phase,
-        "message": "",
-        "span": None,
-        "symbol": None,
-        **item,
+        "message": message if isinstance(message, str) else "",
+        "span": span,
+        "symbol": symbol if isinstance(symbol, str) else None,
     }
 
 
