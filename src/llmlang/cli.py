@@ -29,6 +29,16 @@ def _positive(value: str) -> int:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="LLM-Language P0 proof-carrying function factory")
     commands = parser.add_subparsers(dest="command", required=True)
+    for name in ("check-a1", "run-a1", "emit-a1"):
+        command = commands.add_parser(name, help="A1 structured-language workflow")
+        command.add_argument("--module", type=Path, required=True)
+        if name == "check-a1":
+            command.add_argument("--write-certificate", type=Path)
+        else:
+            command.add_argument("--entry", required=True)
+            command.add_argument("--inputs", default="[]", help="JSON argument array")
+        if name == "emit-a1":
+            command.add_argument("--out", type=Path, required=True)
     for name in ("lock-pkg", "link-pkg", "check-pkg", "run-pkg"):
         package = commands.add_parser(name, help="Local pkg1 package workflow")
         package.add_argument("--workspace", type=Path, required=True)
@@ -171,6 +181,8 @@ def _execute(args: argparse.Namespace, program: Program, limits: Limits) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command in {"check-a1", "run-a1", "emit-a1"}:
+        return _execute_a1(args)
     if args.command in {"lock-pkg", "link-pkg", "check-pkg", "run-pkg"}:
         from llmlang.pkg.cli import execute
 
@@ -220,6 +232,39 @@ def _compile_web(source_path: Path, output: Path) -> int:
         return 1
     except (OSError, UnicodeError):
         _emit({"status": "invalid", "diagnostics": [{"code": "W_IO"}]})
+        return 1
+
+
+def _execute_a1(args: argparse.Namespace) -> int:
+    from llmlang.a1 import interpret
+    from llmlang.a1.proof import verify as verify_a1
+    from llmlang.a1.target import emit_javascript
+
+    try:
+        raw = json.loads(args.module.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            raise ValueError
+        report = verify_a1(raw)
+        if args.command == "check-a1":
+            if args.write_certificate and report["status"] == "proved":
+                write_json(args.write_certificate, report["certificate"])
+            _emit(report)
+            return 0 if report["status"] == "proved" else 1
+        if report["status"] != "proved":
+            _emit(report)
+            return 1
+        inputs = json.loads(args.inputs)
+        if not isinstance(inputs, list):
+            raise ValueError
+        if args.command == "emit-a1":
+            args.out.write_text(emit_javascript(raw, args.entry, inputs), encoding="utf-8")
+            _emit({"status": "proved", "output": str(args.out)})
+            return 0
+        result = interpret(raw, args.entry, inputs)
+        _emit({"status": "proved", "run_status": "returned", "result": result})
+        return 0
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
+        _emit({"status": "invalid", "diagnostics": [{"code": "E_A1_INPUT"}]})
         return 1
 
 
