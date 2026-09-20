@@ -1,0 +1,33 @@
+{
+  "entries": [
+    "main"
+  ],
+  "format": "a1-ir-v1",
+  "functions": [
+    {
+      "body": [
+        {
+          "dest": "%0",
+          "op": "const",
+          "type": {
+            "capacity": 16,
+            "kind": "text"
+          },
+          "value": "Grüße 📦"
+        },
+        {
+          "count": 5,
+          "dest": "%1",
+          "op": "text_prefix_codepoints",
+          "value": {
+            "ref": "%0"
+          }
+        }
+      ],
+      "name": "main",
+      "params": [],
+      "return": "%1"
+    }
+  ],
+  "types": []
+}

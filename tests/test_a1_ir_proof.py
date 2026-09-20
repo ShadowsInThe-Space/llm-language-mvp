@@ -123,3 +123,31 @@ def test_collection_budget_is_separate_from_proof():
             [{"list": [1, 2, 3], "capacity": 3}],
             A1Limits(max_collection_expansion=2),
         )
+
+
+def test_unknown_callback_and_recursive_call_fail_closed():
+    module = sample_module()
+    module["functions"][0]["body"].append(
+        {"op": "call", "dest": "%5", "callee": "main", "args": []}
+    )
+    module["functions"][0]["return"] = "%5"
+    assert verify(module)["diagnostics"][0]["code"] == "E_A1_CALL_CYCLE"
+
+    module = sample_module()
+    module["functions"][0]["body"].append(
+        {"op": "bounded_map", "dest": "%5", "list": [], "callback": "missing"}
+    )
+    module["functions"][0]["return"] = "%5"
+    assert verify(module)["diagnostics"][0]["code"] == "E_A1_CALLBACK_TYPE"
+
+
+def test_nat_refinement_requires_explicit_checker_evidence():
+    module = sample_module()
+    module["functions"][0]["body"].append({"op": "refine_nat", "dest": "%5", "value": 1})
+    module["functions"][0]["return"] = "%5"
+    assert verify(module)["diagnostics"][0]["code"] == "E_A1_REFINEMENT"
+    module["functions"][0]["body"][-1]["evidence"] = {
+        "predicate": ">=0",
+        "rule": "A1-C004",
+    }
+    assert verify(module)["status"] == "proved"

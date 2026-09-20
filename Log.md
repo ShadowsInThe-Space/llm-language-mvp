@@ -554,3 +554,24 @@ bereits geschlossenen Meilenstein oder eine bereits veröffentlichte/getaggte
 Version. Main-Veröffentlichungswiederholungen bleiben separat idempotent möglich.
 Zwei Builds mit fixiertem Backend und gleichem Commitzeitstempel sind bytegleich;
 frische Wheel-Installation besteht pkg1-Demo und w2-Buildintegritätsprüfung.
+
+## 2026-09-20 — M2 strukturierte A1-Sprache (#17–#20, #31)
+
+Sechs normative Verträge frieren Typen, Generics, kanonische IR, versionierte
+Checkerregeln, bounded Collections/Text und die integrierte Abnahme ein. A1 ist
+additiv; P0/w1/w2/pkg1 bleiben unverändert. Die IR nutzt immutable SSA-Werte,
+explizite Effekte/Orte und kanonisches JSON/Hashing. Callgraph und statische
+Callbacks sind geschlossen und azyklisch; Generics werden nur für erreichbare
+Instanzen deterministisch und budgetiert spezialisiert.
+
+TDD mit drei günstigen Workern: nominale Records/Varianten/Option/Result,
+Collections/Text sowie Generics/Nat wurden in getrennten Dateien mit RED-Fällen
+begonnen. Die Integration ergänzt Referenzinterpreter, explizite Prüfregeln,
+exakt rekonstruierte Zertifikate, stabile Diagnosen und einen eigenständigen
+JavaScript-Targetemitter. Zwei fachlich verschiedene Consumer verwenden zwei
+nominale Records und Kapazitäten; Unicode-Ergebnisse werden gegen Node.js
+differential geprüft. Ausführung, struktureller Beweis und Targetvergleich
+bleiben drei getrennte Aussagen.
+
+Lokale Zwischenabnahme: 502 Tests, Ruff und striktes Mypy grün. Vor Release
+folgen frische Wheel-Installation, GitHub-CI und unabhängiger KI-Fachreview.

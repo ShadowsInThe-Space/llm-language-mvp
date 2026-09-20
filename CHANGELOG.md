@@ -6,12 +6,33 @@ Release policy: [one package, one merge, one release](docs/RELEASE-WORKFLOW.md).
 
 ## [Unreleased]
 
+No changes yet.
+
+## [0.6.0] - 2026-09-20
+
+### Added
+
+- Nominal immutable records, closed variants, exhaustive matching and general
+  `Option<T>`/`Result<T,E>` ([#17](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/17)).
+- Acyclic named functions, explicit `Nat` refinements and deterministic,
+  budgeted used-only generic specialization ([#18](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/18)).
+- Canonical typed A1 IR, deterministic reference interpreter, versioned checker
+  rules and independently reconstructed certificates ([#19](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/19)).
+- Bounded `List<T,N>`, precise UTF-8 `Text<N>` and generated JavaScript target
+  differential tests ([#20](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/20)).
+
 ### Changed
 
-- M2 work branch prepares milestone-sized delivery, a live issue-completion gate,
-  reviewed release documents and an automatic draft/publish/verify lifecycle
-  ([#30](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/30)).
-  This workflow is not yet activated on main; M2 remains incomplete.
+- Milestone-sized delivery now requires all frozen issues, evidence, review and
+  release material before its single completion merge ([#30](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/30),
+  [#31](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/31)).
+
+### Validation and scope
+
+- 502 tests expected at final acceptance; Python 3.12/3.13 CI, Ruff, strict
+  Mypy, installed-wheel and independent AI PL review remain release gates.
+- Developer Preview. A1 proves structural well-formedness and supported local
+  contracts; target equivalence is differential-tested, not formally proved.
 
 ## [0.5.0] - 2026-09-20
 
@@ -41,5 +62,6 @@ Release policy: [one package, one merge, one release](docs/RELEASE-WORKFLOW.md).
 Earlier implementation versions are documented in historical `Log.md` and
 `RELEASE.json`; this changelog does not invent retroactive GitHub releases.
 
-[Unreleased]: https://github.com/ShadowsInThe-Space/llm-language-mvp/compare/v0.5.0...milestone/m2
+[Unreleased]: https://github.com/ShadowsInThe-Space/llm-language-mvp/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/ShadowsInThe-Space/llm-language-mvp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ShadowsInThe-Space/llm-language-mvp/releases/tag/v0.5.0

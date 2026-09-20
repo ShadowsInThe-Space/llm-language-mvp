@@ -220,4 +220,64 @@ def validate_module(module: object) -> dict[str, Any]:
         result = function.get("return")
         _require(result in values, "E_A1_RETURN", "return references unknown value", location)
     _require(all(entry in names for entry in entries), "E_A1_ENTRY", "unknown entry", "entries")
+    function_table = {function["name"]: function for function in functions}
+    graph: dict[str, set[str]] = {name: set() for name in function_table}
+    for function in functions:
+        for index, instruction in enumerate(function["body"]):
+            location = f"functions.{function['name']}.body[{index}]"
+            op = instruction["op"]
+            if op == "call":
+                callee = instruction.get("callee")
+                _require(callee in function_table, "E_A1_CALL", "unknown callee", location)
+                assert isinstance(callee, str)
+                graph[function["name"]].add(callee)
+                arguments = instruction.get("args", [])
+                _require(
+                    isinstance(arguments, list)
+                    and len(arguments) == len(function_table[callee].get("params", [])),
+                    "E_A1_CALL",
+                    "call argument arity differs",
+                    location,
+                )
+            if op in {"bounded_map", "bounded_fold"}:
+                callback = instruction.get("callback")
+                _require(
+                    callback in function_table,
+                    "E_A1_CALLBACK_TYPE",
+                    "callback must be a static function",
+                    location,
+                )
+                assert isinstance(callback, str)
+                graph[function["name"]].add(callback)
+                expected = 1 if op == "bounded_map" else 2
+                _require(
+                    len(function_table[callback].get("params", [])) == expected,
+                    "E_A1_CALLBACK_TYPE",
+                    "callback arity differs",
+                    location,
+                )
+            if op == "refine_nat":
+                _require(
+                    instruction.get("evidence") == {"predicate": ">=0", "rule": "A1-C004"},
+                    "E_A1_REFINEMENT",
+                    "Nat refinement evidence is missing",
+                    location,
+                )
+
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(name: str) -> None:
+        if name in visiting:
+            raise A1IRError("E_A1_CALL_CYCLE", "call graph must be acyclic", name)
+        if name in visited:
+            return
+        visiting.add(name)
+        for child in sorted(graph[name]):
+            visit(child)
+        visiting.remove(name)
+        visited.add(name)
+
+    for name in sorted(graph):
+        visit(name)
     return module
