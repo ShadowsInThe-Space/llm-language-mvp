@@ -394,3 +394,37 @@ und Paketmetadaten geprüft, alleiniger Rechteinhaber in beiden Sprachfassungen,
 Zahlenwerte der Gebühren-/Evaluations-/Forschungsabschnitte unverändert. Kein
 Compiler-Code-Diff. Build meldet bekannte Deprecation-Hinweise zur mit
 setuptools>=68 kompatiblen Lizenzmetadaten-Syntax. git diff --check bestanden.
+
+## 2026-09-20 — M0: Kompatibilitätsbasis vor Modulen (Issue #12)
+
+Entscheidung: `specs/M0-BASELINE.md` erklärt die implementierten P0-/w1-/w2-Verträge
+zur verbindlichen Ausgangsbasis; frühe Visionstexte schalten keine zusätzlichen
+Sprachfähigkeiten frei. Referenzstand ist `149553a` (0.4.0). Eingecheckte
+Hash-/Kanonisierungswerte und Webmanifeste in `tests/fixtures/m0-v1.json` schützen
+historische Beispiele, Spezifikationen und bereits vorhandene Belege.
+
+Begründung: Ein aktuell erzeugter Hash verglichen mit einem zweiten aktuell
+erzeugten Hash entdeckt gemeinsame Implementierungsdrift nicht. Festgeschriebene
+Referenzen plus unabhängige Prüfung historischer Zertifikate und bestehende
+Verhaltens-/SQLite-Tests prüfen unterschiedliche Fehlerklassen. Der Hash bindet
+Bytes; der rekonstruierende Checker begründet die formale Aussage.
+
+Diagnosen erhalten additive `diagnostic-v1`-Felder für phase/code/span/symbol.
+Die Phase ist eine definierte Fehlerkategorie; unbekannte Koordinaten/Symbole
+werden nicht erfunden. Bisherige Fehlercodes, P0-Pfade und Webspans bleiben
+erhalten. Die Diagnoseergänzung verändert weder kanonische Quellen noch
+Zertifikate, Hashverfahren oder Laufzeitsemantik.
+
+TDD: Drei neue Diagnosevertragstests zuerst rot (fehlende Felder an P0-, Web-
+und CLI-I/O-Grenze), danach grün. Zusätzliche Tests prüfen direkte Reports,
+Fehlerkategorien und Zertifikatsablehnung. Günstiger Worker ergänzt eingefrorene
+Kompatibilitäts- und Fehlereinbringungstests; unabhängiger Review prüft Lücken.
+CI führt Pytest/Ruff/Mypy unter Python 3.12/3.13 und Node 24 für PRs und main aus.
+M1 setzt diese gemergte grüne Basis voraus; Profile/Checker werden hier nicht erweitert.
+
+Abnahme lokal: 350 Tests bestanden; Ruff und Mypy (20 Quelldateien) ohne Befund.
+Vier kontrollierte Fehlereinbringungen decken Quellen-/Hashdrift, akzeptierte alte
+Zertifikate und akzeptierte Fremdprofile ab. Reviewbefund zu unvollständigen
+verschachtelten Factory-Diagnosen mit eigenem RED-Test reproduziert und behoben.
+Historische WebError-Spans und bisher span-lose CLI-I/O-Diagnosen explizit getrennt
+dokumentiert. GitHub-Matrix und Merge werden am Pull Request nachgewiesen.

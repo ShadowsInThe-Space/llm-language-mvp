@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 
 from .adapters import CandidateProvider, ProviderError
 from .core import validate
+from .diagnostics import diagnostic, diagnostic_document
 from .model import CHECKER_VERSION, Candidate, Expr, LanguageError, Limits, Specification
 from .parser import canonical_candidate, canonical_spec, parse_candidate, parse_spec
 from .proof import VerificationReport, baseline_hash, check_certificate, verify
@@ -28,7 +29,7 @@ class FactoryAttempt:
             "status": self.status,
             "source_hash": self.source_hash,
             "elapsed_ms": self.elapsed_ms,
-            "feedback": deepcopy(self.feedback),
+            "feedback": diagnostic_document(deepcopy(self.feedback)),
         }
 
 
@@ -49,12 +50,12 @@ class FactoryResult:
             "candidate_source": canonical_candidate(self.candidate) if self.candidate else None,
             "verification": self.verification.to_dict() if self.verification else None,
             "attempts": [attempt.to_dict() for attempt in self.attempts],
-            "reason": deepcopy(self.reason),
+            "reason": diagnostic_document(deepcopy(self.reason)),
         }
 
 
 def _error(code: str, message: str, *, status: str = "unverified") -> dict[str, object]:
-    return {"status": status, "code": code, "message": message}
+    return diagnostic({"status": status, "code": code, "message": message})
 
 
 def _report_feedback(report: VerificationReport) -> dict[str, object]:

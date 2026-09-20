@@ -8,6 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from llmlang.core import evaluate, validate
+from llmlang.diagnostics import diagnostic_document
 from llmlang.model import Candidate, LanguageError, Limits, Program, Specification, encode_value
 from llmlang.parser import canonical_candidate, parse_candidate, parse_spec
 from llmlang.proof import check_certificate, verify
@@ -15,7 +16,7 @@ from llmlang.transport import decode_inputs, load_json, read_text, write_json
 
 
 def _emit(value: object) -> None:
-    print(json.dumps(value, ensure_ascii=True, sort_keys=True))
+    print(json.dumps(diagnostic_document(value), ensure_ascii=True, sort_keys=True))
 
 
 def _positive(value: str) -> int:

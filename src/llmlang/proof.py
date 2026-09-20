@@ -14,6 +14,7 @@ from math import gcd
 from typing import Literal
 
 from .core import evaluate, evaluate_contract, validate
+from .diagnostics import diagnostic
 from .model import (
     CHECKER_VERSION,
     PROFILE,
@@ -61,7 +62,7 @@ class VerificationReport:
             "domains": [d.to_dict() for d in self.domains],
             "certificate": self.certificate,
             "counterexample": self.counterexample,
-            "diagnostics": list(self.diagnostics),
+            "diagnostics": [diagnostic(item) for item in self.diagnostics],
         }
 
 

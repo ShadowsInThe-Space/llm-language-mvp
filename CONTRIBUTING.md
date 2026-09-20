@@ -26,6 +26,9 @@ python -m mypy --no-incremental src
 For a bug fix, begin with a failing regression test, make the smallest fix,
 and rerun the relevant checks. Tests should exercise behavior.
 Record changes to language rules in the corresponding specification and `Log.md`.
+The [M0 compatibility baseline](specs/M0-BASELINE.md) is mandatory before M1.
+Keep historical fixtures intact; do not regenerate expected hashes to make a
+compatibility failure disappear. Pull requests run all three checks in CI.
 Change the compiler or source program rather than editing generated app files by hand.
 
 A pull request should explain the problem, the change, checks actually run,

@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from .diagnostics import diagnostic
+
 type Type = Literal["Int", "Bool"]
 type Value = int | bool
 PROFILE = "p0"
@@ -67,7 +69,7 @@ class LanguageError(Exception):
         self.path = path
 
     def to_dict(self) -> dict[str, object]:
-        return {"code": self.code, "message": self.message, "path": list(self.path)}
+        return diagnostic({"code": self.code, "message": self.message, "path": list(self.path)})
 
 
 def encode_value(value: Value) -> dict[str, object]:
