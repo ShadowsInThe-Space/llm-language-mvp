@@ -511,3 +511,40 @@ Reviewer prüfte zusätzlich gemischte Int/Bool-Parameter, let-Binder, importier
 und lokale Vorgängeraufrufe sowie die Ablehnung einer manipulierten Call-Zuordnung.
 Bericht unter docs/reviews/M1-REVIEW.md; ausdrücklich KI-Fachreview, keine reale
 akademische Begutachtung oder formale Verifikation der Python-TCB.
+
+## 2026-09-20 — Ein Arbeitspaket, ein Merge, ein Release (#30)
+
+Auf Nutzerwunsch keine Einzelissue-Merges mehr: gemeinsamer milestone-Branch,
+vollständige Abnahme aller eingefrorenen Issues, ein Abschluss-PR, ein Release.
+Vorhandene Issues GitHub-Meilensteinen M0–M6 und F1–F4 zugeordnet; M0/M1 sind
+historisch abgeschlossen. Neue offene Issues #30–#37 ergänzen Prozess, integrierte
+Sprach-/Webabnahme, CRM, Buchung, Shop-Challenge, begrenzte Live-Orchestrierung
+und überprüfbare Token-/Zeitmetriken. Epics bleiben außerhalb einzelner Releases.
+
+M2-Scope in release-plan.json: #17 #18 #19 #20 #30 #31, Ziel v0.6.0,
+ready=false. Pyproject und veröffentlichte README-Version bleiben 0.5.0.
+Diese Prozessänderung bleibt auf milestone/m2; kein vorbereitender Merge nach main
+und kein zusätzliches Release. README/CHANGELOG/Release Notes werden zukünftig
+im finalen Paket aktualisiert, nicht über spätere Direktpushes.
+
+Live-Mergegate prüft exakte Issue-Menge, completed statt not_planned, Version,
+Dokumentation und unabhängigen Reviewmarker. Branchschutz auf GitHub aktiviert
+und zurückgelesen: aktueller PR, beide Python-Matrixchecks plus milestone-complete,
+gebunden an GitHub Actions, auch für Admins; kein Force-Push/Löschen.
+Die Automation liegt zunächst nur auf dem Arbeitsbranch; main erhält sie mit M2.
+
+TDD: fehlender Publisher zuerst Importfehler, danach gemockte GitHub-Lebenszyklen.
+Unabhängiger Review fand Draft-Discovery per ungeeignetem By-tag-Endpunkt und
+Assetprüfung erst nach Veröffentlichung. Negativtests zuerst rot reproduziert;
+authentifizierte paginierte Draft-Suche und Asset-/Zielprüfung vor Veröffentlichung
+beheben beide Fehler. Reviews verlangen exakte Freigabezeile, normale Markdown-
+Versionsüberschriften bleiben erlaubt. API-/Netzwerkfehler geben nichts frei.
+Veröffentlichte Assets/Tags werden nicht überschrieben; nur private Drafts sind
+wiederaufnehmbar. Milestone wird erst nach verifiziertem Release geschlossen.
+
+Lokal 456 Tests bestanden, Ruff/Mypy (27 Quelldateien) sauber. Actionlint inklusive
+Shellprüfung erfolgreich. 37 fokussierte Gate-/Publisher-Tests. Reale read-only
+Prüfung gegen GitHub lehnt M2 korrekt ab (sechs offene Issues, ready=false und
+fehlende finale Releaseunterlagen). Reale Veröffentlichung absichtlich nicht
+ausgeführt. Unabhängiges Review unter docs/reviews/RELEASE-WORKFLOW-REVIEW.md
+bestätigt Arbeitsbranch-Reife, ausdrücklich keine M2-Releasefreigabe.

@@ -1,8 +1,10 @@
 name: Compatibility baseline
 on:
   pull_request:
-  push:
     branches: [main]
+  push:
+    branches: ['milestone/**']
+  workflow_call:
 permissions:
   contents: read
 jobs:

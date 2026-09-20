@@ -10,6 +10,12 @@ That is what we are building. Our first small website already works.
 
 **[Try it yourself](docs/QUICKSTART.md)** · **[Compiler source](src/llmlang/web)** · **[How to contribute](CONTRIBUTING.md)**
 
+**Progress:** [Milestones](https://github.com/ShadowsInThe-Space/llm-language-mvp/milestones)
+· [Changelog](CHANGELOG.md) · [Releases](https://github.com/ShadowsInThe-Space/llm-language-mvp/releases)
+· [Delivery workflow](docs/RELEASE-WORKFLOW.md).
+One completed milestone means one final merge and one release. The `milestone/m2`
+branch is work in progress; v0.5.0 remains the published release until M2 is accepted.
+
 ## The idea, with an example
 
 You want:
