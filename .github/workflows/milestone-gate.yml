@@ -1,0 +1,24 @@
+name: Milestone completion gate
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+permissions:
+  contents: read
+  issues: read
+jobs:
+  milestone-complete:
+    # Never emit a skipped/successful gate on ordinary work-branch pushes.
+    name: milestone-complete
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require the complete frozen issue scope and release documentation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python scripts/release_gate.py --repository "$GH_REPO" --mode candidate

@@ -511,3 +511,80 @@ Reviewer prüfte zusätzlich gemischte Int/Bool-Parameter, let-Binder, importier
 und lokale Vorgängeraufrufe sowie die Ablehnung einer manipulierten Call-Zuordnung.
 Bericht unter docs/reviews/M1-REVIEW.md; ausdrücklich KI-Fachreview, keine reale
 akademische Begutachtung oder formale Verifikation der Python-TCB.
+
+## 2026-09-20 — Ein Arbeitspaket, ein Merge, ein Release (#30)
+
+Auf Nutzerwunsch keine Einzelissue-Merges mehr: gemeinsamer milestone-Branch,
+vollständige Abnahme aller eingefrorenen Issues, ein Abschluss-PR, ein Release.
+Vorhandene Issues GitHub-Meilensteinen M0–M6 und F1–F4 zugeordnet; M0/M1 sind
+historisch abgeschlossen. Neue offene Issues #30–#37 ergänzen Prozess, integrierte
+Sprach-/Webabnahme, CRM, Buchung, Shop-Challenge, begrenzte Live-Orchestrierung
+und überprüfbare Token-/Zeitmetriken. Epics bleiben außerhalb einzelner Releases.
+
+M2-Scope in release-plan.json: #17 #18 #19 #20 #30 #31, Ziel v0.6.0,
+ready=false. Pyproject und veröffentlichte README-Version bleiben 0.5.0.
+Diese Prozessänderung bleibt auf milestone/m2; kein vorbereitender Merge nach main
+und kein zusätzliches Release. README/CHANGELOG/Release Notes werden zukünftig
+im finalen Paket aktualisiert, nicht über spätere Direktpushes.
+
+Live-Mergegate prüft exakte Issue-Menge, completed statt not_planned, Version,
+Dokumentation und unabhängigen Reviewmarker. Branchschutz auf GitHub aktiviert
+und zurückgelesen: aktueller PR, beide Python-Matrixchecks plus milestone-complete,
+gebunden an GitHub Actions, auch für Admins; kein Force-Push/Löschen.
+Die Automation liegt zunächst nur auf dem Arbeitsbranch; main erhält sie mit M2.
+
+TDD: fehlender Publisher zuerst Importfehler, danach gemockte GitHub-Lebenszyklen.
+Unabhängiger Review fand Draft-Discovery per ungeeignetem By-tag-Endpunkt und
+Assetprüfung erst nach Veröffentlichung. Negativtests zuerst rot reproduziert;
+authentifizierte paginierte Draft-Suche und Asset-/Zielprüfung vor Veröffentlichung
+beheben beide Fehler. Reviews verlangen exakte Freigabezeile, normale Markdown-
+Versionsüberschriften bleiben erlaubt. API-/Netzwerkfehler geben nichts frei.
+Veröffentlichte Assets/Tags werden nicht überschrieben; nur private Drafts sind
+wiederaufnehmbar. Milestone wird erst nach verifiziertem Release geschlossen.
+
+Lokal 460 Tests bestanden, Ruff/Mypy (27 Quelldateien) sauber. Actionlint inklusive
+Shellprüfung erfolgreich. 41 fokussierte Gate-/Publisher-Tests. Reale read-only
+Prüfung gegen GitHub lehnt M2 korrekt ab (sechs offene Issues, ready=false und
+fehlende finale Releaseunterlagen). Reale Veröffentlichung absichtlich nicht
+ausgeführt. Unabhängiges Review unter docs/reviews/RELEASE-WORKFLOW-REVIEW.md
+bestätigt Arbeitsbranch-Reife, ausdrücklich keine M2-Releasefreigabe.
+
+Zusätzliche vier RED/GREEN-Fälle verhindern einen zweiten Abschluss-PR für einen
+bereits geschlossenen Meilenstein oder eine bereits veröffentlichte/getaggte
+Version. Main-Veröffentlichungswiederholungen bleiben separat idempotent möglich.
+Zwei Builds mit fixiertem Backend und gleichem Commitzeitstempel sind bytegleich;
+frische Wheel-Installation besteht pkg1-Demo und w2-Buildintegritätsprüfung.
+
+## 2026-09-20 — M2 strukturierte A1-Sprache (#17–#20, #31)
+
+Sechs normative Verträge frieren Typen, Generics, kanonische IR, versionierte
+Checkerregeln, bounded Collections/Text und die integrierte Abnahme ein. A1 ist
+additiv; P0/w1/w2/pkg1 bleiben unverändert. Die IR nutzt immutable SSA-Werte,
+explizite Effekte/Orte und kanonisches JSON/Hashing. Callgraph und statische
+Callbacks sind geschlossen und azyklisch; Generics werden nur für erreichbare
+Instanzen deterministisch und budgetiert spezialisiert.
+
+TDD mit drei günstigen Workern: nominale Records/Varianten/Option/Result,
+Collections/Text sowie Generics/Nat wurden in getrennten Dateien mit RED-Fällen
+begonnen. Die Integration ergänzt Referenzinterpreter, explizite Prüfregeln,
+exakt rekonstruierte Zertifikate, stabile Diagnosen und einen eigenständigen
+JavaScript-Targetemitter. Zwei fachlich verschiedene Consumer verwenden zwei
+nominale Records und Kapazitäten; Unicode-Ergebnisse werden gegen Node.js
+differential geprüft. Ausführung, struktureller Beweis und Targetvergleich
+bleiben drei getrennte Aussagen.
+
+Lokale Zwischenabnahme nach adversarialer Review-Reparatur: 530 Tests, Ruff und
+striktes Mypy grün. Der erste Review verweigerte die Freigabe wegen gemeinsamer
+Zertifikatslogik, unvollständiger IR-Typprüfung, Schema-/Hashabweichung und
+Target-Divergenzen. Unabhängige Evidenzrekonstruktion, vollständige statische
+und Hostgrenzen-Prüfung, normativer Frame-Hash sowie fail-closed Text-/Integer-
+Targetregeln beheben diese Befunde. Ein zweiter Re-Review fand vier weitere
+Hostgrenzenlücken; die abschließende
+Reparatur validiert auch Option/Result-Werte, unbekannte Nominaltypen,
+Target-Eingaben und verpflichtende Parameter-/Resulttypen fail-closed.
+Der dritte Re-Review ergänzte Callback-Elementtypen, korrekte verschachtelte
+Variantauflösung, verpflichtende Const-Typen und exakt geschlossene Resultwerte.
+Der vierte Durchgang schloss den letzten Wildcardpfad: `list_empty` verlangt
+jetzt einen expliziten Elementtyp mit übereinstimmender Kapazität.
+Vor Release folgen frische Wheel-Installation, GitHub-CI und unabhängiger
+KI-Fachreview.

@@ -11,7 +11,17 @@ Start with the [quickstart](docs/QUICKSTART.md) and the [scope explained in the 
 - Report a compiler bug with the smallest source program that reproduces it.
 
 For language or architecture changes, open a proposal before implementing them.
-Libraries, general data structures and booking workflows are planned, not available.
+Local pure P0 libraries are available. General structured data, web libraries
+and booking workflows remain planned.
+
+## Milestone-sized delivery
+
+Use one shared `milestone/<id>` work branch for the entire package. Intermediate
+commits and pushes are welcome there; individual issue PRs/merges to `main` are not.
+Only after every scoped issue is completed with acceptance evidence, open one
+final PR. README, CHANGELOG, version, release notes and independent review belong
+to that package. A successful final merge triggers one validated milestone release.
+See the mandatory [release workflow](docs/RELEASE-WORKFLOW.md) and `release-plan.json`.
 
 ## Development
 

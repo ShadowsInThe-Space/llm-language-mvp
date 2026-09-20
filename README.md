@@ -10,6 +10,12 @@ That is what we are building. Our first small website already works.
 
 **[Try it yourself](docs/QUICKSTART.md)** · **[Compiler source](src/llmlang/web)** · **[How to contribute](CONTRIBUTING.md)**
 
+**Progress:** [Milestones](https://github.com/ShadowsInThe-Space/llm-language-mvp/milestones)
+· [Changelog](CHANGELOG.md) · [Releases](https://github.com/ShadowsInThe-Space/llm-language-mvp/releases)
+· [Delivery workflow](docs/RELEASE-WORKFLOW.md).
+One completed milestone means one final merge and one release. M2 is prepared as
+v0.6.0; it becomes published only after its one completion PR passes every gate.
+
 ## The idea, with an example
 
 You want:
@@ -95,6 +101,15 @@ complete-program proof checks and rejection of stale evidence after changes.
 Run the [library reuse demo](docs/PKG1-GUIDE.md#reproduzierbare-m1-abnahme).
 General web libraries remain a later milestone.
 
+M2 adds the first structured A1 profile for agent-generated domain logic:
+nominal immutable records, closed variants, general `Option`/`Result`, explicit
+`Nat` refinements, acyclic named functions and deterministic bounded generics.
+`List<T,N>` and UTF-8-bounded `Text<N>` have precise capacity semantics. A
+canonical typed IR runs in the reference interpreter and can emit a standalone
+JavaScript target; differential tests compare both. Versioned structural proof
+certificates are independently reconstructed before execution. See the
+[A1 specifications](specs/A1-ACCEPTANCE.md) and [v0.6.0 scope](docs/releases/v0.6.0.md).
+
 Planned examples include a customer management app and an event booking
 website. These extensions are **not implemented yet**.
 
@@ -117,7 +132,7 @@ Start with the English quickstart. The detailed language specifications are curr
 - **Understand the checks:** [What the proofs cover](docs/ASSURANCE.md) · [Browser acceptance report](docs/W1-ABNAHME.md)
 - **Follow the plans:** [Development roadmap](docs/LLM-Language-Weiterentwicklungsplan.md) · [Decision log](Log.md)
 
-*Current version: 0.5.0 — Developer Preview · [KPDL 1.1 — LLM-Language edition](LICENSE)*
+*Current version: 0.6.0 — Developer Preview candidate · [KPDL 1.1 — LLM-Language edition](LICENSE)*
 
 Copyright © 2026 Marc-Dennis Haberland, the sole project rights holder named
 in this license. This project-specific KPDL edition permits use, modification

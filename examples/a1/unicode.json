@@ -1,0 +1,45 @@
+{
+  "checker": "a1-check-v1",
+  "entrypoints": [
+    "main"
+  ],
+  "format": "a1-ir-v1",
+  "functions": [
+    {
+      "body": [
+        {
+          "dest": "%0",
+          "op": "const",
+          "type": {
+            "capacity": 16,
+            "kind": "text"
+          },
+          "value": "Grüße 📦"
+        },
+        {
+          "count": 5,
+          "dest": "%1",
+          "op": "text_prefix_codepoints",
+          "value": {
+            "ref": "%0"
+          }
+        }
+      ],
+      "name": "main",
+      "params": [],
+      "result": {
+        "capacity": 16,
+        "kind": "text"
+      },
+      "return": "%1"
+    }
+  ],
+  "limits": {
+    "max_call_depth": 64,
+    "max_collection_expansion": 1000,
+    "max_steps": 10000
+  },
+  "profile": "a1",
+  "specializations": [],
+  "types": []
+}
