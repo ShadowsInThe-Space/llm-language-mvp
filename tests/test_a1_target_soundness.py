@@ -8,6 +8,7 @@ import pytest
 
 from llmlang.a1.ir import A1IRError
 from llmlang.a1.target import A1TargetError, emit_javascript
+from llmlang.a1.typecheck import A1TypeError
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="Node target unavailable")
 
@@ -137,3 +138,11 @@ def test_concat_uses_scalar_validation_and_exact_utf8_capacity() -> None:
     completed = run_target(module)
     assert completed.returncode == 0
     assert json.loads(completed.stdout) == "éé"
+
+
+def test_target_rejects_invalid_external_arguments_before_emission() -> None:
+    module = const_module("ok", value_type={"kind": "text", "capacity": 2})
+    module["functions"][0]["params"] = [{"name": "input", "type": {"kind": "text", "capacity": 1}}]
+    with pytest.raises(A1TypeError) as error:
+        emit_javascript(module, "main", ["é"])
+    assert getattr(error.value, "code", None) == "E_A1_TEXT_CAPACITY"

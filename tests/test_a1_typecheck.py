@@ -126,3 +126,32 @@ def test_runtime_boundary_rejects_nominal_and_capacity_drift():
             m, "main", [{"record": "R", "fields": {"x": 1}}, {"list": [1, 2, 3], "capacity": 2}]
         )
     assert error.value.code == "E_A1_LIST_BOUNDS"
+
+
+@pytest.mark.parametrize(
+    ("parameter_type", "bad_value"),
+    [
+        ({"kind": "option", "elem": "Int"}, "not-option"),
+        ({"kind": "option", "elem": "Int"}, {"tag": "Nope"}),
+        ({"kind": "option", "elem": "Int"}, {"tag": "Some", "value": "bad"}),
+        ({"kind": "result", "ok": "Int", "error": "Unit"}, {"tag": "Ok", "value": "bad"}),
+    ],
+)
+def test_runtime_boundary_rejects_invalid_option_and_result(parameter_type, bad_value):
+    checked = module([], params=({"name": "value", "type": parameter_type},))
+    with pytest.raises(A1TypeError):
+        validate_runtime_arguments(checked, "main", [bad_value])
+
+
+def test_unknown_nominal_ids_and_missing_explicit_types_fail_closed():
+    unknown = module(
+        [],
+        params=({"name": "value", "type": {"kind": "record", "id": "Missing"}},),
+        result={"kind": "record", "id": "Missing"},
+    )
+    with pytest.raises(A1TypeError, match="unknown nominal"):
+        validate_module(unknown)
+
+    missing_param = module([], params=({"name": "value"},))
+    with pytest.raises(A1TypeError, match="parameter type"):
+        validate_module(missing_param)

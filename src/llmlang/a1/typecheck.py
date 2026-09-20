@@ -68,8 +68,12 @@ def _type(raw: Any, records: set[str], variants: set[str]) -> Type:
             _type(raw.get("error"), records, variants),
         )
     if kind == "record" and isinstance(raw.get("id"), str):
+        if raw["id"] not in records:
+            _fail("E_A1_TYPE", "unknown nominal record type", "type")
         return ("record", raw["id"])
     if kind == "variant" and isinstance(raw.get("id"), str):
+        if raw["id"] not in variants:
+            _fail("E_A1_TYPE", "unknown nominal variant type", "type")
         return ("variant", raw["id"])
     _fail("E_A1_TYPE", "unsupported type expression", "type")
 
@@ -183,11 +187,9 @@ def _function_types(
         name = function.get("name")
         if not isinstance(name, str):
             _fail("E_A1_FUNCTION", "function needs a name", "functions")
-        result[name] = _type(
-            function.get("result", function.get("return_type", "Unit")),
-            names - set(variants),
-            set(variants),
-        )
+        if "result" not in function:
+            _fail("E_A1_TYPE", "function result type is required", f"functions[{name}]")
+        result[name] = _type(function["result"], names - set(variants), set(variants))
     return result
 
 
@@ -206,7 +208,11 @@ def validate_module(module: Mapping[str, Any]) -> None:
         for index, parameter in enumerate(function.get("params", [])):
             if not isinstance(parameter, Mapping) or not isinstance(parameter.get("name"), str):
                 _fail("E_A1_BINDING", "invalid parameter", f"functions[{name}].params[{index}]")
-            parameter_type = _type(parameter.get("type", "Unit"), set(records), set(variants))
+            if "type" not in parameter:
+                _fail(
+                    "E_A1_TYPE", "parameter type is required", f"functions[{name}].params[{index}]"
+                )
+            parameter_type = _type(parameter["type"], set(records), set(variants))
             if parameter["name"] in env:
                 _fail("E_A1_BINDING", "duplicate parameter", f"functions[{name}]")
             env[parameter["name"]] = parameter_type
@@ -429,6 +435,23 @@ def _runtime(
         if expected[1] != UNKNOWN:
             for item in value["list"]:
                 _runtime(item, expected[1], records, variants, location)
+    elif kind == "option":
+        if not isinstance(value, Mapping) or value.get("tag") not in {"None", "Some"}:
+            _fail("E_A1_TYPE", "Option tagged value required", location)
+        if value["tag"] == "None":
+            if set(value) - {"tag", "value"} or value.get("value") is not None:
+                _fail("E_A1_TYPE", "None cannot carry a payload", location)
+        else:
+            if "value" not in value:
+                _fail("E_A1_TYPE", "Some payload is required", location)
+            _runtime(value["value"], expected[1], records, variants, location)
+    elif kind == "result":
+        if not isinstance(value, Mapping) or value.get("tag") not in {"Ok", "Err"}:
+            _fail("E_A1_TYPE", "Result tagged value required", location)
+        if "value" not in value:
+            _fail("E_A1_TYPE", "Result payload is required", location)
+        payload_type = expected[1] if value["tag"] == "Ok" else expected[2]
+        _runtime(value["value"], payload_type, records, variants, location)
 
 
 def validate_runtime_arguments(

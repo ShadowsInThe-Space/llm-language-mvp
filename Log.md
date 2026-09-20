@@ -573,10 +573,14 @@ nominale Records und Kapazitäten; Unicode-Ergebnisse werden gegen Node.js
 differential geprüft. Ausführung, struktureller Beweis und Targetvergleich
 bleiben drei getrennte Aussagen.
 
-Lokale Zwischenabnahme nach adversarialer Review-Reparatur: 521 Tests, Ruff und
+Lokale Zwischenabnahme nach adversarialer Review-Reparatur: 527 Tests, Ruff und
 striktes Mypy grün. Der erste Review verweigerte die Freigabe wegen gemeinsamer
 Zertifikatslogik, unvollständiger IR-Typprüfung, Schema-/Hashabweichung und
 Target-Divergenzen. Unabhängige Evidenzrekonstruktion, vollständige statische
 und Hostgrenzen-Prüfung, normativer Frame-Hash sowie fail-closed Text-/Integer-
-Targetregeln beheben diese Befunde. Vor Release
-folgen frische Wheel-Installation, GitHub-CI und unabhängiger KI-Fachreview.
+Targetregeln beheben diese Befunde. Ein zweiter Re-Review fand vier weitere
+Hostgrenzenlücken; die abschließende
+Reparatur validiert auch Option/Result-Werte, unbekannte Nominaltypen,
+Target-Eingaben und verpflichtende Parameter-/Resulttypen fail-closed.
+Vor Release folgen frische Wheel-Installation, GitHub-CI und unabhängiger
+KI-Fachreview.

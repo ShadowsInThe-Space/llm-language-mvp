@@ -7,6 +7,7 @@ import json
 from typing import Any
 
 from llmlang.a1.ir import validate_module
+from llmlang.a1.typecheck import validate_runtime_arguments
 
 MAX_SAFE_INTEGER = 9_007_199_254_740_991
 
@@ -39,6 +40,7 @@ def _reject_unsafe_integers(value: object, path: str = "module") -> None:
 def emit_javascript(module: dict[str, Any], entry: str, arguments: list[Any]) -> str:
     """Emit a self-contained target program that writes one canonical JSON result."""
     validate_module(module)
+    validate_runtime_arguments(module, entry, arguments)
     _reject_unsafe_integers(module)
     _reject_unsafe_integers(arguments, "arguments")
     document = json.dumps(module, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
