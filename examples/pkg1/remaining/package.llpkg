@@ -1,0 +1,1 @@
+{"format":"pkg1","name":"remaining","version":"1.0.0","dependencies":{"rules":"1.0.0"},"modules":[{"name":"main","names":["run"],"imports":[{"alias":"grant","package":"rules","module":"quota","export":"grant"}],"exports":["run"],"spec":"main.llapi","source":"main.llmod"}]}

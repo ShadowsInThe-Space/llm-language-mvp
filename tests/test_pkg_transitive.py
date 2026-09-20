@@ -12,13 +12,6 @@ SELECTION = {"app": "app", "base": "base", "rules": "rules"}
 
 def _prepare(workspace: Path) -> None:
     shutil.copytree(EXAMPLE, workspace)
-    app2 = workspace / "app2"
-    shutil.copytree(workspace / "app", app2)
-    manifest = json.loads((app2 / "package.llpkg").read_text(encoding="utf-8"))
-    manifest["name"] = "app2"
-    (app2 / "package.llpkg").write_text(
-        json.dumps(manifest, separators=(",", ":")), encoding="utf-8"
-    )
 
 
 def _freeze_resolve_link(workspace: Path, root: str):
@@ -39,7 +32,7 @@ def test_transitive_source_change_invalidates_both_consumers_and_old_certificate
     workspace = tmp_path / "workspace"
     _prepare(workspace)
     old: dict[str, tuple[object, object, object, object]] = {}
-    for root in ("app", "app2"):
+    for root in ("app", "remaining"):
         old[root] = _freeze_resolve_link(workspace, root)
 
     base_source = workspace / "base" / "math.llmod"
@@ -50,7 +43,7 @@ def test_transitive_source_change_invalidates_both_consumers_and_old_certificate
         encoding="utf-8",
     )
 
-    for root in ("app", "app2"):
+    for root in ("app", "remaining"):
         _, changed_snapshot, changed_bound, _ = _freeze_resolve_link(workspace, root)
         _, old_snapshot, old_bound, old_certificate = old[root]
         assert changed_snapshot != old_snapshot
@@ -65,7 +58,7 @@ def test_relocated_workspace_has_identical_canonical_bound_bytes(tmp_path: Path)
     second = tmp_path / "two"
     _prepare(first)
     _prepare(second)
-    for root in ("app", "app2"):
+    for root in ("app", "remaining"):
         _, _, bound_one, _ = _freeze_resolve_link(first, root)
         _, _, bound_two, _ = _freeze_resolve_link(second, root)
         assert canonical_bound(bound_one) == canonical_bound(bound_two)

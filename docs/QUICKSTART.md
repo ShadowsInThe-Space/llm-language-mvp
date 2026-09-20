@@ -13,6 +13,7 @@ Run these commands in a terminal on Linux or macOS:
 ```bash
 git clone https://github.com/ShadowsInThe-Space/llm-language-mvp.git
 cd llm-language-mvp
+git checkout v0.5.0
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
@@ -81,6 +82,18 @@ This checks ten small calculation examples and replays saved agent responses:
 an incorrect program is rejected, then a repaired program is accepted.
 Proof evidence is written to `build/demo/`. This is a reproducible replay,
 not a live AI conversation. See [proof boundaries (German)](ASSURANCE.md).
+
+## 5. Try local shared libraries (Linux)
+
+```bash
+python scripts/demo_pkg1.py
+```
+
+This verifies two distinct programs sharing one transitive dependency, runs
+them, and checks that a library change invalidates both old locks and proofs.
+It uses temporary copies and leaves the example sources unchanged.
+See [the pkg1 guide](PKG1-GUIDE.md) for individual commands and limitations.
+Package commands are currently validated on Linux only.
 
 ## For contributors
 

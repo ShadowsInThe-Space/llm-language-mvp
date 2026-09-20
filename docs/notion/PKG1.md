@@ -1,6 +1,6 @@
 # M1: Pakete, Linker und Quellbindung
 
-Stand 2026-09-20. Importierbare Notion-Dokumentation zu Issues #13–#15.
+Stand 2026-09-20. Importierbare Notion-Dokumentation zu Issues #13–#16.
 
 ## Architektur
 
@@ -29,12 +29,19 @@ werden nicht verändert. Neue Datentypen und Webkomposition folgen erst später.
 
 ## Abnahme
 
-414 lokale Tests, Ruff und striktes Mypy bestanden. Die dokumentierte CLI-Kette
+419 lokale Tests, Ruff und striktes Mypy bestanden. Die dokumentierte CLI-Kette
 lief tatsächlich bis zur zertifizierten Ausführung: Minimum von 7 und 3 ergibt 3.
 Historische M0-Werte unverändert. Manipulierte Verträge/Körper/Binder/Exports und
 alte Belege bei transitiven Änderungen werden abgelehnt. Pfad-/Symlink-/FIFO-
 sowie kumulative Budgetfälle sind geprüft. Die Implementierung des Linkchecks
 selbst ist nicht formal bewiesen.
+
+M1-Wiederverwendung: `app` und `remaining` sind fachlich unterschiedliche
+Verbraucher derselben transitiven Kette `rules → base`. Bei Eingabe 7,3 liefern
+sie 3 bzw. 0. `scripts/demo_pkg1.py` prüft beide vollständigen Programme, verwirft
+beide alten Locks/Belege nach einer Bibliotheksänderung und akzeptiert beide
+frischen Belege. Kein neuer Opcode und keine Compileränderung für diese Abnahme.
+Die Beweisgrenzen sind in docs/PKG1-ASSURANCE.md explizit dokumentiert.
 
 ## Verbindliche Quellen im Repository
 

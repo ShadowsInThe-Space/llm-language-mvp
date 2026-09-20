@@ -473,3 +473,41 @@ Issue #16 bleibt eigener Tracker, obwohl Integrationsfixtures sein Szenario vorb
 Zusätzlicher RED-Fall: zwei zulässige Quelldateien ergeben mehr als 128 KiB Core;
 der Artefaktleser muss das Gesamtbudget verwenden. Getrennte Source-/Artefaktlimits
 beheben den Fehler, ohne historische P0-Dateilimits zu verändern.
+
+## 2026-09-20 — M1-Wiederverwendung und v0.5.0 Developer Preview (#16)
+
+Eigenständiges Paket `remaining` ergänzt: während `app` den Minimumwert liefert,
+berechnet der neue Verbraucher den zweiten Parameter minus diesen Minimumwert.
+Beide importieren `rules`, welches dieselbe unabhängige `base`-Bibliothek nutzt.
+Keine Compiler-/Runtime-/Opcodeänderung. Der identische Quellbaustein trägt zwei
+unterschiedliche vollständige Programmverträge; er wird nicht durch ein bloßes
+Umbenennen eines identischen Consumers simuliert.
+
+TDD mit günstigen Workern: Demo-Abnahmetest zuerst bei fehlendem Script rot
+(Exit 2), danach grün. CLI-Tests prüfen unterschiedliche Resultate 3/4 für 3,7;
+die Demo prüft 3/0 für 7,3. Transitive Tests prüfen beide alten Paketbelege nach
+semantisch äquivalenter Bibliotheksänderung gegen neue autorisierte Snapshots.
+Alte Locks scheitern mit P_HASH, alte Belege gegen neu gelinkte Quellen mit
+P_BINDING; beide neu erzeugten Gesamtbelege werden akzeptiert. Keine modulare
+Beweiswiederverwendung behauptet: M1 prüft jedes vollständige Programm erneut.
+
+Die Demo nutzt temporäre Kopien, neue exklusive Ausgabepfade pro Durchgang und
+den aufrufenden Python-Interpreter. Review/Integration deckten Wiederverwendung
+eines Ausgabepfads und zunächst nur einseitige Änderungsprüfung auf; beides ist
+vor Abnahme korrigiert. Die Gesamtsuite verweigerte eine Änderung der eingefrorenen
+historischen Assurance-Datei; sie blieb unverändert, der neue TCB-Vertrag liegt
+separat unter docs/PKG1-ASSURANCE.md. Keine Baseline-Hashes angepasst.
+
+Lokal 419 Tests bestanden, Ruff und striktes Mypy (27 Quelldateien) sauber.
+Wheel 0.5.0 in frische virtuelle Umgebung installiert, tatsächlichen Import aus
+site-packages nachgewiesen, beide Consumer über CLI geprüft/ausgeführt sowie
+w2-Webkompilierung und Integritätsprüfung ausgeführt. Paketversion 0.5.0 und
+unveränderte Webgenerator-Identität web.0.4.0 bewusst getrennt. Historisches
+RELEASE.json bleibt als v0.2.0-Beleg erhalten. Release-Gates: unabhängiger
+Programmiersprachenreview, grüne PR/main-CI, erst dann Tag und Developer Preview.
+
+Unabhängiger Abschlussreview: keine offenen fachlichen Release-Blocker.
+Reviewer prüfte zusätzlich gemischte Int/Bool-Parameter, let-Binder, importierte
+und lokale Vorgängeraufrufe sowie die Ablehnung einer manipulierten Call-Zuordnung.
+Bericht unter docs/reviews/M1-REVIEW.md; ausdrücklich KI-Fachreview, keine reale
+akademische Begutachtung oder formale Verifikation der Python-TCB.
