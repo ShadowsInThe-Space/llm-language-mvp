@@ -542,9 +542,15 @@ Versionsüberschriften bleiben erlaubt. API-/Netzwerkfehler geben nichts frei.
 Veröffentlichte Assets/Tags werden nicht überschrieben; nur private Drafts sind
 wiederaufnehmbar. Milestone wird erst nach verifiziertem Release geschlossen.
 
-Lokal 456 Tests bestanden, Ruff/Mypy (27 Quelldateien) sauber. Actionlint inklusive
-Shellprüfung erfolgreich. 37 fokussierte Gate-/Publisher-Tests. Reale read-only
+Lokal 460 Tests bestanden, Ruff/Mypy (27 Quelldateien) sauber. Actionlint inklusive
+Shellprüfung erfolgreich. 41 fokussierte Gate-/Publisher-Tests. Reale read-only
 Prüfung gegen GitHub lehnt M2 korrekt ab (sechs offene Issues, ready=false und
 fehlende finale Releaseunterlagen). Reale Veröffentlichung absichtlich nicht
 ausgeführt. Unabhängiges Review unter docs/reviews/RELEASE-WORKFLOW-REVIEW.md
 bestätigt Arbeitsbranch-Reife, ausdrücklich keine M2-Releasefreigabe.
+
+Zusätzliche vier RED/GREEN-Fälle verhindern einen zweiten Abschluss-PR für einen
+bereits geschlossenen Meilenstein oder eine bereits veröffentlichte/getaggte
+Version. Main-Veröffentlichungswiederholungen bleiben separat idempotent möglich.
+Zwei Builds mit fixiertem Backend und gleichem Commitzeitstempel sind bytegleich;
+frische Wheel-Installation besteht pkg1-Demo und w2-Buildintegritätsprüfung.

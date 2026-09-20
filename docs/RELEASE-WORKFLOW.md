@@ -86,6 +86,9 @@ python scripts/release_gate.py --repository ShadowsInThe-Space/llm-language-mvp 
 Commit the final package and open the single PR. Required checks:
 `baseline (3.12)`, `baseline (3.13)`, `milestone-complete`.
 The gate runs on every relevant PR update without a skip-success path.
+It also rejects already-closed milestones and already-tagged/released versions,
+so a completed package cannot authorize another main merge. Publication retries
+use the separate main release mode and do not need a second PR.
 If only an issue state changed, rerun the PR gate; issue events do not magically
 refresh a previous result. Recheck live issue state immediately before merging.
 

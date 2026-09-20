@@ -210,3 +210,41 @@ def test_notes_output_never_overwrites(tmp_path):
     with pytest.raises(gate.GateError, match="already exists"):
         gate.write_notes(output, "replace")
     assert output.read_text(encoding="utf-8") == "keep"
+
+
+@pytest.mark.parametrize("state", ["closed", None])
+def test_candidate_cannot_remerge_a_completed_milestone(monkeypatch, tmp_path, state):
+    plan = write_valid(tmp_path)
+
+    def missing(*args):
+        raise gate.NotFoundError("not found")
+
+    monkeypatch.setattr(gate, "gh_json", missing)
+    assert "candidate milestone must be open" in gate.validate_candidate_state(
+        plan, {"state": state}, "o/r"
+    )
+
+
+def test_candidate_version_must_not_already_be_released_or_tagged(monkeypatch, tmp_path):
+    plan = write_valid(tmp_path)
+    monkeypatch.setattr(gate, "gh_json", lambda *args: {"present": True})
+    assert "candidate version already exists" in gate.validate_candidate_state(
+        plan, {"state": "open"}, "o/r"
+    )
+
+
+def test_new_candidate_version_accepts_only_confirmed_absence(monkeypatch, tmp_path):
+    plan = write_valid(tmp_path)
+
+    def missing(*args):
+        raise gate.NotFoundError("not found")
+
+    monkeypatch.setattr(gate, "gh_json", missing)
+    assert gate.validate_candidate_state(plan, {"state": "open"}, "o/r") == []
+
+    def failed(*args):
+        raise gate.GateError("network failure")
+
+    monkeypatch.setattr(gate, "gh_json", failed)
+    with pytest.raises(gate.GateError):
+        gate.validate_candidate_state(plan, {"state": "open"}, "o/r")

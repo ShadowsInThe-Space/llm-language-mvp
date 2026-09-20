@@ -240,7 +240,7 @@ def gh_json(repo: str, endpoint: str) -> Any:
             return [item for page in value for item in page]
         return value
     except subprocess.CalledProcessError as exc:
-        if "404" in (exc.stderr or ""):
+        if re.search(r"\(HTTP 404\)", exc.stderr or ""):
             raise NotFoundError("GitHub resource not found") from exc
         raise GateError("GitHub API request failed") from exc
     except subprocess.TimeoutExpired as exc:
@@ -274,6 +274,23 @@ def validate_branch(plan: Plan, mode: str, repo: str) -> list[str]:
             remote = remote[0] if remote else {}
         if _git(["rev-parse", "HEAD"]) != remote.get("sha"):
             errors.append("local HEAD is not origin main")
+    return errors
+
+
+def validate_candidate_state(plan: Plan, milestone: dict[str, Any], repo: str) -> list[str]:
+    """A published work package cannot authorize another main merge."""
+    errors = []
+    if milestone.get("state") != "open":
+        errors.append("candidate milestone must be open")
+    for endpoint in (
+        f"repos/{repo}/releases/tags/v{plan.version}",
+        f"repos/{repo}/git/ref/tags/v{plan.version}",
+    ):
+        try:
+            gh_json(repo, endpoint)
+        except NotFoundError:
+            continue
+        errors.append("candidate version already exists")
     return errors
 
 
@@ -332,6 +349,8 @@ def main(argv: list[str] | None = None) -> int:
         issues = gh_json(args.repository, f"repos/{args.repository}/issues?state=all&per_page=100")
         errors += validate_live(plan, milestone, issues)
         errors += validate_branch(plan, args.mode, args.repository)
+        if args.mode == "candidate":
+            errors += validate_candidate_state(plan, milestone, args.repository)
         if not errors and args.notes_output:
             write_notes(
                 Path(args.notes_output),
