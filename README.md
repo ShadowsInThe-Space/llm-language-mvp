@@ -1,144 +1,138 @@
 # LLM-Language · The Software Factory
 
-**A programming language that helps AI build software — with tools that check its work.**
+**An experimental language and software factory where AI agents generate software that is independently checked before it is accepted.**
 
-Imagine a workshop: you describe what you need. AI writes the blueprint.
-A translator turns it into an application. Checking tools help find mistakes
-before you use it.
+The goal is not to replace Python, Rust or C.
 
-That is what we are building. Our first small website already works.
+The goal is to give autonomous agents a small, deterministic representation for describing software, checking important properties and generating familiar, human-readable target code.
 
-**[Try it yourself](docs/QUICKSTART.md)** · **[Compiler source](src/llmlang/web)** · **[How to contribute](CONTRIBUTING.md)**
+**[Try the generated note app](https://hello-ai-world.adaptiveaisolutions.chatgpt.site)** · **[Run the compiler in 60 seconds](docs/QUICKSTART.md)** · **[See what is verified](docs/ASSURANCE.md)**
 
-**Progress:** [Milestones](https://github.com/ShadowsInThe-Space/llm-language-mvp/milestones)
-· [Changelog](CHANGELOG.md) · [Releases](https://github.com/ShadowsInThe-Space/llm-language-mvp/releases)
-· [Delivery workflow](docs/RELEASE-WORKFLOW.md).
-One completed milestone means one final merge and one release. M2 is prepared as
-v0.6.0; it becomes published only after its one completion PR passes every gate.
+> Developer preview. The project can already compile a small web blueprint, verify generated-file integrity and formally check bounded calculation rules. It is not yet a general-purpose language or an autonomous software factory.
 
-## The idea, with an example
+## Why not just let an LLM write Python?
 
-You want:
+Modern LLMs can already write Python, Rust, C and many other languages. Understanding those languages is not the problem.
 
-> “A website where I can save notes and read them again later.”
+The problem is that an agent still has to navigate flexible syntax, implicit behavior, large APIs and many equivalent ways to express the same idea. That increases the search space and leaves correctness dependent on the model's judgment.
 
-Normally, several pieces need to fit together: the page you see, the work
-happening behind it, and a place to store your notes.
+LLM-Language explores a different workflow:
 
-Our language describes these pieces in **one shared blueprint**.
-The **compiler** is the translator: it turns that blueprint into code for
-the website and its connection to storage. Your browser displays an ordinary
-website. It does not need a special extension.
+1. A human describes the required behavior and constraints.
+2. An agent generates a compact, explicit program.
+3. The compiler checks its structure and meaning.
+4. Independent verification checks the supported guarantees.
+5. Failed checks return machine-readable errors for repair.
+6. Accepted programs can generate ordinary target code.
 
-## See the compiler in 30 seconds
+The model proposes. The compiler and verifier decide what is accepted.
 
-![Animated walkthrough: read the blueprint, generate web source, check generated files, and run the separate proof demo.](docs/assets/compiler-walkthrough.gif)
+## See it working
 
-*Illustrated output from actual commands, not a screen recording.
-[Text version and commands](docs/QUICKSTART.md) · [Run evidence](docs/launch/validation.json).*
+The current web example describes a small note application in one 16-line blueprint:
 
-## From an idea to a website
+> “A website where I can save notes, load them again and clear the display without deleting the saved data.”
 
-This is the development workflow for our small web application:
+The compiler turns that blueprint into React/Vinext source, server operations, database schema and a reproducible build manifest. The result is an ordinary website that runs in a normal browser.
 
-```mermaid
-flowchart TD
-    A["You describe your idea"] --> B["We agree on what the app should do"]
-    B --> C["AI writes a blueprint in our language"]
-    C --> D{"Does the compiler understand and accept it?"}
-    D -->|No| E["Explain the error and improve the blueprint"]
-    E --> C
-    D -->|Yes| F["Generate code for the website and storage"]
-    F --> G["Build and test the application"]
-    G --> H{"Does it behave as intended?"}
-    H -->|No| I["Fix the cause in the blueprint or compiler"]
-    I --> C
-    H -->|Yes| J["Publish the website and use it in a browser"]
+![Generated note application with saved-note history and a loaded note.](evidence/w2/browser.jpg)
+
+**[Open the generated note app](https://hello-ai-world.adaptiveaisolutions.chatgpt.site)**
+
+*The interface is currently in German. Depending on its access settings, the hosted demo may require the owner's permission.*
+
+## Try the compiler
+
+No AI account or API key is required. The quickstart uses included examples and makes no model request.
+
+```bash
+git clone https://github.com/ShadowsInThe-Space/llm-language-mvp.git
+cd llm-language-mvp
+git checkout v0.5.0
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+
+python -m llmlang compile-web examples/web/hello-history.llapp \
+  --out build/my-first-webapp
+
+python scripts/demo.py
 ```
 
-Today, setup and human review are still part of the process. A factory that
-can finish many different kinds of apps on its own is our long-term goal.
+The web command generates source files; it does not start a complete local web stack. The separate proof demo replays a rejected program and its repaired replacement. See the **[English quickstart](docs/QUICKSTART.md)** for expected output, Windows notes and the exact integrity check.
 
-## What already works
+![Compiler walkthrough showing compilation, generated-file checking and the separate proof demo.](docs/assets/compiler-walkthrough.gif)
 
-Our example website is a small notebook:
+## What works today
 
-1. **Write something:** for example, `Hello new AI World`.
-2. **Save it:** the text goes into a database — the app's memory.
-3. **Find it again:** a list shows the beginning of each saved note.
-4. **Read it:** your chosen note is loaded from storage.
-5. **Clear the display:** the note disappears from the screen, but stays saved.
+| Capability | Current status |
+| --- | --- |
+| Compile a declarative note-app blueprint | Working |
+| Generate page, server and database source | Working |
+| Detect changes to generated files | Working integrity check |
+| Reject invalid bounded calculation programs | Working for the supported P0 subset |
+| Independently reconstruct proof certificates | Working within the documented trusted base |
+| Reuse local pure calculation libraries | Working |
+| Structured bounded domain data | Developer Preview in A1 |
+| Generate standalone JavaScript for A1 programs | Working for the supported subset |
+| Generate arbitrary production applications autonomously | Not implemented |
+| Prove the complete generated website correct | Not implemented |
 
-**[Open the example website](https://hello-ai-world.adaptiveaisolutions.chatgpt.site)**
+## What “verified” means here
 
-![Our generated website: a text box, a list of saved notes, and a note loaded from storage.](evidence/w2/browser.jpg)
+For supported calculation rules, a program can carry evidence that its implementation satisfies stated preconditions and postconditions for every valid input in the formal model.
 
-*Screenshot from browser testing. The page was generated from our language.
-The demo interface is currently in German.*
+That is stronger than testing a collection of examples, but it is not magic:
 
-## Why check the AI's work?
+- A proof cannot detect a missing or incorrect requirement.
+- The compiler, checker, runtime, operating system and hardware are not all formally proven.
+- The generated note website is checked with tests, static analysis and reproducible build integrity. The whole website is **not** mathematically proven correct.
 
-Because AI makes mistakes too. “Looks right” is not enough.
+The precise assurance boundary and trusted computing base are documented in **[Assurance and known limits](docs/ASSURANCE.md)**.
 
-For certain calculation rules, our tools can already check mathematically
-whether a program follows the agreed rule. For example:
-**“You cannot spend more points than you have.”**
+## The direction
 
-Think of a very precise referee: it checks the rule we wrote down.
-It cannot know whether we forgot an important rule.
+The long-term goal is a software factory in which specialized agents can specify, generate, verify, repair and compile software without treating an LLM's confidence as evidence of correctness.
 
-**The whole website is not mathematically proven correct.** It is checked
-with code analysis and tests. See the [v0.5.0 release notes](docs/releases/v0.5.0.md)
-for the release scope and validation, and [GitHub Actions](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions)
-for the current regression checks.
+The language itself should stay small and unambiguous. Capabilities such as web applications, databases, networking, graphics and AI should grow through explicit libraries and target backends rather than turning the core language into one large feature collection.
 
-## What comes next?
+Human-readable code remains an output. The agent-optimized language changes how software is created and checked, not whether humans can inspect the result.
 
-We want to turn this small workshop into a more flexible software factory.
-Local **libraries** for pure calculation rules now work: reusable building blocks,
-a bit like LEGO. Two different example programs share the same library, with
-complete-program proof checks and rejection of stale evidence after changes.
-Run the [library reuse demo](docs/PKG1-GUIDE.md#reproduzierbare-m1-abnahme).
-General web libraries remain a later milestone.
+## Architecture at a glance
 
-M2 adds the first structured A1 profile for agent-generated domain logic:
-nominal immutable records, closed variants, general `Option`/`Result`, explicit
-`Nat` refinements, acyclic named functions and deterministic bounded generics.
-`List<T,N>` and UTF-8-bounded `Text<N>` have precise capacity semantics. A
-canonical typed IR runs in the reference interpreter and can emit a standalone
-JavaScript target; differential tests compare both. Versioned structural proof
-certificates are independently reconstructed before execution. See the
-[A1 specifications](specs/A1-ACCEPTANCE.md) and [v0.6.0 scope](docs/releases/v0.6.0.md).
+```mermaid
+flowchart LR
+    A["Requirements"] --> B["Agent-generated program"]
+    B --> C["Compiler and verifier"]
+    C -->|Rejected| D["Machine-readable error"]
+    D --> B
+    C -->|Accepted| E["Human-readable target code"]
+```
 
-Planned examples include a customer management app and an event booking
-website. These extensions are **not implemented yet**.
+Today, setup, review and release decisions still involve humans.
 
-## Want to look inside?
+## Explore the project
 
-The current compatibility contract is [M0 baseline](specs/M0-BASELINE.md).
-It defines which existing profiles are normative and the gates required before
-package/module development begins.
+- **Start here:** [English quickstart](docs/QUICKSTART.md)
+- **Understand the guarantees:** [Assurance and known limits](docs/ASSURANCE.md)
+- **Inspect the compiler:** [src/llmlang](src/llmlang)
+- **Read the language specifications:** [specs](specs)
+- **Build the web example:** [Web compiler and deployment guide](docs/W1-GUIDE.md)
+- **Try reusable local libraries:** [pkg1 guide](docs/PKG1-GUIDE.md)
+- **See what changed:** [Changelog](CHANGELOG.md) · [Releases](https://github.com/ShadowsIn-The-Space/llm-language-mvp/releases)
+- **Follow development:** [Milestones](https://github.com/ShadowsIn-The-Space/llm-language-mvp/milestones) · [Decision log](Log.md)
+- **Contribute:** [Contribution guide](CONTRIBUTING.md)
 
-Local pure P0 packages now support explicit imports/exports, deterministic linking
-and independent source-to-Core binding checks. Try the [pkg1 workflow](docs/PKG1-GUIDE.md).
-General web libraries remain a later milestone.
+## Project status
 
-Start with the English quickstart. The detailed language specifications are currently in German.
+Current version: **0.6.0 Developer Preview candidate**
 
-- **Find the compiler:** [src/llmlang/web](src/llmlang/web) · [Start with build.py](src/llmlang/web/build.py)
-- **Run it yourself:** [English quickstart](docs/QUICKSTART.md) · [Detailed technical guide (German)](docs/TECHNICAL-GUIDE.md)
-- **Build websites:** [Compiler, architecture and deployment](docs/W1-GUIDE.md)
-- **Explore the language:** [Calculation rules](docs/P0.md) · [Websites](docs/W1-SPEC.md) · [Saved text history](docs/W2-SPEC.md)
-- **Understand the checks:** [What the proofs cover](docs/ASSURANCE.md) · [Browser acceptance report](docs/W1-ABNAHME.md)
-- **Follow the plans:** [Development roadmap](docs/LLM-Language-Weiterentwicklungsplan.md) · [Decision log](Log.md)
+P0, w1, w2 and pkg1 remain protected by compatibility tests. A1 adds immutable records, closed variants, bounded lists and text, deterministic interpretation, structural proof certificates and standalone JavaScript generation for its supported subset. See the [v0.6.0 scope](docs/releases/v0.6.0.md).
 
-*Current version: 0.6.0 — Developer Preview candidate · [KPDL 1.1 — LLM-Language edition](LICENSE)*
+## License
 
-Copyright © 2026 Marc-Dennis Haberland, the sole project rights holder named
-in this license. This project-specific KPDL edition permits use, modification
-and proprietary applications subject to its attribution and licensing terms.
-Companies with annual group revenue of EUR 3 million or more require an
-enterprise license; research use is governed by Section 11. See [LICENSE](LICENSE)
-for the complete terms and [NOTICE](NOTICE) for scope and historical attribution.
+Copyright © 2026 Marc-Dennis Haberland.
 
-For licensing enquiries, [open an issue titled “Lizenzanfrage”](https://github.com/ShadowsInThe-Space/llm-language-mvp/issues/new?title=Lizenzanfrage).
+This project uses the [KPDL 1.1 — LLM-Language edition](LICENSE). It permits use, modification and proprietary applications subject to its attribution and licensing terms. Companies with annual group revenue of EUR 3 million or more require an enterprise license; research use is governed by Section 11.
+
+See [LICENSE](LICENSE) for the complete terms and [NOTICE](NOTICE) for scope and historical attribution. For licensing enquiries, [open an issue titled “Lizenzanfrage”](https://github.com/ShadowsIn-The-Space/llm-language-mvp/issues/new?title=Lizenzanfrage).
