@@ -13,8 +13,10 @@ def emit_server(program: WebProgram) -> str:
     """Validate every program before emitting static SQL and closed action metadata."""
     checked = validate_program(program)
     actions: list[dict[str, object]] = []
+    uses_pure = False
     for action in checked.actions:
         compiled = action.compiled
+        uses_pure = uses_pure or bool(action.transforms)
         bindings: list[dict[str, object]] = []
         for binding in compiled.bindings:
             value: dict[str, object] = (
@@ -31,6 +33,8 @@ def emit_server(program: WebProgram) -> str:
             "authorization": action.authorization,
             "sql": compiled.sql,
             "bindings": bindings,
+            "transforms": [{"param": transform.param, "function": transform.function,
+                            "args": list(transform.args)} for transform in action.transforms],
             "input": type_descriptor(action.input_codec) if action.input_codec else None,
             "output": type_descriptor(action.output_codec),
             "columns": [{"name": column.name, "type": type_descriptor(column.type)}
@@ -39,19 +43,45 @@ def emit_server(program: WebProgram) -> str:
             "maxRows": compiled.result.max_rows,
         })
     serialized = json.dumps(actions, ensure_ascii=True, separators=(",", ":"))
-    return _RUNTIME.replace("__ACTION_METADATA__", serialized)
+    pure_import = 'import {invokePure} from "./a1-pure";' if uses_pure else ""
+    transform_function = _PURE_TRANSFORMS if uses_pure else _NO_TRANSFORMS
+    return (_RUNTIME.replace("__PURE_IMPORT__", pure_import)
+            .replace("__TRANSFORM_FUNCTION__", transform_function)
+            .replace("__ACTION_METADATA__", serialized))
+
+
+_NO_TRANSFORMS = r'''function transformParams(
+  _action: Action, original: Record<string, unknown>,
+): Record<string, unknown> { return original; }'''
+
+_PURE_TRANSFORMS = r'''function transformParams(
+  action: Action, fields: Record<string, unknown>,
+): Record<string, unknown> {
+  const original: Record<string, unknown> = Object.freeze(
+    Object.assign(Object.create(null), fields),
+  );
+  const replacements = action.transforms.map(transform => ({
+    param: transform.param,
+    value: invokePure(transform.function, transform.args.map(name => original[name])),
+  }));
+  const result: Record<string, unknown> = Object.assign(Object.create(null), original);
+  for (const replacement of replacements) result[replacement.param] = replacement.value;
+  return result;
+}'''
 
 
 _RUNTIME = r'''// General web server: generated only after validate_program succeeds.
 import {decodeValue, encodeJson, encodeValue, parseWireJson} from "./codecs";
 import type {CodecType} from "./codecs";
+__PURE_IMPORT__
 
 type Requirement = "public" | "authenticated" | "admin";
 type Binding = {type: CodecType; param?: string; value?: unknown; incrementable: boolean};
 type Column = {name: string; type: CodecType};
+type Transform = {param: string; function: string; args: string[]};
 type Action = {
   name: string; authorization: Requirement; sql: string; bindings: Binding[];
-  input: CodecType | null; output: CodecType; columns: Column[];
+  input: CodecType | null; output: CodecType; columns: Column[]; transforms: Transform[];
   cardinality: "one" | "optional" | "bounded" | "conditional"; maxRows: number;
 };
 export interface D1Statement {
@@ -118,6 +148,7 @@ async function readBounded(
     reader.releaseLock();
   }
 }
+__TRANSFORM_FUNCTION__
 function bindings(action: Action, fields: Record<string, unknown>): unknown[] {
   return action.bindings.map(binding => {
     const value = Object.hasOwn(binding, "param") ? fields[binding.param!] : binding.value;
@@ -200,11 +231,9 @@ export function createDispatcher(
       return failure instanceof BoundaryError
         ? error(failure.status, failure.label) : error(400, "InvalidRequest");
     }
-    let values: unknown[];
     try {
       native = action.input === null ? object(envelope.input, [])
         : (decodeValue(action.input, envelope.input) as {fields: Record<string, unknown>}).fields;
-      values = bindings(action, native);
     } catch { return error(422, "InvalidInput"); }
     if (action.authorization !== "public") {
       try {
@@ -213,6 +242,9 @@ export function createDispatcher(
           return error(403, "Forbidden");
       } catch { return error(403, "Forbidden"); }
     }
+    let values: unknown[];
+    try { values = bindings(action, transformParams(action, native)); }
+    catch { return error(422, "InvalidInput"); }
     try {
       const outcome = await db.prepare(action.sql).bind(...values).all();
       if (outcome?.success !== true || !Array.isArray(outcome.results))

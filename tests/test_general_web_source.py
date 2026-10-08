@@ -190,5 +190,69 @@ class WebSourceTests(unittest.TestCase):
                              limits=WebSourceLimits(max_nodes=200))
 
 
+    def test_explicit_action_transforms_roundtrip_and_bind_pure_library(self):
+        pure = '''(a1src1 (limits 100 10 8)
+          (fn preview ((text (Text 32))) (Text 32)
+            (let count Nat (const 2))
+            (let result (Text 32) (text_prefix_codepoints text count)) (return result))
+          (fn identity ((text (Text 32))) (Text 32) (return text))
+          (entry preview) (entry identity))'''
+        source = application().replace(
+            "(project id title)))",
+            "(project id title)) (transform title preview (title)))", 1,
+        ).replace("(library common)", "(pure_library helpers) (library common)")
+        options = {"library_sources": {"common": UI}, "pure_sources": {"helpers": pure}}
+        parsed = parse_web_source(source, **options)
+        transform = parsed.program.actions[0].transforms[0]
+        self.assertEqual((transform.param, transform.function, transform.args),
+                         ("title", "preview", ("title",)))
+        self.assertEqual(parsed.checked.snapshot()["pure_library"]["role"], "executable")
+        self.assertEqual(parsed.checked.snapshot()["actions"][0]["transforms"],
+                         [{"param": "title", "function": "preview", "args": ["title"]}])
+        repeated = parse_web_source(parsed.canonical_source, **options)
+        self.assertEqual(repeated.program, parsed.program)
+        self.assertEqual(repeated.source_hash, parsed.source_hash)
+        self.assertTrue(check_web_source_binding(source, parsed.program, **options))
+        offered = parsed.checked.snapshot()
+        offered["actions"][0]["transforms"][0]["function"] = "identity"
+        self.assertFalse(check_web_source_binding(source, offered, **options))
+        alternate = source.replace("(transform title preview", "(transform title identity")
+        self.assertFalse(check_web_source_binding(alternate, parsed.program, **options))
+        self.assertNotEqual(parse_web_source(alternate, **options).source_hash, parsed.source_hash)
+        self.assertEqual(parsed.source_map["actions[0].transforms[0]"].line, 6)
+
+    def test_transform_syntax_and_semantics_fail_closed(self):
+        pure = '''(a1src1 (limits 100 10 8)
+          (fn preview ((text (Text 32))) (Text 32) (return text)) (entry preview))'''
+        source = application().replace(
+            "(project id title)))",
+            "(project id title)) (transform title preview (title)))", 1,
+        ).replace("(library common)", "(pure_library helpers) (library common)")
+        bad_forms = (
+            "(transform title preview title)",
+            "(transform title preview (title) extra)",
+            "(javascript title preview (title))",
+            "(transform title preview (\"title\"))",
+            "(transform missing preview (title))",
+            "(transform title missing (title))",
+            "(transform title preview (missing))",
+            "(transform title preview ())",
+            "(transform title preview (title title))",
+            "(transform title preview (id))",
+            "(transform title preview (title)) (transform title preview (title))",
+        )
+        for form in bad_forms:
+            invalid = source.replace("(transform title preview (title))", form)
+            with self.subTest(form=form), self.assertRaises(WebSourceError):
+                parse_web_source(invalid, library_sources={"common": UI},
+                                 pure_sources={"helpers": pure})
+        with self.assertRaises(WebSourceError):
+            parse_web_source(source.replace("(pure_library helpers)", ""),
+                             library_sources={"common": UI})
+        with self.assertRaises(WebSourceError):
+            parse_web_source(source, library_sources={"common": UI},
+                             pure_sources={"helpers": pure.replace("(entry preview)", "")})
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,8 @@ from pathlib import Path, PurePosixPath
 from types import MappingProxyType
 from typing import Any
 
+from llmlang.a1.runtime import RUNTIME_VERSION
+from llmlang.a1.runtime import emit_typescript_runtime as emit_pure_runtime
 from llmlang.a1.source import parse_source as parse_pure_source
 
 from .client import emit_client
@@ -21,7 +23,7 @@ from .queries import schema_sql
 from .server import emit_server
 from .source import parse_component_library, parse_web_source
 
-COMPILER_VERSION = "general-web.0.1.0"
+COMPILER_VERSION = "general-web.0.2.0"
 
 
 def _json(value: object) -> str:
@@ -61,6 +63,11 @@ def compile_source(
                                         "column": span.column}
                                   for name, span in parsed.source_map.items()}),
     }
+    entries = tuple(sorted({transform.function for action in parsed.checked.actions
+                            for transform in action.transforms}))
+    if entries:
+        assert parsed.program.pure_library is not None
+        files["a1-pure.ts"] = emit_pure_runtime(json.loads(parsed.program.pure_library), entries)
     for name, text in libraries.items():
         files[f"libraries/{name}.webuilib"] = parse_component_library(text).canonical_source + "\n"
     for name, text in pure.items():
@@ -69,6 +76,7 @@ def compile_source(
         "format": "general-web-build-v1",
         "compiler": COMPILER_VERSION,
         "codec": CODEC_VERSION,
+        "pure_runtime": RUNTIME_VERSION if entries else None,
         "source_hash": parsed.source_hash,
         "program_hash": parsed.semantic_hash,
         "effects_hash": parsed.checked.effects.semantic_hash,

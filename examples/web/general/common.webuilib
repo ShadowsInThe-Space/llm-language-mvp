@@ -1,7 +1,7 @@
 (webuilib1 common
   (component editor
     (form create save
-      (fields (id "Identifier" input) (title "Text" input))
+      (fields (id "Identifier" input) (title "Text (first 120 characters saved)" input))
       (states "Saving" "Save failed" "No saved value" "Saved")
       (buttons "Save" "Clear display")))
   (component browser

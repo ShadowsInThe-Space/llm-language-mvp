@@ -9,9 +9,11 @@ After installing the repository development dependencies, run:
 
 ```sh
 python -m llmlang compile-general-web examples/web/general/history.webapp \
-  --library common=examples/web/general/common.webuilib --out build/general-history
+  --library common=examples/web/general/common.webuilib \
+  --pure-library helpers=examples/web/general/helpers.a1src --out build/general-history
 python -m llmlang compile-general-web examples/web/general/tasks.webapp \
-  --library common=examples/web/general/common.webuilib --out build/general-tasks
+  --library common=examples/web/general/common.webuilib \
+  --pure-library helpers=examples/web/general/helpers.a1src --out build/general-tasks
 ```
 
 `python -m llmlang.web.general` exposes the same source/library/output arguments
@@ -24,7 +26,16 @@ snapshots, source positions, checked program IR and an integrity manifest.
 `check_build` recompiles the supplied source snapshot and compares every artifact;
 an offered manifest hash alone does not establish the binding.
 
-The two applications consume the same `common.webuilib` editor/browser components.
+The two applications consume the same `common.webuilib` editor/browser components
+and execute `helpers.a1src` on the server before binding write queries. The shared
+`title_preview` entry keeps the first 120 Unicode code points; form labels state
+this saved-preview behavior. The planner uses it for both create and update.
+Transform arguments refer to the original decoded inputs, with replacements
+applied together. Parameter and result types must match exactly. Pure execution
+has checked input/output values and bounded budgets; failure prevents the query.
+The generated `a1-pure.ts` and its library snapshot are bound by the manifest and
+are not imported by the generated client component.
+
 History stores text entries. The planner adds completion, priority and a revision
 checked atomic update. IDs are explicitly entered in this first UI. Update uses
 the revision displayed by the selected record. The forms never automatically
@@ -39,6 +50,9 @@ at the configured same-origin endpoint (default `/api/general`). The host suppli
 the actual D1 binding and allowed origin to `createDispatcher`; neither is read
 from request data. Apply `schema.sql` only to a fresh disposable database during
 acceptance. It creates tables; it is not a migration plan for existing data.
+Keep the compiler output directory as server/build input. It includes SQL and the
+full checked program/library snapshots; publish only the host's built client
+assets, never expose the whole compiler output as a static public directory.
 
 Authenticated/admin actions require an actual trusted host authorization adapter.
 Both examples are public shared-data demonstrations, not tenant-isolated apps.
@@ -54,9 +68,6 @@ build or strict TypeScript check does not demonstrate browser or D1 behavior.
 
 ## What remains before M3 acceptance
 
-- Bind executable pure A1 library calls into the general application path. The
-  optional `pure_library` field currently records independently checked provenance;
-  it does not execute a pure library from a UI/query action.
 - Run a clean build in the pinned Vinext host with generated modules unchanged.
 - Run actual D1 conditional-write/concurrency and persistence/restart tests.
 - Exercise both applications in the supported browser matrix, including keyboard,

@@ -15,6 +15,14 @@ name, table name, history, or tasks branches.
 
 ## Components and controls
 
+On the server render and initial client render, a readiness state is false.
+Form inputs/selects/checkboxes are inside a disabled fieldset, and Save, Load,
+Select, and Clear buttons are disabled until the React effect subscribes to the
+controller and marks the UI ready. The form handler also checks readiness before
+calling its controller. This prevents unhydrated native form submission or lost
+early actions. A Vinext App Router host supplies a `"use client"` wrapper that
+imports the generated module unchanged.
+
 The default export `GeneralApp` accepts an optional `endpoint` prop, defaulting
 to `/api/general`. The endpoint is a same-origin absolute path; cross-origin
 URLs, protocol-relative paths, backslashes, whitespace, and fragments are
@@ -83,7 +91,15 @@ list load, row selection, canonical integers, loading/error/empty/success,
 confirmed value preservation, malformed/duplicate/numeric/oversized responses,
 clear without a request, abort, and ignored stale selection responses.
 
-This evidence is controller execution with standard web `Response` and a test
-fetcher. It is not React DOM interaction, browser accessibility verification,
+The optional test selected by `LLMLANG_REACT_TOOLCHAIN` compiles the actual
+generated TSX with TypeScript and runs React `renderToString` followed by
+`hydrateRoot` in jsdom, including StrictMode's effect replay. It checks inert
+SSR controls, enabled hydrated controls, label associations, and prevention of
+native submission after hydration. The toolchain must contain pinned TypeScript,
+React, React DOM, React types, and jsdom; without it this test explicitly skips.
+jsdom event execution is not evidence of native keyboard/focus behavior.
+
+The controller tests use standard web `Response` and a test fetcher. Neither
+those tests nor the optional jsdom check establish browser accessibility verification,
 a pinned Vinext production build, or a Cloudflare D1 deployment. Those are
 separate integration gates; no local mock is presented as their equivalent.

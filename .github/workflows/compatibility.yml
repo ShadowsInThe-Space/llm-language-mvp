@@ -32,7 +32,20 @@ jobs:
         if: ${{ !cancelled() }}
       - name: Install pinned generated-target typecheck tools
         if: ${{ matrix.python == '3.13' && !cancelled() }}
-        run: npm install --prefix "$RUNNER_TEMP/llmlang-types" --no-package-lock --ignore-scripts typescript@5.9.3 @types/react@19.2.2
+        run: npm install --prefix "$RUNNER_TEMP/llmlang-types" --no-package-lock --ignore-scripts typescript@5.9.3 @types/react@19.2.2 react@19.2.6 react-dom@19.2.6 jsdom@26.1.0
       - name: Check generated general web target types
         if: ${{ matrix.python == '3.13' && !cancelled() }}
         run: python scripts/check_general_target.py --toolchain "$RUNNER_TEMP/llmlang-types"
+      - name: Check actual React SSR and hydration boundaries
+        if: ${{ matrix.python == '3.13' && !cancelled() }}
+        run: LLMLANG_REACT_TOOLCHAIN="$RUNNER_TEMP/llmlang-types" python -m unittest discover -s tests -p test_general_web_client.py -q
+      - name: Check general compiler from isolated installed wheel
+        if: ${{ matrix.python == '3.13' && !cancelled() }}
+        run: |
+          python -m pip install -r requirements.release.lock
+          python -m pip wheel --no-build-isolation --no-deps --wheel-dir "$RUNNER_TEMP/general-wheel" .
+          python -m venv "$RUNNER_TEMP/general-wheel-venv"
+          "$RUNNER_TEMP/general-wheel-venv/bin/python" -m pip install -r requirements.lock "$RUNNER_TEMP"/general-wheel/*.whl
+          export PYTHONPATH=
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/general-wheel-venv/bin/python" "$GITHUB_WORKSPACE/scripts/check_general_wheel.py" --examples "$GITHUB_WORKSPACE/examples/web/general"

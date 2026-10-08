@@ -10,14 +10,18 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
+from llmlang.a1.ir import canonical_bytes
+from llmlang.a1.source import lower_source
 from llmlang.web.general.codecs import BoolType, NatType, TextType, emit_typescript_runtime
 from llmlang.web.general.program import (
     DisplayColumn,
     ListView,
+    ParamTransform,
     ProgramError,
     QueryAction,
     ViewStates,
     WebProgram,
+    validate_program,
 )
 from llmlang.web.general.queries import (
     Column,
@@ -62,6 +66,32 @@ def application() -> WebProgram:
     return WebProgram("server_app", "Server", schema, actions, (view,))
 
 
+def transformed_application(max_steps: int = 1000) -> WebProgram:
+    program = application()
+    save = program.actions[0]
+    other = Param("other", TextType(32))
+    query = replace(save.query, values=(
+        ("id", save.params[0]), ("title", save.params[1]), ("done", save.params[2]),
+        ("revision", 0), ("__proto__", other),
+    ))
+    transformed = replace(save, params=(*save.params, other), query=query, transforms=(
+        ParamTransform("title", "prefix", ("other",)),
+        ParamTransform("other", "prefix", ("title",)),
+    ))
+    source = f'''(a1src1 (limits {max_steps} 100 20)
+      (fn prefix ((text (Text 32))) (Text 32)
+        (let count Nat (const 1))
+        (let result (Text 32) (text_prefix_codepoints text count)) (return result))
+      (fn reset ((number Nat)) Nat (let zero Nat (const 0)) (return zero))
+      (entry prefix) (entry reset))'''
+    edit = replace(program.actions[3], transforms=(
+        ParamTransform("expected", "reset", ("expected",)),
+    ))
+    actions = (transformed, *program.actions[1:3], edit, *program.actions[4:])
+    return replace(program, actions=actions,
+                   pure_library=canonical_bytes(lower_source(source)))
+
+
 ROW = {"title": "Hello 🌍", "done": 1, "revision": 1, "__proto__": "safe"}
 
 
@@ -76,6 +106,9 @@ const source = name => fs.readFileSync(new URL(name, import.meta.url), "utf8");
 fs.writeFileSync(new URL("./codecs", import.meta.url), stripTypeScriptTypes(source("./codecs.ts")));
 fs.writeFileSync(new URL("./server.mjs", import.meta.url),
                  stripTypeScriptTypes(source("./server.ts")));
+if (fs.existsSync(new URL("./a1-pure.ts", import.meta.url)))
+  fs.writeFileSync(new URL("./a1-pure", import.meta.url),
+                   stripTypeScriptTypes(source("./a1-pure.ts")));
 const {createDispatcher} = await import("./server.mjs");
 const payload = JSON.parse(fs.readFileSync(0, "utf8"));
 const results = [];
@@ -125,10 +158,20 @@ console.log(JSON.stringify(results));
 
 
 class ServerTests(unittest.TestCase):
-    def run_operations(self, *operations: dict[str, object]) -> list[dict]:
+    def run_operations(
+        self, *operations: dict[str, object], program: WebProgram | None = None,
+    ) -> list[dict]:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "server.ts").write_text(emit_server(application()))
+            selected = application() if program is None else program
+            (root / "server.ts").write_text(emit_server(selected))
+            pure = validate_program(selected).snapshot().get("pure_library")
+            if pure is not None and pure.get("role") == "executable":
+                from llmlang.a1.runtime import emit_typescript_runtime as emit_pure_runtime
+
+                (root / "a1-pure.ts").write_text(emit_pure_runtime(
+                    pure["ir"], entries=tuple(pure["entries"]),
+                ))
             (root / "codecs.ts").write_text(emit_typescript_runtime())
             (root / "package.json").write_text('{"type":"module"}')
             (root / "run.mjs").write_text(RUNNER)
@@ -143,6 +186,18 @@ class ServerTests(unittest.TestCase):
         with self.assertRaises(ProgramError):
             emit_server(replace(program, views=()))
         self.assertNotIn("request.text()", emit_server(program))
+
+    def test_template_marker_literals_remain_data_in_action_metadata(self) -> None:
+        original = application()
+        for marker in ("__PURE_IMPORT__", "__TRANSFORM_FUNCTION__", "__ACTION_METADATA__"):
+            save = original.actions[0]
+            query = replace(save.query, values=tuple(
+                (name, marker if name == "__proto__" else value)
+                for name, value in save.query.values
+            ))
+            program = replace(original, actions=(replace(save, query=query), *original.actions[1:]))
+            with self.subTest(marker=marker):
+                self.assertTrue('"value":"' + marker + '"' in emit_server(program))
 
     def test_valid_wire_input_binds_sql_and_nominal_result(self) -> None:
         result, = self.run_operations({})
@@ -166,6 +221,43 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(results[0]["calls"][1]["values"], ["one", payload, 0, 0, "safe"])
         self.assertNotIn(payload, results[0]["calls"][0]["sql"])
         self.assertEqual(results[1]["status"], 500)
+
+    def test_pure_transforms_bind_actual_results_using_original_arguments(self) -> None:
+        program = transformed_application()
+        wire = input_value("save", id="one", title="Alpha", done=False, other="Beta")
+        result, = self.run_operations({"action": "save", "input": wire}, program=program)
+        self.assertEqual(result["status"], 200)
+        self.assertEqual(result["calls"][1]["values"], ["one", "B", 0, 0, "A"])
+        self.assertIn('import {invokePure} from "./a1-pure"', emit_server(program))
+        self.assertNotIn('from "./a1-pure"', emit_server(application()))
+        unused = replace(application(), pure_library=program.pure_library)
+        self.assertNotIn('from "./a1-pure"', emit_server(unused))
+
+    def test_pure_runtime_failure_is_generic_and_precedes_database(self) -> None:
+        program = transformed_application(max_steps=1)
+        wire = input_value("save", id="one", title="Alpha", done=False, other="Beta")
+        result, = self.run_operations({"action": "save", "input": wire}, program=program)
+        self.assertEqual(result["status"], 422)
+        self.assertEqual(result["body"], {"error": "InvalidInput"})
+        self.assertEqual(result["calls"], [])
+
+    def test_transform_precedes_query_revision_overflow_validation(self) -> None:
+        wire = input_value("edit", id="one", expected="9007199254740991", title="new")
+        result, = self.run_operations({"action": "edit", "input": wire},
+                                     program=transformed_application())
+        self.assertEqual(result["status"], 200)
+        self.assertEqual(result["calls"][1]["values"], ["new", "one", 0])
+
+    def test_protected_actions_authorize_before_running_pure_transform(self) -> None:
+        original = transformed_application(max_steps=1)
+        save = replace(original.actions[0], authorization="admin")
+        program = replace(original, actions=(save, *original.actions[1:]))
+        wire = input_value("save", id="one", title="Alpha", done=False, other="Beta")
+        results = self.run_operations({"action": "save", "input": wire},
+            {"action": "save", "input": wire, "authorize": "deny"},
+            {"action": "save", "input": wire, "authorize": "allow"}, program=program)
+        self.assertEqual([result["status"] for result in results], [403, 403, 422])
+        self.assertTrue(all(result["calls"] == [] for result in results))
 
     def test_transport_envelope_and_typed_input_fail_before_database(self) -> None:
         operations = (

@@ -41,7 +41,7 @@ and column uniqueness, codec capacities and query bounds.
 
 Each action declares all parameters explicitly as ordered `(NAME TYPE)` pairs,
 a static authorization policy (`public`, `authenticated` or `admin`), and exactly
-one query. Query input operands are parameter names or scalar literals: integers,
+one query, followed optionally by explicit pure parameter transforms. Query input operands are parameter names or scalar literals: integers,
 `true`/`false`, or double-quoted text. Parameter types are derived from the explicit
 action declaration, and every query use must match its actual schema column.
 Unused, missing, duplicated or inconsistently typed action parameters fail closed.
@@ -63,6 +63,37 @@ a primary-key tie breaker where needed. Unique selects require a declared unique
 key. Conditional updates bind the key and expected Nat revision atomically;
 updates cannot rewrite their key/revision, and successful updates increment the
 revision. Source never supplies raw SQL or interpolated SQL fragments.
+
+
+## Explicit pure action transforms
+
+An action can append zero or more transform forms after its one query:
+
+```text
+(action save ((id (Text 64)) (title (Text 32))) public
+  (insert entries (values (id id) (title title) (revision 0)) (project id title))
+  (transform title preview (title)))
+(pure_library helpers)
+```
+
+The grammar is `(transform TARGET_PARAM EXPORTED_FUNCTION (ARG_PARAM...))`.
+Targets and arguments are static names of declared action parameters, and the
+function must be an exported entrypoint in the explicitly resolved A1 library.
+The checker requires exact scalar argument/result types, including Text capacity;
+missing library/function/target/arguments, wrong arity/types and duplicate targets
+fail closed. Strings, literals, host calls or expression bodies cannot appear as
+transform argument names. Zero arguments are syntactically valid when an exported
+function's checked signature actually takes none.
+
+Arguments always read the original decoded action inputs. Transforms cannot chain
+through another transform's result, and cannot create extra input fields. Each
+result replaces only its declared target parameter before the prepared query
+binds. Declaration order is preserved in source and checked metadata. Original
+inputs and transformed outputs remain subject to their exact scalar codecs and
+the library's declared execution budgets. The library and selected function IDs
+are part of full semantic binding; renaming a function or changing its source
+cannot be authorized by an old offered hash. Sources without transforms retain
+their original action syntax and behavior.
 
 ## Generic views and shared libraries
 
@@ -125,9 +156,10 @@ the shared library's declared action/field contracts.
 
 Optionally, `(pure_library NAME)` resolves one separate `a1src1` source snapshot
 supplied through `pure_sources`. The public A1 frontend independently lowers and
-checks it, then canonical IR bytes bind it into WebProgram. Its role remains
-`provenance_only`: no runtime A1 call or cross-language equivalence proof is
-claimed. No embedded IR JSON is accepted by this form.
+checks it, then canonical IR bytes bind it into WebProgram. Without an action
+transform its role is `provenance_only`; with checked transforms it is `executable`
+for those explicit scalar calls. This binding does not claim a formal proof of
+cross-language target equivalence. No embedded IR JSON is accepted by this form.
 
 ## Reader bounds and canonical binding
 

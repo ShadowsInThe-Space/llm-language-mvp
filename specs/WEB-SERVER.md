@@ -57,6 +57,32 @@ integers. Positional binding types are validated again, Bool binds as 0/1, and
 an incrementable maximum revision fails before a database call. Authorization
 also precedes database access. SQL is static and contains no runtime values.
 
+## Executable pure parameter transforms
+
+Actions may declare checked `ParamTransform(param, function, args)` nodes bound
+to exported functions in the canonical A1 pure library. The program checker
+validates their scalar signatures, original input names and unique replacement
+targets. Static metadata identifies only the checked transforms. A server with
+transforms imports `invokePure` from `./a1-pure`; a server without transforms has
+no such import, including when an unused provenance-only pure library exists.
+The pure IR and runtime are server artifacts and are never emitted to the client.
+
+The dispatcher first decodes the original nominal input and authorizes protected
+actions through trusted host policy. It freezes a separate original parameter
+snapshot. Every function reads its arguments from that snapshot; transformations
+cannot read earlier replacement values. All functions must complete before any
+replacements are applied. The resulting parameter map then passes the usual
+scalar binding validation, including expected-revision incrementability checks,
+before database preparation. This makes replacement semantics simultaneous and
+prevents premature rejection of an original value that a valid transform replaces.
+
+A1 runtime failures, budget exhaustion, unsafe arithmetic and invalid transformed
+binding values return generic HTTP 422 `InvalidInput` with zero database calls.
+Runtime details are never included in the response. Pure evaluation has its own
+per-invocation bounded execution/collection/call budgets, and it receives no
+request, identity, database or network capability. Authorization failures avoid
+pure evaluation as well as database calls.
+
 ## Results and errors
 
 Successful HTTP 200 bodies are directly encoded using the checked action's
@@ -88,7 +114,10 @@ type, `no-store`, exact allowed-origin CORS, `Vary: Origin`, and `nosniff`.
 test double. It checks transport and envelope validation before database calls,
 stream byte/time bounds, trusted host authorization, nominal wire outputs,
 safe positional bindings, invalid provider rows, generic errors, conflict
-outcomes and prototype-sensitive names. The test double is HTTP/codec boundary
+outcomes and prototype-sensitive names. Transform tests additionally run the
+actual emitted A1 pure runtime, check changed positional SQL bindings and
+original-argument replacement semantics, and require zero database calls after
+runtime failures. The test double is HTTP/codec boundary
 evidence only. It is not a SQL engine, D1 emulator or proof of provider atomicity.
 
 Real provider acceptance, account binding, schema installation, deployment,

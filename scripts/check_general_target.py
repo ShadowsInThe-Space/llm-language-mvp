@@ -20,12 +20,14 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     examples = root / "examples/web/general"
     libraries = {"common": (examples / "common.webuilib").read_text(encoding="utf-8")}
+    pure = {"helpers": (examples / "helpers.a1src").read_text(encoding="utf-8")}
     toolchain = args.toolchain.resolve()
     tsc = toolchain / "node_modules/.bin/tsc"
     with tempfile.TemporaryDirectory(prefix="generated-", dir=toolchain) as directory:
         for name in ("history", "tasks"):
             source = (examples / f"{name}.webapp").read_text(encoding="utf-8")
-            output = write_build(compile_source(source, library_sources=libraries),
+            output = write_build(compile_source(source, library_sources=libraries,
+                                                pure_sources=pure),
                                  Path(directory) / name)
             subprocess.run([
                 str(tsc), "--noEmit", "--strict", "--target", "ES2022",

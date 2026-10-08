@@ -24,6 +24,7 @@ from llmlang.web.general.program import (
     FormView,
     InputField,
     ListView,
+    ParamTransform,
     ProgramError,
     ProgramLimits,
     QueryAction,
@@ -77,6 +78,27 @@ def application(table_name: str = "entries", text_name: str = "title") -> WebPro
         ), STATES),
     )
     return WebProgram("app", "Application", schema, actions, views)
+
+
+def preview_library() -> bytes:
+    text = {"kind": "text", "capacity": 32}
+    functions = [
+        {"name": "preview", "params": [{"name": "text", "type": text}], "result": text,
+         "body": [{"op": "call", "dest": "result", "callee": "shorten",
+                   "args": [{"ref": "text"}]}], "return": "result"},
+        {"name": "shorten", "params": [{"name": "text", "type": text}], "result": text,
+         "body": [{"op": "const", "dest": "count", "type": "Nat", "value": 2},
+                  {"op": "text_prefix_codepoints", "dest": "result", "value": {"ref": "text"},
+                   "count": {"ref": "count"}}], "return": "result"},
+        {"name": "bytes", "params": [{"name": "text", "type": text}], "result": "Nat",
+         "body": [{"op": "text_utf8_bytes", "dest": "result", "value": {"ref": "text"}}],
+         "return": "result"},
+    ]
+    return canonical_bytes({"format": "a1-ir-v1", "profile": "a1", "checker": "a1-check-v1",
+                            "types": [], "functions": functions, "specializations": [],
+                            "entrypoints": ["preview", "bytes"],
+                            "limits": {"max_steps": 100, "max_collection_expansion": 10,
+                                       "max_call_depth": 8}})
 
 
 class ProgramTests(unittest.TestCase):
@@ -329,6 +351,92 @@ class ProgramTests(unittest.TestCase):
             validate_program(program)
         self.assertEqual(raised.exception.code, "W_PROGRAM_LIMIT")
         self.assertEqual(raised.exception.path, "actions.list.output")
+
+    def test_transform_uses_exported_scalar_entry_and_actual_transitive_pure_graph(self) -> None:
+        original = application()
+        transform = ParamTransform("title", "preview", ("title",))
+        action = replace(original.actions[0], transforms=(transform,))
+        checked = validate_program(replace(original, pure_library=preview_library(),
+                                           actions=(action, *original.actions[1:])))
+        self.assertEqual(checked.action("save").transforms, (transform,))
+        self.assertEqual(checked.action("save").input_codec,
+                         validate_program(original).action("save").input_codec)
+        pure = checked.snapshot()["pure_library"]
+        self.assertEqual(pure["role"], "executable")
+        self.assertEqual(pure["entries"], ["preview"])
+        self.assertIn("pure:preview", checked.effects.server_reachable)
+        self.assertIn("pure:shorten", checked.effects.server_reachable)
+        self.assertNotIn("pure:bytes", checked.effects.server_reachable)
+        self.assertNotIn("pure:preview", checked.effects.client_reachable)
+        self.assertEqual(checked.effects.summary("pure:shorten").transitive_effects, frozenset())
+        self.assertEqual(checked.snapshot()["actions"][0]["transforms"], [
+            {"param": "title", "function": "preview", "args": ["title"]},
+        ])
+
+    def test_transform_missing_library_entry_and_exact_signatures_fail_closed(self) -> None:
+        original = application()
+        cases = (
+            (None, (ParamTransform("title", "preview", ("title",)),)),
+            (preview_library(), (ParamTransform("title", "missing", ("title",)),)),
+            (preview_library(), (ParamTransform("title", "shorten", ("title",)),)),
+            (preview_library(), (ParamTransform("title", "preview", ()),)),
+            (preview_library(), (ParamTransform("title", "preview", ("unknown",)),)),
+            (preview_library(), (ParamTransform("title", "preview", ("id",)),)),
+            (preview_library(), (ParamTransform("title", "preview", ("done",)),)),
+            (preview_library(), (ParamTransform("title", "bytes", ("title",)),)),
+            (preview_library(), (ParamTransform("unknown", "preview", ("title",)),)),
+            (preview_library(), (ParamTransform("title", "preview", ("title",)),
+                                 ParamTransform("title", "preview", ("title",)))),
+        )
+        for pure, transforms in cases:
+            with self.subTest(pure=pure is not None, transforms=transforms):
+                action = replace(original.actions[0], transforms=transforms)
+                with self.assertRaises(ProgramError) as raised:
+                    validate_program(replace(original, pure_library=pure,
+                                             actions=(action, *original.actions[1:])))
+                self.assertEqual(raised.exception.code, "W_PROGRAM_TRANSFORM")
+                self.assertTrue(raised.exception.path.startswith("actions.save.transforms."))
+
+    def test_transform_metadata_and_internal_helper_body_bind_semantic_hash(self) -> None:
+        original = application()
+        action = replace(original.actions[0], transforms=(ParamTransform(
+            "title", "preview", ("title",)),))
+        program = replace(original, pure_library=preview_library(),
+                          actions=(action, *original.actions[1:]))
+        checked = validate_program(program)
+        module = json.loads(preview_library())
+        module["functions"][1]["body"][0]["value"] = 1
+        changed = validate_program(replace(program, pure_library=canonical_bytes(module)))
+        self.assertNotEqual(checked.semantic_hash, changed.semantic_hash)
+        self.assertNotEqual(checked.semantic_hash, validate_program(replace(program,
+                           actions=(replace(action, transforms=()),
+                                    *original.actions[1:]))).semantic_hash)
+
+    def test_transforms_cannot_use_derived_targets_as_hidden_inputs(self) -> None:
+        original = application()
+        action = replace(original.actions[0], transforms=(ParamTransform(
+            "title", "preview", ("computed",)),))
+        self.rejected(replace(original, pure_library=preview_library(),
+                      actions=(action, *original.actions[1:])), "W_PROGRAM_TRANSFORM")
+
+    def test_executable_pure_library_cannot_raise_trusted_runtime_budgets(self) -> None:
+        original = application()
+        action = replace(original.actions[0], transforms=(ParamTransform(
+            "title", "preview", ("title",)),))
+        for name, value in (("max_steps", 100001), ("max_collection_expansion", 10001),
+                            ("max_call_depth", 65)):
+            with self.subTest(name=name):
+                module = json.loads(preview_library())
+                module["limits"][name] = value
+                source = canonical_bytes(module)
+                # An uncalled library still remains provenance, without runtime claims.
+                self.assertEqual(validate_program(replace(original, pure_library=source)).snapshot()
+                                 ["pure_library"]["role"], "provenance_only")
+                with self.assertRaises(ProgramError) as raised:
+                    validate_program(replace(original, pure_library=source,
+                                             actions=(action, *original.actions[1:])))
+                self.assertEqual(raised.exception.code, "W_PROGRAM_PURE")
+                self.assertEqual(raised.exception.path, "pure_library.limits." + name)
 
 
 if __name__ == "__main__":

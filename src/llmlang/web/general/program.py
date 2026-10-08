@@ -19,6 +19,12 @@ from llmlang.a1.effects import (
 )
 from llmlang.a1.ir import canonical_bytes as a1_canonical_bytes
 from llmlang.a1.ir import module_hash, validate_module
+from llmlang.a1.runtime import RUNTIME_VERSION as PURE_RUNTIME_VERSION
+from llmlang.a1.runtime import (
+    MAX_RUNTIME_CALL_DEPTH,
+    MAX_RUNTIME_COLLECTION,
+    MAX_RUNTIME_STEPS,
+)
 from llmlang.diagnostics import diagnostic
 
 from .codecs import (
@@ -26,7 +32,9 @@ from .codecs import (
     MAX_WIRE_BYTES,
     BoolType,
     CodecType,
+    IntType,
     ListType,
+    NatType,
     OptionType,
     RecordType,
     ScalarType,
@@ -61,6 +69,11 @@ type Control = Literal["input", "select", "checkbox"]
 FORMAT = "web-program-v1"
 CODEC_VERSION = "web-codecs-v1"
 QUERY_VERSION = "web-queries-v1"
+PURE_RUNTIME_LIMITS = (
+    ("max_steps", MAX_RUNTIME_STEPS),
+    ("max_collection_expansion", MAX_RUNTIME_COLLECTION),
+    ("max_call_depth", MAX_RUNTIME_CALL_DEPTH),
+)
 _NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}\Z")
 
 
@@ -74,11 +87,19 @@ class ProgramError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
+class ParamTransform:
+    param: str
+    function: str
+    args: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class QueryAction:
     name: str
     params: tuple[Param, ...]
     query: Query
     authorization: Authorization = "public"
+    transforms: tuple[ParamTransform, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,6 +221,7 @@ class ActionContract:
     compiled: CompiledQuery
     input_codec: RecordType | None
     output_codec: CodecType
+    transforms: tuple[ParamTransform, ...] = ()
 
     def decode_input(self, wire: object) -> dict[str, object]:
         if self.input_codec is None:
@@ -209,7 +231,10 @@ class ActionContract:
         else:
             decoded = cast(dict[str, Any], decode_value(self.input_codec, wire))
             result = cast(dict[str, object], decoded["fields"])
-        self.validate_inputs(result)
+        # Original wire scalars are checked above; query constraints are applied
+        # to the replacement values by the server before it binds SQL.
+        if not self.transforms:
+            self.validate_inputs(result)
         return result
 
     def validate_inputs(self, params: Mapping[str, object]) -> tuple[Scalar, ...]:
@@ -395,7 +420,7 @@ def _action(action: QueryAction, schema: Schema) -> ActionContract:
         raise ProgramError("W_PROGRAM_ACTION", "Action violates the typed query contract",
                            path) from error
     return ActionContract(action.name, action.params, action.query, action.authorization,
-                          compiled, input_codec, output)
+                          compiled, input_codec, output, action.transforms)
 
 
 def _view(view: View, actions: dict[str, ActionContract]) -> None:
@@ -578,12 +603,108 @@ def _pure(source: bytes | None, limits: ProgramLimits) -> dict[str, Any] | None:
         if not isinstance(module.get("functions"), list) or len(module["functions"]) > 64:
             _fail("W_PROGRAM_PURE", "Pure library permits at most 64 functions", "pure_library")
         validate_module(module)
-        return {"ir_hash": module_hash(module), "ir": module, "role": "provenance_only"}
+        return {"ir_hash": module_hash(module), "ir": module, "role": "provenance_only",
+                "entries": []}
     except (ValueError, RecursionError, TypeError) as error:
         if isinstance(error, ProgramError):
             raise
         raise ProgramError("W_PROGRAM_PURE", "Invalid canonical pure-library IR",
                            "pure_library") from error
+
+
+def _a1_scalar(raw: object, path: str) -> ScalarType:
+    """Resolve exactly the frozen A1 scalar spellings at the target boundary."""
+    aliases: dict[str, ScalarType] = {"Int": IntType(), "Nat": NatType(), "Bool": BoolType()}
+    if isinstance(raw, str) and raw in aliases:
+        return aliases[raw]
+    if isinstance(raw, dict):
+        kind = raw.get("kind")
+        primitives: dict[str, ScalarType] = {
+            "int": IntType(), "nat": NatType(), "bool": BoolType(),
+        }
+        if isinstance(kind, str) and kind in primitives:
+            return primitives[kind]
+        if kind == "text":
+            capacity = raw.get("capacity", raw.get("max_bytes"))
+            if type(capacity) is int:
+                text = TextType(capacity)
+                try:
+                    validate_type(text)
+                except ValueError as error:
+                    raise ProgramError("W_PROGRAM_TRANSFORM", "Unsupported target scalar type",
+                                       path) from error
+                return text
+    _fail("W_PROGRAM_TRANSFORM", "Pure entry requires a supported exact scalar signature", path)
+
+
+def _transforms(
+    actions: dict[str, ActionContract], pure: dict[str, Any] | None,
+) -> tuple[EffectFunction, ...]:
+    functions: dict[str, Any] = {} if pure is None else {
+        function["name"]: function for function in pure["ir"]["functions"]
+    }
+    exports: list[str] = []
+    for action in actions.values():
+        path = "actions." + action.name + ".transforms"
+        if type(action.transforms) is not tuple or len(action.transforms) > MAX_COLUMNS:
+            _fail("W_PROGRAM_TRANSFORM", "Bounded immutable transform tuple required", path)
+        params = {param.name: param.type for param in action.params}
+        targets: set[str] = set()
+        for index, transform in enumerate(action.transforms):
+            tpath = path + "." + str(index)
+            if type(transform) is not ParamTransform:
+                _fail("W_PROGRAM_TRANSFORM", "Declared parameter transform required", tpath)
+            if (type(transform.param) is not str or transform.param not in params
+                    or transform.param in targets):
+                _fail("W_PROGRAM_TRANSFORM", "Transform target must be a unique action input",
+                      tpath)
+            targets.add(transform.param)
+            if (pure is None or type(transform.function) is not str
+                    or transform.function not in functions
+                    or transform.function not in pure["ir"]["entrypoints"]):
+                _fail("W_PROGRAM_TRANSFORM", "Transform must name an actual pure-library entry",
+                      tpath)
+            if (type(transform.args) is not tuple
+                    or any(type(name) is not str or name not in params for name in transform.args)):
+                _fail("W_PROGRAM_TRANSFORM", "Transform arguments must name original action inputs",
+                      tpath)
+            function = functions[transform.function]
+            declared = function.get("params", [])
+            if len(transform.args) != len(declared):
+                _fail("W_PROGRAM_TRANSFORM", "Pure entry argument arity differs", tpath)
+            for name, argument in zip(transform.args, declared, strict=True):
+                if params[name] != _a1_scalar(argument["type"], tpath):
+                    _fail("W_PROGRAM_TRANSFORM", "Pure argument type differs from original input",
+                          tpath)
+            if params[transform.param] != _a1_scalar(function["result"], tpath):
+                _fail("W_PROGRAM_TRANSFORM", "Pure result type differs from target input", tpath)
+            if transform.function not in exports:
+                exports.append(transform.function)
+    if not exports:
+        return ()
+    assert pure is not None
+    for name, ceiling in PURE_RUNTIME_LIMITS:
+        if pure["ir"]["limits"][name] > ceiling:
+            _fail("W_PROGRAM_PURE", "Executable library exceeds trusted runtime ceiling",
+                  "pure_library.limits." + name)
+    pure["role"], pure["entries"] = "executable", exports
+    reachable: set[str] = set()
+    pending = list(exports)
+    edges: dict[str, tuple[str, ...]] = {}
+    while pending:
+        name = pending.pop()
+        if name in reachable:
+            continue
+        reachable.add(name)
+        calls = tuple(
+            instruction["callee"] if instruction["op"] == "call" else instruction["callback"]
+            for instruction in functions[name]["body"]
+            if instruction["op"] in ("call", "bounded_map", "bounded_fold")
+        )
+        edges[name] = calls
+        pending.extend(calls)
+    return tuple(EffectFunction("pure:" + name, "shared", calls=tuple(
+        "pure:" + callee for callee in edges[name])) for name in functions if name in reachable)
 
 
 def validate_program(
@@ -723,6 +844,7 @@ def validate_program(
                 declared_views[node.name] = node
     _selection(tuple(declared_views.values()), actions)
     pure = _pure(program.pure_library, limits)
+    pure_functions = _transforms(actions, pure)
 
     effect_functions: list[EffectFunction] = []
     for action in actions.values():
@@ -734,7 +856,9 @@ def validate_program(
             capabilities.add("identity.admin")
         effect_functions.append(EffectFunction(
             "server:" + action.name, "server", frozenset({effect}), frozenset(capabilities),
+            calls=tuple("pure:" + transform.function for transform in action.transforms),
             host_calls=(effect,)))
+    effect_functions.extend(pure_functions)
     for view in expanded:
         calls = (
             ("ui:" + view.selection.detail,)
@@ -758,12 +882,17 @@ def validate_program(
     snapshot = {
         "format": FORMAT, "name": program.name, "title": program.title,
         "versions": {"codec": CODEC_VERSION, "query": QUERY_VERSION,
+                     "pure_runtime": PURE_RUNTIME_VERSION,
+                     "pure_runtime_limits": dict(PURE_RUNTIME_LIMITS),
                      "effect_checker": EFFECT_CHECKER, "host_registry": REGISTRY_VERSION},
         "schema": [{"name": table.name, "columns": [
             {"name": column.name, "type": type_descriptor(column.type),
              "primary_key": column.primary_key, "unique": column.unique} for column in table.columns
         ]} for table in schema.tables],
         "actions": [{"name": action.name, "authorization": action.authorization,
+                     "transforms": [{"param": transform.param, "function": transform.function,
+                                     "args": list(transform.args)}
+                                    for transform in action.transforms],
                      "params": [{"name": param.name, "type": type_descriptor(param.type)}
                                 for param in action.params],
                      "query": _query_snapshot(action.query, schema),

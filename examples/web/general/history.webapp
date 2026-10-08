@@ -2,12 +2,14 @@
   (schema (table entries
     (id (Text 64) primary) (title (Text 512)) (revision Nat)))
   (action save ((id (Text 64)) (title (Text 512))) public
-    (insert entries (values (id id) (title title) (revision 0)) (project id title)))
+    (insert entries (values (id id) (title title) (revision 0)) (project id title))
+    (transform title title_preview (title)))
   (action browse () public
     (select_list entries (project id title) (order (id desc))
       (limit 8) (offset 0) (where)))
   (action fetch ((selected_id (Text 64))) public
     (select_unique entries id selected_id (project id title revision)))
+  (pure_library helpers)
   (library common)
   (import common editor editor)
   (import common browser browser)

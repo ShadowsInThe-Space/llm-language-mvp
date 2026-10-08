@@ -34,6 +34,7 @@ from .program import (
     FormView,
     InputField,
     ListView,
+    ParamTransform,
     ProgramError,
     ProgramLimits,
     QueryAction,
@@ -370,7 +371,7 @@ def _schema(node: _Node, source_map: dict[str, WebSourceSpan]) -> Schema:
 
 
 def _action(node: _Node, path: str, source_map: dict[str, WebSourceSpan]) -> QueryAction:
-    name, params_node, authorization, query = _form(node, "action", 5, 5)
+    name, params_node, authorization, query, *transform_nodes = _form(node, "action", 5)
     params: dict[str, Param] = {}
     source_map[path] = node.span
     source_map.setdefault(f"actions.{_name(name)}", node.span)
@@ -385,8 +386,20 @@ def _action(node: _Node, path: str, source_map: dict[str, WebSourceSpan]) -> Que
     policy = _name(authorization)
     if policy not in {"public", "authenticated", "admin"}:
         _fail("unsupported authorization policy", authorization, "POLICY", path)
+    transforms: list[ParamTransform] = []
+    for index, transform_node in enumerate(transform_nodes):
+        param_node, function_node, args_node = _form(transform_node, "transform", 4, 4)
+        transforms.append(ParamTransform(
+            _name(param_node), _name(function_node),
+            tuple(_name(arg) for arg in _items(args_node)),
+        ))
+        source_map[f"{path}.transforms[{index}]"] = transform_node.span
+        source_map.setdefault(
+            f"actions.{_name(name)}.transforms.{index}", transform_node.span
+        )
     return QueryAction(
         _name(name), tuple(params.values()), _query(query, params), cast(Authorization, policy),
+        tuple(transforms),
     )
 
 

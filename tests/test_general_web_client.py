@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 """Generated client behavior is exercised as plain TypeScript, not claimed browser evidence."""
 
+import os
 import shutil
 import subprocess
 import tempfile
@@ -8,6 +9,8 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
+from llmlang.a1.ir import canonical_bytes
+from llmlang.a1.source import parse_source as parse_pure_source
 from llmlang.web.general.client import emit_client
 from llmlang.web.general.codecs import (
     BoolType,
@@ -22,6 +25,7 @@ from llmlang.web.general.program import (
     FormView,
     InputField,
     ListView,
+    ParamTransform,
     ProgramError,
     QueryAction,
     Selection,
@@ -85,6 +89,108 @@ class ClientTests(unittest.TestCase):
         self.assertIn("new TextEncoder()", first)
         with self.assertRaises(ProgramError):
             emit_client(replace(application(), title=""))
+
+    def test_executable_pure_transform_and_internal_helpers_stay_server_only(self) -> None:
+        source = """(a1src1 (limits 100 10 8)
+          (fn server_only_preview ((text (Text 32))) (Text 32)
+            (let result (Text 32) (call server_only_shorten text)) (return result))
+          (fn server_only_shorten ((text (Text 32))) (Text 32)
+            (let count Nat (const 2))
+            (let result (Text 32) (text_prefix_codepoints text count)) (return result))
+          (entry server_only_preview))"""
+        original = application()
+        transform = ParamTransform("title", "server_only_preview", ("title",))
+        transformed = replace(original, pure_library=canonical_bytes(parse_pure_source(source).module),
+                              actions=(replace(original.actions[0], transforms=(transform,)),
+                                       *original.actions[1:]))
+        client = emit_client(transformed)
+        self.assertEqual(client, emit_client(original))
+        for server_detail in ("server_only_preview", "server_only_shorten", "text_prefix_codepoints",
+                              "a1-pure", "invokePure", "transforms", "pure_library", "a1-ir-v1"):
+            self.assertNotIn(server_detail, client)
+        different_body = source.replace("(const 2)", "(const 3)")
+        self.assertEqual(client, emit_client(replace(
+            transformed, pure_library=canonical_bytes(parse_pure_source(different_body).module))))
+
+    def test_actionable_controls_have_a_hydration_gate(self) -> None:
+        source = emit_client(application())
+        self.assertIn('const [ready, setReady] = useState(false)', source)
+        self.assertIn('setReady(true)', source)
+        self.assertIn('<fieldset disabled={!ready}>', source)
+        self.assertIn('disabled={!ready || state.status === "loading"}', source)
+        self.assertIn('disabled={!ready} onClick={() => controller.clear', source)
+        self.assertIn('if (ready) void controller.submitForm', source)
+
+    @unittest.skipUnless(os.environ.get("LLMLANG_REACT_TOOLCHAIN"),
+                         "Pinned React SSR/hydration toolchain unavailable")
+    def test_actual_generated_react_ssr_and_hydrated_dom(self) -> None:
+        toolchain = Path(os.environ["LLMLANG_REACT_TOOLCHAIN"]).resolve()
+        script = r'''
+const assert = require('node:assert/strict');
+const React = require('react');
+const {renderToString} = require('react-dom/server');
+const {JSDOM} = require('jsdom');
+const App = require('./App.js').default;
+const element = () => React.createElement(React.StrictMode, null, React.createElement(App));
+const html = renderToString(element());
+const dom = new JSDOM('<div id="root">' + html + '</div>', {
+  url: 'http://localhost:8787/', pretendToBeVisual: true,
+});
+const {document} = dom.window;
+const ssrFieldset = document.querySelector('fieldset');
+assert.ok(ssrFieldset.disabled, 'SSR form must remain inert');
+for (const button of document.querySelectorAll('button'))
+  assert.ok(button.disabled || button.closest('fieldset[disabled]'), 'SSR button is active');
+for (const control of document.querySelectorAll('input,select'))
+  assert.ok(control.disabled || control.closest('fieldset[disabled]'), 'SSR control is active');
+let submitted = false;
+document.querySelector('form').addEventListener('submit', () => submitted = true);
+document.querySelector('button[type="submit"]').click();
+assert.equal(submitted, false, 'SSR disabled submit must not cause a native submit');
+global.window = dom.window; global.document = document;
+global.HTMLElement = dom.window.HTMLElement;
+global.IS_REACT_ACT_ENVIRONMENT = true;
+const {hydrateRoot} = require('react-dom/client');
+(async () => {
+  let root;
+  await React.act(async () => {
+    root = hydrateRoot(document.getElementById('root'), element());
+  });
+  assert.equal(document.querySelector('fieldset').disabled, false, 'Hydration enables controls');
+  for (const button of document.querySelectorAll('button')) assert.equal(button.disabled, false);
+  for (const input of document.querySelectorAll('input,select')) {
+    assert.equal(input.labels.length, 1);
+    assert.equal(input.labels[0].htmlFor, input.id);
+  }
+  const form = document.querySelector('form');
+  let prevented;
+  await React.act(async () => {
+    prevented = !form.dispatchEvent(new dom.window.Event('submit', {bubbles:true,cancelable:true}));
+  });
+  assert.equal(prevented, true, 'Hydrated handler prevents native form navigation');
+  assert.equal(document.querySelector('[role="alert"]').textContent, 'Failed');
+  await React.act(async () => root.unmount());
+  dom.window.close();
+  console.log('actual React SSR and hydrated DOM passed');
+})().catch(error => {console.error(error);process.exitCode=1;});
+'''
+        with tempfile.TemporaryDirectory(prefix="hydration-", dir=toolchain) as directory:
+            folder = Path(directory)
+            (folder / "App.tsx").write_text(emit_client(application()))
+            (folder / "codecs.ts").write_text(emit_typescript_runtime())
+            (folder / "package.json").write_text('{"type":"commonjs"}')
+            (folder / "test.cjs").write_text(script)
+            compiled = subprocess.run([
+                str(toolchain / "node_modules/.bin/tsc"), "--strict", "--target", "ES2022",
+                "--module", "commonjs", "--moduleResolution", "node", "--jsx", "react-jsx",
+                "--esModuleInterop", "--lib", "DOM,ES2022", "--types", "react",
+                "App.tsx", "codecs.ts",
+            ], cwd=folder, text=True, capture_output=True, check=False, timeout=30)
+            self.assertEqual(compiled.returncode, 0, compiled.stdout + compiled.stderr)
+            result = subprocess.run(["node", str(folder / "test.cjs")], text=True,
+                                    capture_output=True, check=False, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("actual React SSR and hydrated DOM passed", result.stdout)
 
     @unittest.skipUnless(shutil.which("node"), "Node TypeScript execution unavailable")
     def test_controller_codec_failure_clear_and_stale_response_behavior(self) -> None:

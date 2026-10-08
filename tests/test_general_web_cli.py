@@ -24,7 +24,8 @@ class GeneralCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "app"
             args = (EXAMPLES / "history.webapp", "--library",
-                    f"common={EXAMPLES / 'common.webuilib'}", "--out", output)
+                    f"common={EXAMPLES / 'common.webuilib'}", "--pure-library",
+                    f"helpers={EXAMPLES / 'helpers.a1src'}", "--out", output)
             result = self.run_cli(*args)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
             self.assertEqual(json.loads(result.stdout)["status"], "compiled")

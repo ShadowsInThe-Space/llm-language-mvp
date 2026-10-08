@@ -4,7 +4,8 @@
     (done Bool) (priority Nat)))
   (action save ((id (Text 64)) (title (Text 512))) public
     (insert tasks (values (id id) (title title) (revision 0)
-      (done false) (priority 0)) (project id title)))
+      (done false) (priority 0)) (project id title))
+    (transform title title_preview (title)))
   (action browse () public
     (select_list tasks (project id title done priority revision) (order (priority desc))
       (limit 8) (offset 0) (where)))
@@ -14,14 +15,16 @@
     (done Bool) (priority Nat)) public
     (conditional_update tasks id id revision revision
       (values (title title) (done done) (priority priority))
-      (project id title revision done priority)))
+      (project id title revision done priority))
+    (transform title title_preview (title)))
+  (pure_library helpers)
   (library common)
   (import common editor editor)
   (import common browser browser)
   (use editor)
   (use browser)
   (form edit update
-    (fields (id "Task identifier" input) (title "Title" input)
+    (fields (id "Task identifier" input) (title "Title (first 120 characters saved)" input)
       (revision "Expected revision" input) (done "Completed" checkbox)
       (priority "Priority" input))
     (states "Updating" "Update failed or revision changed" "No update" "Updated")

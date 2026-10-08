@@ -6,7 +6,19 @@ Release policy: [one package, one merge, one release](docs/RELEASE-WORKFLOW.md).
 
 ## [Unreleased]
 
-No changes yet.
+### M3 work branch — not yet released
+
+- General typed web sources and reusable UI components compile history and task
+  applications through the same checked codec/query/server/client pipeline.
+- Typed server-side parameter transforms call a shared A1 library through a
+  bounded portable runtime; generated runtime and source snapshots are bound by
+  the reproducible build manifest.
+- Form and data controls remain disabled until React hydration is ready.
+- Independent effect/capability checking, exact wire budgets, source binding and
+  generated-target regression coverage are additive to the frozen profiles.
+
+Actual pinned host, D1 and browser acceptance remains required before M3 release;
+see [the implementation preview](docs/GENERAL-WEB-PREVIEW.md).
 
 ## [0.6.0] - 2026-09-20
 

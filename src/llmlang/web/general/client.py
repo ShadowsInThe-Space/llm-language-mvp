@@ -237,12 +237,13 @@ function initialDraft(view: Extract<View, {kind: "form"}>): Record<string, unkno
   return Object.fromEntries(view.fields.map(field => [field.param,
     field.control === "select" ? field.choices[0].wire : field.type.kind === "bool" ? false : ""]));
 }
-function FormPanel({view, controller, state}: {view: Extract<View, {kind: "form"}>; controller: ClientController; state: ViewState}) {
+function FormPanel({view, controller, state, ready}: {view: Extract<View, {kind: "form"}>; controller: ClientController; state: ViewState; ready: boolean}) {
   const [draft, setDraft] = useState<Record<string, unknown>>(() => initialDraft(view));
   const change = (name: string, value: unknown) => setDraft(previous => ({...previous, [name]: value}));
   const outcome = state.value as (Row & {tag?: string; value?: Row}) | null;
   const confirmed = outcome?.tag === "Some" ? outcome.value : outcome?.tag === "None" ? null : outcome;
-  return <form onSubmit={event => {event.preventDefault(); void controller.submitForm(view.name, draft);}}>
+  return <form onSubmit={event => {event.preventDefault(); if (ready) void controller.submitForm(view.name, draft);}}>
+    <fieldset disabled={!ready}>
     {view.fields.map(field => {
       const id = `${SPEC.name}-${view.name}-${field.param}`;
       return <div key={field.param}><label htmlFor={id}>{field.label}</label>
@@ -258,25 +259,26 @@ function FormPanel({view, controller, state}: {view: Extract<View, {kind: "form"
           value={String(draft[field.param])} onChange={event => change(field.param, event.target.value)} />}
       </div>;
     })}
-    <button type="submit" disabled={state.status === "loading"}>{view.submitLabel}</button>
-    <button type="button" onClick={() => controller.clear(view.name)}>{view.clearLabel}</button>
+    <button type="submit" disabled={!ready || state.status === "loading"}>{view.submitLabel}</button>
+    <button type="button" disabled={!ready} onClick={() => controller.clear(view.name)}>{view.clearLabel}</button>
     {confirmed && <dl aria-label="Saved values">{Object.entries(confirmed.fields).map(([name, value]) =>
       <React.Fragment key={name}><dt>{view.fields.find(field => field.param === name)?.label ?? name}</dt>
         <dd>{display(value)}</dd></React.Fragment>)}</dl>}
+    </fieldset>
   </form>;
 }
-function DataPanel({view, controller, state}: {view: Exclude<View, {kind: "form"}>; controller: ClientController; state: ViewState}) {
+function DataPanel({view, controller, state, ready}: {view: Exclude<View, {kind: "form"}>; controller: ClientController; state: ViewState; ready: boolean}) {
   const value = state.value as {list?: Row[]; tag?: string; value?: Row} | null;
   const rows = view.kind === "list" ? value?.list ?? [] : value?.tag === "Some" && value.value ? [value.value] : [];
   return <div>
-    {view.kind === "list" && <button type="button" disabled={state.status === "loading"}
+    {view.kind === "list" && <button type="button" disabled={!ready || state.status === "loading"}
       onClick={() => {void controller.loadList(view.name);}}>Load</button>}
-    <button type="button" onClick={() => controller.clear(view.name)}>Clear</button>
+    <button type="button" disabled={!ready} onClick={() => controller.clear(view.name)}>Clear</button>
     {rows.length > 0 && <table><thead><tr>{view.columns.map(column => <th key={column.column} scope="col">{column.label}</th>)}
       {view.kind === "list" && view.selection && <th scope="col">Details</th>}</tr></thead>
       <tbody>{rows.map((row, index) => <tr key={index}>{view.columns.map(column =>
         <td key={column.column}>{display(row.fields[column.column])}</td>)}
-        {view.kind === "list" && view.selection && <td><button type="button"
+        {view.kind === "list" && view.selection && <td><button type="button" disabled={!ready}
           onClick={() => {void controller.selectRow(view.name, row);}}>Select {index + 1}</button></td>}
       </tr>)}</tbody></table>}
   </div>;
@@ -284,16 +286,18 @@ function DataPanel({view, controller, state}: {view: Exclude<View, {kind: "form"
 export default function GeneralApp({endpoint = "/api/general"}: {endpoint?: string}) {
   const controller = useMemo(() => createClientController(endpoint), [endpoint]);
   const [, redraw] = useState(0);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     const unsubscribe = controller.subscribe(() => redraw(value => value + 1));
+    setReady(true);
     return () => {unsubscribe(); controller.dispose();};
   }, [controller]);
   return <main><h1>{SPEC.title}</h1>{SPEC.views.map(view => {
     const state = controller.getState(view.name);
     return <section key={view.name} aria-label={view.name} aria-busy={state.status === "loading"}>
       <p role={state.status === "error" ? "alert" : "status"}>{view.states[state.status]}</p>
-      {view.kind === "form" ? <FormPanel view={view} controller={controller} state={state} />
-        : <DataPanel view={view} controller={controller} state={state} />}
+      {view.kind === "form" ? <FormPanel view={view} controller={controller} state={state} ready={ready} />
+        : <DataPanel view={view} controller={controller} state={state} ready={ready} />}
     </section>;
   })}</main>;
 }

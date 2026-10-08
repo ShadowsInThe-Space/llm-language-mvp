@@ -18,7 +18,8 @@ WebProgram(
     name, title, schema, actions, views,
     components=(), libraries=(), imports=(), pure_library=None,
 )
-QueryAction(name, params, query, authorization="public")
+QueryAction(name, params, query, authorization="public", transforms=())
+ParamTransform(param, function, args)
 ```
 
 Program/action/component/view IDs use ASCII identifiers of 1..64 characters.
@@ -64,15 +65,20 @@ must invoke `validate_program` on every invocation and use the returned
 snapshot/contracts, never trust a `checked` marker or external manifest.
 
 An `ActionContract` retains `name`, ordered `params`, closed `query`,
-`authorization`, generated `CompiledQuery`, `input_codec` and `output_codec`.
+`authorization`, generated `CompiledQuery`, `input_codec`, `output_codec` and
+an immutable `transforms` tuple.
 No query SQL is taken from user input; SQL in the compiled contract is derived
 by the closed query compiler.
 
 For action `save`, nonempty inputs use nominal `RecordType("saveInput", ...)`;
 fields are exactly its parameter declarations. A parameter-free action has
 `input_codec=None` and accepts exactly `{}`. `decode_input(wire)` returns
-validated native parameter data and rechecks the compiled bindings. Ordinary
-input fields cannot create or replace host authority.
+validated original native parameter data. Without transforms it also checks
+the compiled bindings. With transforms, query-specific binding constraints
+are checked only after the server has computed all replacements.
+`validate_inputs(post_transform_params)` performs that final query-binding
+validation, including revision incrementability. Ordinary input fields and
+pure scalar results cannot create or replace host authority.
 
 Projected rows use nominal `RecordType("saveRow", ...)`, with exact projected
 schema fields in declaration order. The output wrapper follows query
@@ -207,15 +213,57 @@ server/build artifact; copying it wholesale into generated client code would
 violate this boundary. This model checks structure and provenance, not the
 implementation of a host's authentication or authorization.
 
-## Pure library provenance
+## Bound pure libraries and server parameter transforms
 
 `pure_library` is optional exact canonical `a1-ir-v1` bytes, bounded to 131072
 bytes and at most 64 function declarations. The existing A1 validator checks
 it independently; its `module_hash` and complete IR are bound in the WebIR
 snapshot. Noncanonical JSON, duplicate-key encodings, malformed or unsupported
-IR are rejected. The role is explicitly `provenance_only`: no pure function
-call integration, evaluation, property proof or used-entry proof is advertised
-by this model. The binding cannot turn an external manifest into evidence.
+IR are rejected. An unused library has role `provenance_only` and an empty
+runtime entry whitelist; retaining its bytes does not claim execution or a
+proof. A library used by an actual parameter transform has role `executable`
+and an exact ordered inventory of the distinct used exported entries.
+
+`ParamTransform(param, function, args)` replaces one declared query input
+parameter with a server-side pure function result. Its arguments are an exact
+tuple of original decoded action parameter names. All transforms read those
+original values, independent of declaration order; no transform may read a
+previous replacement as an implicit intermediate. Targets must be distinct
+declared action parameters, so there are at most as many transforms as query
+parameters (at most 32). The client input contract remains unchanged.
+
+The function must exist in the validated A1 module and be explicitly listed
+in its actual `entrypoints`. It must have the exact argument arity and scalar
+types of the referenced action inputs and the exact result type of the target.
+Supported entry signature types are Bool, Int, Nat and bounded Text with exact
+capacity equality. Int and Nat are distinct; capacities are not widened.
+Records, collections, Unit or other types cannot appear in a transform entry
+signature. Internal pure functions retain the frozen A1 rules.
+
+Missing libraries, unexported/unknown functions, unknown arguments or targets,
+wrong signatures, mutable metadata and duplicate targets fail with
+`W_PROGRAM_TRANSFORM` at `actions.<name>.transforms.<index>` (a malformed tuple
+is diagnosed at the transforms field). The compiler derives action-to-pure
+edges and the transitive pure ordinary/callback graph from actual validated
+A1 instructions, not advertised summaries. Only reachable pure functions
+appear in this graph; shared pure functions carry no host capabilities.
+
+The server authenticates/authorizes the action before invoking pure code. It
+evaluates transformations from the original decoded inputs, validates returned
+values, applies replacements simultaneously, then rechecks query bindings and
+CAS revision limits before issuing SQL. A pure failure, unsafe target integer
+or exhausted resource budget must terminate the action before DB execution.
+
+The portable runtime version is `a1-pure-runtime-v1`, bound together with the
+complete pure IR, its semantic hash, internal helper bodies and ordered
+transform metadata. Used executable libraries cannot raise declared budgets
+above trusted ceilings: 100000 steps, 10000 collection expansions and call
+depth 64. These limits are per fresh pure invocation; they are never silently
+widened, and the bounded number of transforms bounds the number of invocations
+per action. Dormant provenance-only libraries make no runtime-budget claim.
+The runtime also validates its native host values and rejects values outside
+the exact target range. This integration remains separate from A1 proof
+evidence and does not turn an external manifest into a property proof.
 
 ## Limits, diagnostics and canonical binding
 
@@ -230,7 +278,8 @@ canonical-byte limits fail closed.
 `ProgramError` supplies the existing `diagnostic-v1` envelope with stable code
 and dotted path. Codes are `W_PROGRAM_BINDING`, `W_PROGRAM_SCHEMA`,
 `W_PROGRAM_ACTION`, `W_PROGRAM_VIEW`, `W_PROGRAM_COMPONENT`, `W_PROGRAM_PURE`,
-`W_PROGRAM_EFFECT`, `W_PROGRAM_LIMIT`, and `W_PROGRAM_INPUT`. External values
+`W_PROGRAM_EFFECT`, `W_PROGRAM_LIMIT`, `W_PROGRAM_INPUT` and
+`W_PROGRAM_TRANSFORM`. External values
 are not interpolated into diagnostics. Declaration order determines failure
 order. Codec/query runtime errors retain their own typed-boundary diagnostics.
 
@@ -239,7 +288,8 @@ parameter descriptor, original component/library/import, expanded UI binding,
 all labels/states, inferred action codecs, authorization requirements, pure
 library provenance, effect graph report and explicit limits. Versions include
 `web-codecs-v1`, `web-queries-v1`, `a1-effects-check-v1` and
-`a1-host-effects-v1`. Canonical JSON has sorted object keys, ASCII escapes, no
+`a1-host-effects-v1` and `a1-pure-runtime-v1`. Canonical JSON has sorted object
+keys, ASCII escapes, no
 insignificant whitespace and no NaN/Infinity. Semantic binding is:
 
 ```text
