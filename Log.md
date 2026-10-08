@@ -588,3 +588,27 @@ Der vierte Durchgang schloss den letzten Wildcardpfad: `list_empty` verlangt
 jetzt einen expliziten Elementtyp mit übereinstimmender Kapazität.
 Vor Release folgen frische Wheel-Installation, GitHub-CI und unabhängiger
 KI-Fachreview.
+
+
+## 2026-10-08 — M3 implementation started (#21, #22, #32)
+
+- Authorized scope: the full roadmap, delivered one milestone at a time; current
+  work branch `milestone/m3`, release candidate remains `ready: false`.
+- Four bounded GPT-6.1-Sol workers handle effect checking, wire codecs, typed SQL
+  queries and the additive A1 source frontend. Integration and independent review
+  remain separate responsibilities. Existing W1/W2/pkg1 fixtures remain frozen.
+- The workspace had no checkout. All 273 upstream blobs, the root tree and the
+  signed upstream commit `853d7e73aec56fa37325833b3ec1a0394cc2d0a4` were
+  reconstructed through the GitHub connector and verified by Git object hashes.
+  Local history is a shallow checkout at that original commit.
+- Python 3.13 environment created. Locked dependency installation is blocked by
+  DNS/network access; pytest, Ruff, Mypy and Z3 are unavailable locally. Isolated
+  stdlib unittest behavior checks do not replace the mandated full acceptance.
+- TDD regression: canonical JSON sorting changed record_make field dictionary
+  order and caused valid nonalphabetical record declarations to fail validation.
+  RED: one canonical roundtrip error, two other checks passed. GREEN: compare
+  the exact field-name set (as the existing type checker already does), preserving
+  nominal identities, field types and ordered declarations in the semantic hash.
+  All three `test_a1_canonical_record.py` tests now pass on Python 3.13.
+- No release, completion claim or issue closure. Real D1/browser evidence and
+  the full matrix remain required before M3 acceptance.

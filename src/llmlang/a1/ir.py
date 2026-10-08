@@ -232,7 +232,7 @@ def validate_module(module: object) -> dict[str, Any]:
                 )
                 assert isinstance(type_name, str) and isinstance(supplied, dict)
                 _require(
-                    tuple(supplied) == records[type_name],
+                    set(supplied) == set(records[type_name]),
                     "E_A1_RECORD_FIELDS",
                     "record fields differ",
                     iloc,
