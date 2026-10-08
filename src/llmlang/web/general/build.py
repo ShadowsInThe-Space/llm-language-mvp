@@ -108,9 +108,9 @@ def write_build(build: GeneralBuild, output: Path) -> Path:
         raise FileExistsError(target)
     snapshot = dict(build.files)
     for name, text in snapshot.items():
-        path = PurePosixPath(name)
-        if (not name or path.is_absolute() or str(path) != name
-                or any(part in {".", ".."} for part in path.parts) or "\\" in name
+        relative_path = PurePosixPath(name)
+        if (not name or relative_path.is_absolute() or str(relative_path) != name
+                or any(part in {".", ".."} for part in relative_path.parts) or "\\" in name
                 or not isinstance(text, str)):
             raise ValueError("Invalid artifact path or content")
     target.parent.mkdir(parents=True, exist_ok=True)

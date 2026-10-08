@@ -152,7 +152,7 @@ def check_effect_graph(
     for item in snapshot:
         if not isinstance(item, EffectFunction) or not isinstance(item.name, str) or not item.name:
             _fail("E_A1_BINDING", "named EffectFunction required", ("functions",))
-        path = ("functions", item.name)
+        path: tuple[str, ...] = ("functions", item.name)
         if item.name in table:
             _fail("E_A1_BINDING", "duplicate function", (*path, "name"))
         table[item.name] = item
@@ -230,10 +230,10 @@ def check_effect_graph(
         effects = set(item.effects)
         capabilities = set(item.capabilities)
         depth = 1
-        for callee in item.calls:
-            effects.update(summaries[callee].transitive_effects)
-            capabilities.update(summaries[callee].transitive_capabilities)
-            depth = max(depth, depths[callee] + 1)
+        for callee_name in item.calls:
+            effects.update(summaries[callee_name].transitive_effects)
+            capabilities.update(summaries[callee_name].transitive_capabilities)
+            depth = max(depth, depths[callee_name] + 1)
         summaries[name] = EffectSummary(name, frozenset(effects), frozenset(capabilities))
         depths[name] = depth
         for parent in parents[name]:

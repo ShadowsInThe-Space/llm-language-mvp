@@ -276,7 +276,7 @@ def _scalar(node: _Node) -> Scalar:
     if node.kind == "integer":
         return int(node.value)
     if node.kind == "symbol" and node.value in {"true", "false"}:
-        return node.value == "true"
+        return str(node.value) == "true"
     _fail("scalar literal required", node)
 
 
@@ -561,9 +561,11 @@ def _parse(
             declared_libraries.append(library)
             source_map[f"libraries.{library}"] = node.span
         elif kind == "import":
-            library, component, alias = _form(node, kind, 4, 4)
+            library_node, component_node, alias_node = _form(node, kind, 4, 4)
             source_map[f"imports[{len(imports)}]"] = node.span
-            imports.append(ComponentImport(_name(library), _name(component), _name(alias)))
+            imports.append(ComponentImport(
+                _name(library_node), _name(component_node), _name(alias_node)
+            ))
         elif kind == "pure_library":
             if pure_name is not None:
                 _fail("only one pure library snapshot is supported", node)

@@ -677,7 +677,9 @@ def validate_program(
             expansion_count += 1
             if expansion_count > limits.max_nodes:
                 _fail("W_PROGRAM_LIMIT", "Component expansion budget exceeded", "views")
-            if type(node) is ComponentUse:
+            if isinstance(node, ComponentUse):
+                if type(node) is not ComponentUse:
+                    _fail("W_PROGRAM_VIEW", "Closed view node required", "views")
                 _name(node.name, "components.use")
                 reference = imported.get(node.name) if not scope else None
                 if reference is None:

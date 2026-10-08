@@ -654,3 +654,11 @@ KI-Fachreview.
   deterministic cycle rejection while allowing the declared graph. GREEN: three
   tests cover valid shallow execution, cycle rejection and the unchanged runtime
   call-depth limit. No Python recursion-limit tuning or budget bypass.
+
+- Checkpoint `4779faa3e398df72b71b7acec4d890fd50a37e14`: full pytest
+  638 tests plus 176 subtests and Ruff passed; both generated examples passed
+  strict TypeScript 5.9.3 with React 19.2.2 types. Mypy identified 14 variable
+  reuse/narrowing errors in four new files. These were fixed without suppressions
+  or relaxed strictness; focused effects/program/source/build tests remain green.
+  The next exact checkpoint must pass the full matrix before calling this code
+  baseline verified. M3 scope/release acceptance remains independently incomplete.
