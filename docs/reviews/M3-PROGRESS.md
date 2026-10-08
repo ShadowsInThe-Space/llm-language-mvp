@@ -52,3 +52,11 @@ acceptance and a final package review. See `docs/GENERAL-WEB-PREVIEW.md`.
 
 No issue has been closed, no final M3 PR opened, no milestone merged or released.
 Token usage, aggregate throughput and complete wall-time counters are unavailable.
+
+## Exact checked implementation checkpoint
+
+`3bc7b319565644dff577cae96b20dcc4ac971968` passed both Python 3.12/3.13
+CI jobs: 638 tests plus 176 subtests, Ruff and strict Mypy. Both generated example
+targets passed strict TypeScript. Evidence: GitHub Actions run
+https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37800192253.
+This evidence does not change the remaining M3 acceptance boundaries above.

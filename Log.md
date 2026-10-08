@@ -662,3 +662,16 @@ KI-Fachreview.
   or relaxed strictness; focused effects/program/source/build tests remain green.
   The next exact checkpoint must pass the full matrix before calling this code
   baseline verified. M3 scope/release acceptance remains independently incomplete.
+
+- Verified exact implementation checkpoint
+  `3bc7b319565644dff577cae96b20dcc4ac971968`: GitHub Actions run
+  https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37800192253
+  succeeded on Python 3.12 and 3.13. Each matrix job passed 638 tests plus
+  176 subtests, Ruff and strict Mypy (50 source files). The Python 3.13 job also
+  passed strict generated-target TypeScript for both history and tasks.
+- This is a verified implementation checkpoint, not M3 completion. Outstanding
+  executable pure-library integration, pinned host, actual D1/browser and final
+  wheel/release acceptance are tracked in docs/GENERAL-WEB-PREVIEW.md.
+  No issue was closed, final PR created, main merged or release published.
+- Resource counters for aggregate tokens, wall-time tokens/s and complete elapsed
+  session duration are unavailable; no worker token counts are estimated.
