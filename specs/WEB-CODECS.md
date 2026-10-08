@@ -31,6 +31,7 @@ Every public operation validates the complete descriptor before use:
 validate_type(codec) -> None
 type_descriptor(codec) -> dict[str, object]
 max_wire_bytes(codec) -> int
+max_wire_nodes(codec) -> int
 encode_value(codec, native_value) -> object
 decode_value(codec, parsed_wire_value) -> object
 encode_json(codec, native_value) -> str
@@ -46,7 +47,8 @@ HTTP callers must use `decode_json` on the bounded raw body instead.
 
 The standalone TypeScript module exports `CodecType`, `CodecError`,
 `CODEC_VERSION`, `validateType`, `encodeValue`, `decodeValue`, `encodeJson` and
-`decodeJson`, `parseWireJson` and `maxWireBytes`. The untyped parser handles the action envelope
+`decodeJson`, `parseWireJson`, `maxWireBytes` and `maxWireNodes`.
+The untyped parser handles the action envelope
 before selecting its declared input codec: dispatch must independently enforce
 the exact action/input envelope fields and action allowlist, then decodeValue
 with the selected trusted type. Parsing alone does not license any value type.
@@ -171,6 +173,28 @@ declared list limit is an explicit source/interface change. Static bounds may
 overapproximate values excluded by independent node/depth budgets. Therefore a
 passing byte bound alone does not prove those other resource gates.
 
+`max_wire_nodes(codec)` also validates the complete descriptor and returns an
+exact conservative structural JSON parser node bound using Python integer
+arithmetic. `maxWireNodes(type)` returns the identical count as TS bigint.
+The budget counts every object/array scope, every object key, and every primitive
+value, including nominal IDs and Option tags. It differs from native value
+traversal, which does not visit wire envelope keys.
+
+| Type | Maximum structural JSON nodes |
+| --- | --- |
+| Text / Int / Nat / Bool | `1` |
+| Option(T) | `4 + nodes(T)` (None has 5) |
+| List(T,n) | `1 + n*nodes(T)` |
+| Record(ID,fields) | `5 + sum(1 + nodes(fieldtype))` |
+
+Actions must fit both byte and node bounds before emission: output nodes must
+not exceed MAX_NODES; the canonical `{action,input}` request envelope adds four
+nodes to its input bound (object, two keys and action string). A list of 80
+31-Bool-field records fits 32768 wire bytes but has 5361 JSON nodes, exceeding
+4096; a 60-row declaration has 4021 nodes and passes both gates. Neither bound
+changes declared types or suppresses runtime validation. Independent JSON depth
+and native value budgets still apply.
+
 Stable error codes: `W_CODEC_TYPE`, `W_CODEC_VALUE`, `W_CODEC_INTEGER`,
 `W_CODEC_TEXT`, `W_CODEC_CAPACITY`, `W_CODEC_JSON`, `W_CODEC_LIMIT`.
 Python CodecError exposes code/message/path and `to_dict()` in diagnostic-v1.
@@ -192,6 +216,11 @@ the implemented bounds now reject a 50-row task codec statically and permit its
 explicit 8-row counterpart. Additional Python/Node comparisons check the bound
 against actual worst-case escaped canonical encodings and agree on an exact
 large nested-list count exceeding JS's safe Number range.
+The subsequent node-bound integration RED reproduced legal native records whose
+canonical wire JSON exceeded the parser node budget while fitting its byte
+budget. Tests imported the missing node-bound helper first; the completed helper
+now distinguishes the 80/60-row cases and counts actual instantiated wire keys
+and scopes. Python and emitted TS agree on exact node bounds as well as bytes.
 
 The differential suite executes emitted TypeScript in Node and compares native
 decoded data, exact canonical output, and rejection codes against Python. Cases

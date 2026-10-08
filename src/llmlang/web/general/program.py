@@ -7,7 +7,7 @@ import json
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Literal, NoReturn, TypeAlias, cast
+from typing import Any, Literal, NoReturn, cast
 
 from llmlang.a1.effects import CHECKER as EFFECT_CHECKER
 from llmlang.a1.effects import (
@@ -22,6 +22,7 @@ from llmlang.a1.ir import module_hash, validate_module
 from llmlang.diagnostics import diagnostic
 
 from .codecs import (
+    MAX_NODES,
     MAX_WIRE_BYTES,
     BoolType,
     CodecType,
@@ -33,6 +34,7 @@ from .codecs import (
     decode_value,
     encode_value,
     max_wire_bytes,
+    max_wire_nodes,
     type_descriptor,
     validate_type,
 )
@@ -54,8 +56,8 @@ from .queries import (
     compile_query,
 )
 
-Authorization: TypeAlias = Literal["public", "authenticated", "admin"]
-Control: TypeAlias = Literal["input", "select", "checkbox"]
+type Authorization = Literal["public", "authenticated", "admin"]
+type Control = Literal["input", "select", "checkbox"]
 FORMAT = "web-program-v1"
 CODEC_VERSION = "web-codecs-v1"
 QUERY_VERSION = "web-queries-v1"
@@ -140,8 +142,8 @@ class ComponentUse:
     name: str
 
 
-View: TypeAlias = FormView | ListView | DetailView
-ViewNode: TypeAlias = View | ComponentUse
+type View = FormView | ListView | DetailView
+type ViewNode = View | ComponentUse
 
 
 @dataclass(frozen=True, slots=True)
@@ -379,6 +381,13 @@ def _action(action: QueryAction, schema: Schema) -> ActionContract:
                   path + ".input")
         if max_wire_bytes(output) > MAX_WIRE_BYTES:
             _fail("W_PROGRAM_LIMIT", "Action result exceeds the worst-case wire budget",
+                  path + ".output")
+        input_nodes = 1 if input_codec is None else max_wire_nodes(input_codec)
+        if input_nodes + 4 > MAX_NODES:
+            _fail("W_PROGRAM_LIMIT", "Action request exceeds the worst-case JSON node budget",
+                  path + ".input")
+        if max_wire_nodes(output) > MAX_NODES:
+            _fail("W_PROGRAM_LIMIT", "Action result exceeds the worst-case JSON node budget",
                   path + ".output")
     except ValueError as error:
         if isinstance(error, ProgramError):

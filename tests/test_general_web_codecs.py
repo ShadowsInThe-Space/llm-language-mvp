@@ -11,6 +11,7 @@ from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 from llmlang.web.general.codecs import (
+    MAX_NODES,
     MAX_SAFE_INTEGER,
     MAX_WIRE_BYTES,
     BoolType,
@@ -27,12 +28,39 @@ from llmlang.web.general.codecs import (
     encode_json,
     encode_value,
     max_wire_bytes,
+    max_wire_nodes,
     parse_wire_json,
     type_descriptor,
 )
 
 
 class CodecAcceptance(unittest.TestCase):
+    def test_static_json_node_bound_rejects_rows_that_fit_byte_budget(self) -> None:
+        row = RecordType("R", tuple((f"f{index}", BoolType()) for index in range(31)))
+        codec = ListType(row, 80)
+        value = {"record": "R", "fields": {f"f{index}": False for index in range(31)}}
+        wire = encode_value(codec, {"list": [value] * 80, "capacity": 80})
+        raw = json.dumps(wire, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+        self.assertLessEqual(max_wire_bytes(codec), MAX_WIRE_BYTES)
+        self.assertLessEqual(len(raw.encode("ascii")), MAX_WIRE_BYTES)
+        self.assertEqual(max_wire_nodes(row), 67)
+        self.assertEqual(max_wire_nodes(codec), 5361)
+        self.assertGreater(max_wire_nodes(codec), MAX_NODES)
+        with self.assertRaises(CodecError) as rejected:
+            encode_json(codec, {"list": [value] * 80, "capacity": 80})
+        self.assertEqual(rejected.exception.code, "W_CODEC_LIMIT")
+        self.assertEqual(rejected.exception.path, "json")
+        smaller = ListType(row, 60)
+        self.assertLessEqual(max_wire_nodes(smaller), MAX_NODES)
+        self.assertEqual(
+            decode_json(smaller, encode_json(smaller, {"list": [value] * 60, "capacity": 60})),
+            {"list": [value] * 60, "capacity": 60},
+        )
+        self.assertEqual(max_wire_nodes(OptionType(TextType(0))), 5)
+        self.assertEqual(max_wire_nodes(OptionType(row)), 71)
+        with self.assertRaises(CodecError):
+            max_wire_nodes(TextType(True))
+
     def test_static_wire_bound_accounts_for_escape_and_composite_overheads(self) -> None:
         self.assertEqual(max_wire_bytes(TextType(0)), 2)
         self.assertEqual(max_wire_bytes(TextType(8)), 50)
@@ -83,21 +111,37 @@ class CodecAcceptance(unittest.TestCase):
             encoded = encode_json(codec, native)
             bound = max_wire_bytes(codec)
             self.assertLessEqual(len(encoded.encode("ascii")), bound)
-            expected.append({"bound": str(bound), "encoded": encoded})
+            def count_nodes(wire: object) -> int:
+                if isinstance(wire, dict):
+                    return 1 + len(wire) + sum(count_nodes(child) for child in wire.values())
+                if isinstance(wire, list):
+                    return 1 + sum(count_nodes(child) for child in wire)
+                return 1
+
+            nodes = max_wire_nodes(codec)
+            self.assertLessEqual(count_nodes(json.loads(encoded)), nodes)
+            expected.append({"bound": str(bound), "nodes": str(nodes), "encoded": encoded})
         large = type_descriptor(ListType(TextType(32768), 4096))
         payload.append({"type": large})
-        expected.append({"bound": str(max_wire_bytes(ListType(TextType(32768), 4096)))})
+        expected.append({
+            "bound": str(max_wire_bytes(ListType(TextType(32768), 4096))),
+            "nodes": str(max_wire_nodes(ListType(TextType(32768), 4096))),
+        })
         nested = TextType(1)
         for _ in range(31):
             nested = ListType(nested, 4096)
         payload.append({"type": type_descriptor(nested)})
-        expected.append({"bound": str(max_wire_bytes(nested))})
+        expected.append(
+            {"bound": str(max_wire_bytes(nested)), "nodes": str(max_wire_nodes(nested))}
+        )
         harness = "\nconst boundCases = " + json.dumps(payload, ensure_ascii=True) + ";\n"
         harness += (
             "console.log(JSON.stringify(boundCases.map(c => Object.hasOwn(c,'value') "
             "? {bound:maxWireBytes(c.type as CodecType).toString(),"
+            "nodes:maxWireNodes(c.type as CodecType).toString(),"
             "encoded:encodeJson(c.type as CodecType,c.value)} "
-            ": {bound:maxWireBytes(c.type as CodecType).toString()})));\n"
+            ": {bound:maxWireBytes(c.type as CodecType).toString(),"
+            "nodes:maxWireNodes(c.type as CodecType).toString()})));\n"
         )
         with tempfile.TemporaryDirectory() as directory:
             script = Path(directory) / "bounds.ts"

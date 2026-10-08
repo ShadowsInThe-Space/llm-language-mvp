@@ -16,7 +16,6 @@ from llmlang.web.general.source import (
     parse_web_source,
 )
 
-
 UI = '''(webuilib1 common
   (component editor
     (form edit save (fields (id "ID" input) (title "Text" input))
@@ -173,10 +172,14 @@ class WebSourceTests(unittest.TestCase):
         pure = '''(a1src1 (limits 100 10 8)
           (fn identity ((x Int)) Int (return x)) (entry identity))'''
         source = application().replace("(library common)", "(pure_library helpers) (library common)")
-        parsed = parse_web_source(source, library_sources={"common": UI}, pure_sources={"helpers": pure})
+        parsed = parse_web_source(
+            source, library_sources={"common": UI}, pure_sources={"helpers": pure}
+        )
         self.assertEqual(parsed.checked.snapshot()["pure_library"]["role"], "provenance_only")
-        self.assertFalse(check_web_source_binding(source, parsed.program,
-            library_sources={"common": UI}, pure_sources={"helpers": pure.replace("100", "101")}))
+        self.assertFalse(check_web_source_binding(
+            source, parsed.program, library_sources={"common": UI},
+            pure_sources={"helpers": pure.replace("100", "101")}
+        ))
         with self.assertRaises(WebSourceError):
             parse_web_source(source, library_sources={"common": UI}, pure_sources={"helpers": pure},
                              limits=WebSourceLimits(max_bytes=len(source.encode("utf-8")) + 1))

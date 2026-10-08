@@ -16,11 +16,9 @@ from types import MappingProxyType
 from typing import Any, Literal, NoReturn, cast
 
 from llmlang.a1.ir import canonical_bytes
-from llmlang.a1.source import (
-    A1SourceError,
-    SourceLimits as PureSourceLimits,
-    parse_source as parse_pure_source,
-)
+from llmlang.a1.source import A1SourceError
+from llmlang.a1.source import SourceLimits as PureSourceLimits
+from llmlang.a1.source import parse_source as parse_pure_source
 
 from .codecs import BoolType, IntType, NatType, ScalarType, TextType
 from .program import (

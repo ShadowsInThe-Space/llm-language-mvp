@@ -643,3 +643,14 @@ KI-Fachreview.
 - Real target acceptance remains blocked by the unavailable local pinned host and
   restricted network/browser environment. This does not authorize issue closure,
   M3 release, or beginning later milestone releases. Full scope stays open.
+
+- Integration review repairs completed: static wire byte/node budgets include
+  worst-case escaping and the request envelope; unused component selections are
+  checked; current eight-row examples compile and recompute exactly. Independent
+  AI recheck reproduced rejection of both original counterexamples and the
+  5,361-node/byte-fitting edge case. This is progress review, not release approval.
+- Third core TDD regression: 1,200 shallow function declarations with a terminal
+  entry failed due recursive static DFS. RED: three errors; iterative DFS preserves
+  deterministic cycle rejection while allowing the declared graph. GREEN: three
+  tests cover valid shallow execution, cycle rejection and the unchanged runtime
+  call-depth limit. No Python recursion-limit tuning or budget bypass.

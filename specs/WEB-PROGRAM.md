@@ -92,6 +92,30 @@ failure remains a separate host outcome (`ConditionNotMet`); a host may map it
 to a conflict response rather than a successful optional absence. This model
 does not prescribe an HTTP status code or execute SQL.
 
+The web transport has a fixed `MAX_WIRE_BYTES=32768` boundary. Program checking
+uses `max_wire_bytes(codec)` to bound the canonical ASCII representation of
+every value allowed by the inferred codec, including nominal record names,
+field names, wrappers and worst-case Unicode/control-character escaping. The
+complete closed request `{"action": action_name, "input": value}` must fit;
+checking just the inner input value is insufficient. Both this request bound
+and the output codec bound must fit before an action is accepted. Failure is
+`W_PROGRAM_LIMIT` at `actions.<name>.input` or `actions.<name>.output`.
+
+Query-level capacities such as `MAX_LIST_ROWS=1000` remain available to the
+query library. A web action must choose a row limit appropriate for its actual
+projected types and transport budget; query legality alone is not transport
+feasibility. These byte bounds concern canonical wire data. The checker also
+uses `max_wire_nodes(codec)` to bound JSON parsing/allocation nodes, including
+record wrapper objects, nominal strings, field keys and values. Outputs must
+fit `MAX_NODES=4096`; requests must fit after adding four nodes for the outer
+object, its `action` and `input` keys, and action-name string. Exceeding this
+bound uses the same deterministic input/output `W_PROGRAM_LIMIT` paths.
+Current action shapes are flat scalar-parameter records and flat projected rows
+with one Option/List wrapper; even the closed request envelope has depth at
+most five, below the codec depth limit. No generic deeply nested action type is
+advertised. Runtime decoders continue to enforce raw body size, depth and node
+budgets independently for hostile or noncanonical input.
+
 ## Typed views and local state
 
 ```python
@@ -142,6 +166,14 @@ local definition or imported alias. A library's nested uses resolve only to
 that library's own definitions. Aliases cannot shadow local declarations or
 each other. Unresolved references, ambiguous imports, duplicate definitions
 and cycles are rejected, including in unused definitions.
+
+Concrete view IDs form one globally unambiguous namespace across the main
+composition and all local/library definitions, including unused definitions.
+Identical reused declarations coalesce for reference checking; different views
+advertising the same ID are rejected. Selection references are checked in this
+entire namespace, so a target may live in a sibling component but an unused
+component cannot retain a nonexistent target. Final actual expansion must
+still contain each concrete view ID exactly once and resolve its selections.
 
 Libraries reuse declarative composition against the application's explicitly
 named action contracts. This initial model has no dynamic components,

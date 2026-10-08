@@ -6,7 +6,13 @@ from dataclasses import FrozenInstanceError, replace
 
 from llmlang.a1.ir import canonical_bytes
 from llmlang.web.general.codecs import (
-    MAX_WIRE_BYTES, BoolType, NatType, RecordType, TextType, max_wire_bytes,
+    MAX_WIRE_BYTES,
+    BoolType,
+    ListType,
+    NatType,
+    RecordType,
+    TextType,
+    max_wire_bytes,
 )
 from llmlang.web.general.program import (
     ComponentDef,
@@ -303,8 +309,26 @@ class ProgramTests(unittest.TestCase):
         browser = ComponentDef("browser", (original.views[1],))
         detail = ComponentDef("details", (original.views[2],))
         program = replace(original, components=(browser, detail),
-                          views=(original.views[0], ComponentUse("browser"), ComponentUse("details")))
+                          views=(original.views[0], ComponentUse("browser"),
+                                 ComponentUse("details")))
         self.assertEqual(validate_program(program).expanded_views, original.views)
+
+    def test_wide_result_fits_bytes_but_exceeds_wire_json_node_budget(self) -> None:
+        columns = tuple(Column("f" + str(index), BoolType()) for index in range(31))
+        schema = Schema((Table("items", (Column("id", NatType(), primary_key=True),
+                                         *columns)),))
+        query = SelectList("items", tuple(column.name for column in columns), (Order("id"),), 80)
+        action = QueryAction("list", (), query)
+        view = ListView("items", "list", (DisplayColumn("f0", "Flag"),), STATES)
+        program = WebProgram("app", "Application", schema, (action,), (view,))
+        # The legal maximum response is 31,521 ASCII bytes, below the 32 KiB cap.
+        output = ListType(RecordType("listRow", tuple((column.name, column.type)
+                                                     for column in columns)), 80)
+        self.assertLessEqual(max_wire_bytes(output), MAX_WIRE_BYTES)
+        with self.assertRaises(ProgramError) as raised:
+            validate_program(program)
+        self.assertEqual(raised.exception.code, "W_PROGRAM_LIMIT")
+        self.assertEqual(raised.exception.path, "actions.list.output")
 
 
 if __name__ == "__main__":

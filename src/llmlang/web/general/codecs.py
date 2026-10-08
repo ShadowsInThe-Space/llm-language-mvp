@@ -189,6 +189,25 @@ def max_wire_bytes(codec: CodecType) -> int:
     return bound(codec)
 
 
+def max_wire_nodes(codec: CodecType) -> int:
+    """Bound structural JSON parser nodes, including scopes, keys and values."""
+    validate_type(codec)
+
+    def bound(item: CodecType) -> int:
+        if isinstance(item, (TextType, IntType, NatType, BoolType)):
+            return 1
+        if isinstance(item, OptionType):
+            # Object, two keys and tag; Some's payload always has at least one node.
+            return 4 + bound(item.item)
+        if isinstance(item, ListType):
+            return 1 + item.capacity * bound(item.item)
+        assert isinstance(item, RecordType)
+        # Outer object, record/fields keys, nominal ID string and fields object.
+        return 5 + sum(1 + bound(child) for _, child in item.fields)
+
+    return bound(codec)
+
+
 def _object(value: object, keys: set[str], path: str) -> dict[str, object]:
     if type(value) is not dict or set(value) != keys:
         _fail("W_CODEC_VALUE", "Exact object fields required", path)
@@ -475,6 +494,22 @@ export function maxWireBytes(type: CodecType): bigint {
       case "record": {
         let count = BigInt('{"fields":{},"record":""}'.length + t.name.length + t.fields.length - 1);
         for (const field of t.fields) count += BigInt(field.name.length + 3) + bound(field.type);
+        return count;
+      }
+    }
+  }
+  return bound(type);
+}
+export function maxWireNodes(type: CodecType): bigint {
+  validateType(type);
+  function bound(t: CodecType): bigint {
+    switch (t.kind) {
+      case "text": case "int": case "nat": case "bool": return 1n;
+      case "option": return 4n + bound(t.elem);
+      case "list": return 1n + BigInt(t.capacity) * bound(t.elem);
+      case "record": {
+        let count = 5n;
+        for (const field of t.fields) count += 1n + bound(field.type);
         return count;
       }
     }
