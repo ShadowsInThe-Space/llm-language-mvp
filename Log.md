@@ -612,3 +612,17 @@ KI-Fachreview.
   All three `test_a1_canonical_record.py` tests now pass on Python 3.13.
 - No release, completion claim or issue closure. Real D1/browser evidence and
   the full matrix remain required before M3 acceptance.
+
+- Remote GitHub Actions remains available despite local DNS failure. Checkpoint
+  `a25c74daaba21731bf0cb9298332e6014f634965` passed the full Python 3.12/3.13
+  matrix: 533 pytest tests (plus 3 subtests), Ruff and strict Mypy. This evidence
+  covers that checkpoint only, not later uncommitted M3 implementation.
+- Second TDD regression: normative primitive string type spellings on const
+  instructions raised AttributeError in the interpreter. RED: 4 subtest errors;
+  GREEN after guarding the text-object branch: 2 tests, all 12 primitive and
+  invalid-literal subcases pass. The formal type contract is unchanged.
+- Integrated the README proposal from PR #39 head
+  `923273a8d776eb442d13b4008138d2901a6edfab` into M3, qualifying independent
+  checking to supported calculation profiles, correcting the released-version
+  marker and repository URLs, and pointing the setup checkout at v0.6.0.
+  PR #39 remains open until package integration is accepted; no separate main merge.
