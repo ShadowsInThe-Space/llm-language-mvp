@@ -171,7 +171,9 @@ class WebSourceTests(unittest.TestCase):
     def test_pure_source_library_binding_and_combined_resource_limits(self):
         pure = '''(a1src1 (limits 100 10 8)
           (fn identity ((x Int)) Int (return x)) (entry identity))'''
-        source = application().replace("(library common)", "(pure_library helpers) (library common)")
+        source = application().replace(
+            "(library common)", "(pure_library helpers) (library common)"
+        )
         parsed = parse_web_source(
             source, library_sources={"common": UI}, pure_sources={"helpers": pure}
         )
