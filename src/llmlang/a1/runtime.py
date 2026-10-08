@@ -16,6 +16,7 @@ MAX_RUNTIME_COLLECTION = 10_000
 MAX_RUNTIME_CALL_DEPTH = 64
 MAX_RUNTIME_VALUE_NODES = 100_000
 MAX_RUNTIME_TEXT_BYTES = 1_048_576
+MAX_RUNTIME_TEXT_WORK = 4_194_304
 MAX_RUNTIME_MODULE_BYTES = 131_072
 MAX_RUNTIME_FUNCTIONS = 64
 
@@ -36,6 +37,39 @@ def _program(module: dict[str, Any], entries: tuple[str, ...]) -> dict[str, Any]
         return _type(raw, names_r, names_v)
 
     results = {f["name"]: resolve(f["result"]) for f in module["functions"]}
+    parameter_types = {f["name"]: [resolve(p["type"]) for p in f["params"]] for f in module["functions"]}
+
+    def literal(value: Any, expected: Type, *, allow_ref: bool = True) -> None:
+        if allow_ref and isinstance(value, dict) and set(value) == {"ref"}:
+            return
+        try:
+            _runtime(value, expected, records, variants, "literal")
+
+            def strict(item: Any, type_: Type, depth: int = 0) -> None:
+                if depth > 64:
+                    raise ValueError("literal depth")
+                kind = type_[0]
+                if kind == "list":
+                    if type(item["capacity"]) is not int:
+                        raise ValueError("exact list capacity")
+                    for child in item["list"]:
+                        strict(child, type_[1], depth + 1)
+                elif kind == "record":
+                    for field, field_type in records[type_[1]].items():
+                        strict(item["fields"][field], field_type, depth + 1)
+                elif kind == "variant":
+                    payload = variants[type_[1]][item["tag"]]
+                    if payload is not None:
+                        strict(item["value"], payload, depth + 1)
+                elif kind == "option" and item["tag"] == "Some":
+                    strict(item["value"], type_[1], depth + 1)
+                elif kind == "result":
+                    strict(item["value"], type_[1] if item["tag"] == "Ok" else type_[2], depth + 1)
+
+            strict(value, expected)
+        except (ValueError, KeyError, TypeError, RecursionError) as error:
+            raise A1RuntimeError("E_A1_VALUE_LITERAL", "Malformed typed literal") from error
+
     functions = []
     for function in module["functions"]:
         env = {p["name"]: resolve(p["type"]) for p in function["params"]}
@@ -75,17 +109,46 @@ def _program(module: dict[str, Any], entries: tuple[str, ...]) -> dict[str, Any]
             elif op == "text_concat":
                 result = ("text", instruction.get("capacity", operand(instruction["left"])[1] + operand(instruction["right"])[1]))
             elif op == "add":
-                result = ("nat",) if operand(instruction["left"]) == operand(instruction["right"]) == ("nat",) else ("int",)
+                result = ("nat",) if operand(instruction["left"]) == ("nat",) else ("int",)
             else:
                 raise A1RuntimeError("E_A1_OP", "Unsupported pure runtime operation")
             if op == "const":
-                try:
-                    _runtime(instruction.get("value"), result, records, variants, "constant")
-                except (ValueError, KeyError, TypeError, RecursionError) as error:
-                    raise A1RuntimeError("E_A1_VALUE_LITERAL", "Malformed composite constant") from error
+                literal(instruction.get("value"), result, allow_ref=False)
+            elif op == "record_make":
+                for field, raw in instruction["fields"].items():
+                    literal(raw, records[instruction["record"]][field])
+            elif op in {"record_get", "match_value"}:
+                literal(instruction["value"], ("record", instruction["record"]) if op == "record_get" else ("variant", instruction["variant"]))
+                if op == "match_value":
+                    for arm in instruction["arms"].values():
+                        literal(arm, result)
+            elif op == "variant_make":
+                payload = variants[instruction["variant"]][instruction["tag"]]
+                if payload is not None:
+                    literal(instruction["value"], payload)
+            elif op == "list_append":
+                literal(instruction["value"], operand(instruction["list"])[1])
+            elif op == "list_index":
+                literal(instruction["index"], ("nat",))
+            elif op == "bounded_fold":
+                literal(instruction["initial"], result)
+            elif op == "text_prefix_codepoints":
+                literal(instruction["count"], ("nat",))
+            elif op == "refine_nat":
+                literal(instruction["value"], ("int",))
+            elif op == "add":
+                literal(instruction["left"], result)
+                literal(instruction["right"], result)
+            elif op == "call":
+                for raw, expected in zip(instruction.get("args", []), parameter_types[instruction["callee"]], strict=True):
+                    literal(raw, expected)
             env[instruction["dest"]] = result
             item = dict(instruction)
             item["value_type"] = result
+            if op == "const":
+                item["value"] = instruction.get("value")
+            if op == "call":
+                item["args"] = instruction.get("args", [])
             if op == "text_concat":
                 item["capacity"] = result[1]
             body.append(item)
@@ -101,8 +164,22 @@ def _program(module: dict[str, Any], entries: tuple[str, ...]) -> dict[str, Any]
     }
 
 
-def emit_typescript_runtime(module: dict[str, Any], entries: tuple[str, ...]) -> str:
-    """Emit a checked pure module with explicit allowed entries and trusted ceilings."""
+def _prepare(module: dict[str, Any], entries: tuple[str, ...]) -> dict[str, Any]:
+    pending = [(module, 0)]
+    count = 0
+    while pending:
+        value, depth = pending.pop()
+        count += 1
+        if depth > 128 or count > 20000:
+            raise A1RuntimeError("E_A1_RUNTIME_LIMIT", "Pure module structure budget exceeded")
+        if isinstance(value, dict):
+            if count + len(pending) + len(value) > 20000:
+                raise A1RuntimeError("E_A1_RUNTIME_LIMIT", "Pure module structure budget exceeded")
+            pending.extend((child, depth + 1) for child in value.values())
+        elif isinstance(value, (list, tuple)):
+            if count + len(pending) + len(value) > 20000:
+                raise A1RuntimeError("E_A1_RUNTIME_LIMIT", "Pure module structure budget exceeded")
+            pending.extend((child, depth + 1) for child in value)
     try:
         encoded = canonical_bytes(module)
     except (RecursionError, ValueError) as error:
@@ -124,7 +201,17 @@ def emit_typescript_runtime(module: dict[str, Any], entries: tuple[str, ...]) ->
     if len(set(entries)) != len(entries) or any(name not in validated["entrypoints"] for name in entries):
         raise A1RuntimeError("E_A1_ENTRY", "Pure runtime whitelist differs from declared entries")
     _reject_unsafe_integers(validated)
-    program = _program(validated, entries)
+    return _program(validated, entries)
+
+
+def validate_runtime_module(module: dict[str, Any], entries: tuple[str, ...] = ()) -> None:
+    """Share emitter admission checks with the application compiler without emitting code."""
+    _prepare(module, entries)
+
+
+def emit_typescript_runtime(module: dict[str, Any], entries: tuple[str, ...]) -> str:
+    """Emit a checked pure module with explicit allowed entries and trusted ceilings."""
+    program = _prepare(module, entries)
     serialized = canonical_bytes(program).decode("ascii")
     literal = json.dumps(serialized, ensure_ascii=True).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     return _RUNTIME.replace("__PROGRAM_LITERAL__", literal)
@@ -146,7 +233,7 @@ export class PureRuntimeError extends Error {
   constructor(code: string) { super(code); this.code = code; }
 }
 function fail(code: string): never { throw new PureRuntimeError(code); }
-type Budget = {steps: number; collection: number; values: number};
+type Budget = {steps: number; collection: number; values: number; text: number};
 function integer(value: unknown): number {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || Object.is(value, -0)) fail("E_A1_UNSAFE_INTEGER");
   return value;
@@ -165,10 +252,12 @@ function exact(value: unknown, keys: readonly string[]): Record<string, unknown>
   if (Reflect.ownKeys(result).length !== keys.length || !keys.every(key => Object.hasOwn(result, key))) fail("E_A1_TYPE");
   return result;
 }
-function text(value: unknown, capacity: number): string {
+function text(value: unknown, capacity: number, budget: Budget): string {
   if (typeof value !== "string") fail("E_A1_TEXT_ENCODING");
   if (value.length > capacity) fail("E_A1_TEXT_CAPACITY");
   if (value.length > 1048576) fail("E_A1_VALUE_LIMIT");
+  budget.text += value.length;
+  if (budget.text > 4194304) fail("E_A1_VALUE_LIMIT");
   for (let i = 0; i < value.length; i++) {
     const c = value.charCodeAt(i);
     if (c === 0) fail("E_A1_TEXT_ENCODING");
@@ -178,6 +267,8 @@ function text(value: unknown, capacity: number): string {
     } else if (c >= 0xdc00 && c <= 0xdfff) fail("E_A1_TEXT_ENCODING");
   }
   const size = new TextEncoder().encode(value).length;
+  budget.text += size - value.length;
+  if (budget.text > 4194304) fail("E_A1_VALUE_LIMIT");
   if (size > capacity) fail("E_A1_TEXT_CAPACITY");
   if (size > 1048576) fail("E_A1_VALUE_LIMIT");
   return value;
@@ -189,7 +280,7 @@ function checked(t: ValueType, value: unknown, budget: Budget, depth = 0): unkno
     case "bool": if (typeof value !== "boolean") fail("E_A1_TYPE"); return value;
     case "int": return integer(value);
     case "nat": { const n = integer(value); if (n < 0) fail("E_A1_NAT"); return n; }
-    case "text": return text(value, t[1] as number);
+    case "text": return text(value, t[1] as number, budget);
     case "record": {
       const row = exact(value, ["record", "fields"]), definition = records.get(t[1] as string);
       if (row.record !== t[1] || !definition) fail("E_A1_TYPE");
@@ -269,10 +360,10 @@ function call(name: string, args: readonly unknown[], budget: Budget, depth: num
         for (const [name, raw] of Object.entries(i.fields as Record<string, unknown>)) fields[name] = operand(env, raw);
         value = {record: i.record, fields}; break;
       }
-      case "record_get": value = object(object(get("value")).fields)[i.field as string]; break;
+      case "record_get": value = object(object(checked(["record", i.record], get("value"), budget)).fields)[i.field as string]; break;
       case "variant_make": value = {variant: i.variant, tag: i.tag, value: Object.hasOwn(i, "value") ? get("value") : null}; break;
       case "match_value": {
-        const tag = object(get("value")).tag;
+        const tag = object(checked(["variant", i.variant], get("value"), budget)).tag;
         const arms = i.arms as Record<string, unknown>;
         if (typeof tag !== "string" || !Object.hasOwn(arms, tag)) fail("E_A1_TYPE");
         value = operand(env, arms[tag]); break;
@@ -296,11 +387,11 @@ function call(name: string, args: readonly unknown[], budget: Budget, depth: num
         else { value = get("initial"); for (const item of list.list) value = call(i.callback as string, [value, item], budget, depth + 1); }
         break;
       }
-      case "text_utf8_bytes": value = new TextEncoder().encode(get("value") as string).length; break;
-      case "text_codepoint_count": value = Array.from(get("value") as string).length; break;
-      case "text_prefix_codepoints": value = Array.from(get("value") as string).slice(0, integer(get("count"))).join(""); break;
-      case "text_concat": value = text((get("left") as string) + (get("right") as string), i.capacity as number); break;
-      case "refine_nat": value = integer(get("value")); if (value < 0) fail("E_A1_REFINEMENT"); break;
+      case "text_utf8_bytes": value = new TextEncoder().encode(text(get("value"), Number.MAX_SAFE_INTEGER, budget)).length; break;
+      case "text_codepoint_count": value = Array.from(text(get("value"), Number.MAX_SAFE_INTEGER, budget)).length; break;
+      case "text_prefix_codepoints": value = Array.from(text(get("value"), Number.MAX_SAFE_INTEGER, budget)).slice(0, integer(get("count"))).join(""); break;
+      case "text_concat": value = text(text(get("left"), Number.MAX_SAFE_INTEGER, budget) + text(get("right"), Number.MAX_SAFE_INTEGER, budget), i.capacity as number, budget); break;
+      case "refine_nat": { const natural = integer(get("value")); if (natural < 0) fail("E_A1_REFINEMENT"); value = natural; break; }
       case "add": value = integer(integer(get("left")) + integer(get("right"))); break;
       case "call": value = call(i.callee as string, (i.args as unknown[]).map(raw => operand(env, raw)), budget, depth + 1); break;
       default: fail("E_A1_OP");
@@ -313,6 +404,6 @@ function call(name: string, args: readonly unknown[], budget: Budget, depth: num
 export function invokePure(name: string, args: readonly unknown[]): unknown {
   if (typeof name !== "string" || !entries.has(name)) fail("E_A1_ENTRY");
   if (!Array.isArray(args)) fail("E_A1_CALL");
-  return call(name, args, {steps: 0, collection: 0, values: 0}, 0);
+  return call(name, args, {steps: 0, collection: 0, values: 0, text: 0}, 0);
 }
 '''

@@ -675,3 +675,34 @@ KI-Fachreview.
   No issue was closed, final PR created, main merged or release published.
 - Resource counters for aggregate tokens, wall-time tokens/s and complete elapsed
   session duration are unavailable; no worker token counts are estimated.
+
+### 2026-10-08 — M3 executable pure libraries, continuation
+
+- Continued with six bounded GPT-6.1-Sol workers, including an independent read-only
+  AI reviewer. Added exact typed parameter transforms to existing query actions;
+  all arguments read original decoded inputs and replacements apply together.
+  Authorization precedes execution, and SQL binding checks follow transformation.
+- Added an independent portable A1 runtime with explicit exported-entry whitelist,
+  strict native-value monitors, safe integers, Unicode checks and capped resource
+  budgets. The historical Node target and frozen core format remain unchanged.
+  General program admission and runtime emission share the portable validator.
+- Both history and task sources execute the same title-preview library. Generated
+  server runtime, source snapshot and runtime identity are manifest-bound. Client
+  output remains byte-identical when only the server helper body changes.
+- Review reproduced shallow nominal literal admission and unsafe target literals;
+  new regressions require static rejection before executable program admission.
+  The compiler still permits unused libraries as explicitly non-executed provenance.
+- Client review found SSR controls usable before hydration. Added disabled readiness
+  gates and an actual React SSR/jsdom hydration regression, including StrictMode.
+- Checkpoint `2132f35be5de295f4addd798cd87685cb8b6697c` ran full CI: both Python
+  versions passed 662 tests plus 203 subtests with one optional React test skipped
+  in the baseline run; strict Mypy passed 51 source files. The separately provisioned
+  React job passed all five tests, and isolated installed-wheel compilation/binding
+  passed for both applications. Ruff and generated TypeScript exposed remaining
+  formatting/type errors; this checkpoint is not declared fully green.
+- Real Node SQLite end-to-end tests execute source, pure transformation, emitted
+  SQL, codec and response paths for both examples, including CAS conflict and
+  database close/reopen. This is SQLite evidence, not Cloudflare D1 acceptance.
+- Remaining package acceptance still includes the pinned external Vinext host,
+  actual D1/browser runs, built client/source-map inspection and final release
+  review. No issue closure, main merge or release is authorized by these checks.

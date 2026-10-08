@@ -46,9 +46,9 @@ plus a new strict generated TypeScript check with pinned compiler/React types.
 Each independent check runs even after another fails; every failure still fails
 the job. There is no `continue-on-error` or release-gate bypass.
 
-M3 still needs executable pure-library integration, pinned Vinext host acceptance,
-actual D1 and browser runs, built client/source-map inspection, installed-wheel
-acceptance and a final package review. See `docs/GENERAL-WEB-PREVIEW.md`.
+M3 still needs pinned Vinext host acceptance, actual D1 and browser runs,
+built client/source-map inspection and a final package review.
+See `docs/GENERAL-WEB-PREVIEW.md`.
 
 No issue has been closed, no final M3 PR opened, no milestone merged or released.
 Token usage, aggregate throughput and complete wall-time counters are unavailable.
@@ -60,3 +60,29 @@ CI jobs: 638 tests plus 176 subtests, Ruff and strict Mypy. Both generated examp
 targets passed strict TypeScript. Evidence: GitHub Actions run
 https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37800192253.
 This evidence does not change the remaining M3 acceptance boundaries above.
+
+## Executable-library continuation review
+
+A separate read-only GPT-6.1-Sol reviewer inspected the new pure runtime,
+parameter transforms, source grammar, generated server/client, build binding and
+SQLite integration tests. This remains an AI implementation review, not release
+approval. Review found and independently reproduced:
+
+- Shallow wrong nominal record/variant literals admitted by the frozen core
+  checker. The additive portable validator now deeply checks typed literal sites.
+- Executable libraries with unsafe integer literals accepted by the web model
+  but rejected by runtime emission. Both now share the same admission validator.
+- Constants resembling SSA references and oversized structure work queues.
+  Constants are checked as values; queues reject excess width before expansion.
+
+The reviewer independently repeated all original counterexamples after repair,
+including a list whose iterator throws if traversed before the size rejection.
+Eleven portable-runtime tests and ninety general-web tests passed at that review
+point, with one local React-toolchain skip. There was no open blocker in this
+bounded integration slice. Subsequent CI must still validate the exact snapshot.
+
+Checkpoint `2132f35be5de295f4addd798cd87685cb8b6697c` separately passed actual
+React SSR/jsdom hydration and isolated installed-wheel tests for both examples
+in CI. The same run identified Ruff formatting and one TypeScript narrowing
+error; it was not a completely green checkpoint. SQLite close/reopen and stale
+revision tests establish SQLite behavior only, not D1 provider acceptance.

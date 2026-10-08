@@ -438,6 +438,66 @@ class ProgramTests(unittest.TestCase):
                 self.assertEqual(raised.exception.code, "W_PROGRAM_PURE")
                 self.assertEqual(raised.exception.path, "pure_library.limits." + name)
 
+    def test_executable_library_uses_portable_static_literal_validation(self) -> None:
+        original = application()
+        action = replace(original.actions[0], transforms=(ParamTransform(
+            "title", "preview", ("title",)),))
+        malformed = (
+            {"name": "unsafe", "params": [], "result": "Int",
+             "body": [{"op": "const", "dest": "n", "type": "Int",
+                       "value": 9007199254740992}], "return": "n"},
+            {"name": "bad_list", "params": [],
+             "result": {"kind": "list", "elem": "Nat", "capacity": 1},
+             "body": [{"op": "const", "dest": "n",
+                       "type": {"kind": "list", "elem": "Nat", "capacity": 1},
+                       "value": {"list": [False], "capacity": 1}}], "return": "n"},
+        )
+        for function in malformed:
+            with self.subTest(function=function["name"]):
+                module = json.loads(preview_library())
+                module["functions"].append(function)
+                source = canonical_bytes(module)
+                self.assertEqual(validate_program(replace(original, pure_library=source)).snapshot()
+                                 ["pure_library"]["role"], "provenance_only")
+                self.rejected(replace(original, pure_library=source,
+                              actions=(action, *original.actions[1:])), "W_PROGRAM_PURE")
+
+    def test_pure_callback_is_reachable_without_exporting_it_as_an_entry(self) -> None:
+        original = application()
+        module = json.loads(preview_library())
+        module["functions"].extend([
+            {"name": "fold_entry", "params": [{"name": "seed", "type": "Nat"}],
+             "result": "Nat", "body": [
+                 {"op": "const", "dest": "items",
+                  "type": {"kind": "list", "elem": "Nat", "capacity": 1},
+                  "value": {"list": [1], "capacity": 1}},
+                 {"op": "bounded_fold", "dest": "result", "list": {"ref": "items"},
+                  "initial": {"ref": "seed"}, "callback": "step"},
+             ], "return": "result"},
+            {"name": "step", "params": [{"name": "total", "type": "Nat"},
+                                         {"name": "item", "type": "Nat"}],
+             "result": "Nat", "body": [{"op": "add", "dest": "result",
+                                        "left": {"ref": "total"}, "right": {"ref": "item"}}],
+             "return": "result"},
+        ])
+        module["entrypoints"].append("fold_entry")
+        save = original.actions[0]
+        params = (*save.params, Param("revision", NatType()))
+        query = replace(save.query, values=(*save.query.values[:-1], ("revision", params[-1])))
+        action = replace(save, params=params, query=query,
+                         transforms=(ParamTransform("revision", "fold_entry", ("revision",)),))
+        form = original.views[0]
+        self.assertIsInstance(form, FormView)
+        assert isinstance(form, FormView)
+        form = replace(form, fields=(*form.fields, InputField("revision", "Revision")))
+        checked = validate_program(replace(original, pure_library=canonical_bytes(module),
+                                           actions=(action, *original.actions[1:]),
+                                           views=(form, *original.views[1:])))
+        self.assertEqual(checked.snapshot()["pure_library"]["entries"], ["fold_entry"])
+        self.assertIn("pure:step", checked.effects.server_reachable)
+        self.assertNotIn("pure:step", checked.effects.client_reachable)
+        self.assertEqual(checked.effects.summary("pure:step").transitive_capabilities, frozenset())
+
 
 if __name__ == "__main__":
     unittest.main()

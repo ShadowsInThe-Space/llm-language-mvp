@@ -261,6 +261,10 @@ above trusted ceilings: 100000 steps, 10000 collection expansions and call
 depth 64. These limits are per fresh pure invocation; they are never silently
 widened, and the bounded number of transforms bounds the number of invocations
 per action. Dormant provenance-only libraries make no runtime-budget claim.
+Before assigning the executable role, the compiler invokes the same portable
+module validator as the runtime emitter. This rejects unsafe integer constants
+and malformed composite literals even in unused helpers. Dormant libraries
+retain only their independent frozen A1 validation and provenance designation.
 The runtime also validates its native host values and rejects values outside
 the exact target range. This integration remains separate from A1 proof
 evidence and does not turn an external manifest into a property proof.

@@ -5,6 +5,7 @@ imports in temporary test copies gain TypeScript extensions for Node execution.
 """
 
 import json
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -19,9 +20,10 @@ UPDATED_TITLE = "🧠n\u0303猫" * 40 + "trailing"
 RUNNER = r'''
 import fs from "node:fs";
 import {DatabaseSync} from "node:sqlite";
+import {fileURLToPath} from "node:url";
 import {createDispatcher} from "./server.ts";
 const payload = JSON.parse(fs.readFileSync(0, "utf8"));
-const filename = new URL("./application.sqlite", import.meta.url).pathname;
+const filename = fileURLToPath(new URL("./application.sqlite", import.meta.url));
 let database = new DatabaseSync(filename);
 database.exec(fs.readFileSync(new URL("./schema.sql", import.meta.url), "utf8"));
 const adapter = {
@@ -63,6 +65,7 @@ def input_value(action: str, **fields: object) -> dict[str, object]:
     return {"record": action + "Input", "fields": fields}
 
 
+@unittest.skipUnless(shutil.which("node"), "Node.js is required for SQLite target tests")
 class SQLiteTargetTests(unittest.TestCase):
     def run_application(self, name: str, table: str, operations: list[dict]) -> list[dict]:
         source = (EXAMPLES / f"{name}.webapp").read_text(encoding="utf-8")

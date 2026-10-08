@@ -19,12 +19,13 @@ from llmlang.a1.effects import (
 )
 from llmlang.a1.ir import canonical_bytes as a1_canonical_bytes
 from llmlang.a1.ir import module_hash, validate_module
-from llmlang.a1.runtime import RUNTIME_VERSION as PURE_RUNTIME_VERSION
 from llmlang.a1.runtime import (
     MAX_RUNTIME_CALL_DEPTH,
     MAX_RUNTIME_COLLECTION,
     MAX_RUNTIME_STEPS,
+    validate_runtime_module,
 )
+from llmlang.a1.runtime import RUNTIME_VERSION as PURE_RUNTIME_VERSION
 from llmlang.diagnostics import diagnostic
 
 from .codecs import (
@@ -687,6 +688,11 @@ def _transforms(
         if pure["ir"]["limits"][name] > ceiling:
             _fail("W_PROGRAM_PURE", "Executable library exceeds trusted runtime ceiling",
                   "pure_library.limits." + name)
+    try:
+        validate_runtime_module(pure["ir"], tuple(exports))
+    except (ValueError, KeyError, TypeError, RecursionError) as error:
+        raise ProgramError("W_PROGRAM_PURE", "Pure library fails portable runtime validation",
+                           "pure_library") from error
     pure["role"], pure["entries"] = "executable", exports
     reachable: set[str] = set()
     pending = list(exports)
