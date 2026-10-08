@@ -74,9 +74,9 @@ def _program(module: dict[str, Any], entries: tuple[str, ...]) -> dict[str, Any]
     for function in module["functions"]:
         env = {p["name"]: resolve(p["type"]) for p in function["params"]}
 
-        def operand(value: Any) -> Type:
+        def operand(value: Any, bound_env: dict[str, Type] = env) -> Type:
             if isinstance(value, dict) and set(value) == {"ref"}:
-                return env[value["ref"]]
+                return bound_env[value["ref"]]
             if type(value) is int:
                 return ("int",)
             if type(value) is bool:

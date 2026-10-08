@@ -19,7 +19,8 @@ class GeneralBuildTests(unittest.TestCase):
         for name in ("history", "tasks"):
             with self.subTest(name=name):
                 source = (EXAMPLES / f"{name}.webapp").read_text()
-                build = compile_source(source, library_sources=self.libraries, pure_sources=self.pure)
+                build = compile_source(source, library_sources=self.libraries,
+                                       pure_sources=self.pure)
                 self.assertEqual(build.files, compile_source(
                     source, library_sources=self.libraries, pure_sources=self.pure).files)
                 self.assertTrue(check_build(source, build.files, library_sources=self.libraries,

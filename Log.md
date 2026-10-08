@@ -706,3 +706,16 @@ KI-Fachreview.
 - Remaining package acceptance still includes the pinned external Vinext host,
   actual D1/browser runs, built client/source-map inspection and final release
   review. No issue closure, main merge or release is authorized by these checks.
+- Independent AI recheck found no open blocker in the bounded pure-transform
+  slice. Final focused runs passed 91 general-web tests (one local React skip)
+  and 15 portable-runtime tests. Added actual callback reachability, nested
+  structured boundaries, fresh collection budgets and aggregate text-work checks.
+- Checkpoint `f3fddd56c466ca8318a4dde5607c34ea822b348a`, Actions run
+  https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37813625006:
+  Python 3.12 and 3.13 each passed 672 tests plus 208 subtests; one optional
+  React test was skipped in the baseline and all five passed in the dedicated
+  provisioned React run. Strict Mypy passed 51 source files; both generated
+  applications passed strict TypeScript and installed-wheel checks. Ruff alone
+  found an unbound-loop-variable warning and one 102-character test line.
+  Bound the per-function inference environment explicitly and wrapped that line;
+  the 15 portable-runtime tests still pass. Full CI reruns on the repair commit.

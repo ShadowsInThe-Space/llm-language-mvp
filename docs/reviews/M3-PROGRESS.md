@@ -86,3 +86,13 @@ React SSR/jsdom hydration and isolated installed-wheel tests for both examples
 in CI. The same run identified Ruff formatting and one TypeScript narrowing
 error; it was not a completely green checkpoint. SQLite close/reopen and stale
 revision tests establish SQLite behavior only, not D1 provider acceptance.
+
+The subsequent `f3fddd56c466ca8318a4dde5607c34ea822b348a` checkpoint passed
+672 tests plus 208 subtests on both Python versions, strict Mypy, strict generated
+TypeScript for both examples, all five provisioned React tests and both isolated
+wheel checks. Evidence: Actions run
+https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37813625006.
+Two final Ruff findings were repaired by explicitly binding the per-function
+inference environment and wrapping a test line; the repair receives another full
+CI run. The final focused runtime suite contains fifteen passing tests. No
+package release approval is inferred from these implementation checks.
