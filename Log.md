@@ -626,3 +626,20 @@ KI-Fachreview.
   checking to supported calculation profiles, correcting the released-version
   marker and repository URLs, and pointing the setup checkout at v0.6.0.
   PR #39 remains open until package integration is accepted; no separate main merge.
+
+- Foundation checkpoint `4ad2113ecff5e470d4f09badd77ad29bcdcf7493` passed
+  585 pytest tests plus 150 subtests in CI; Ruff found two style/default issues,
+  fixed before the next checkpoint. Mypy was not reached in that run.
+- Added general typed program validation, canonical web/UI-library sources,
+  server/client emitters and source-bound builds. Both example sources consume
+  the same UI library; no history/planner-specific compiler branches were added.
+- TDD compiler and CLI: missing-module/entrypoint RED, then deterministic build,
+  modified-library invalidation, artifact tamper rejection and no-clobber CLI GREEN.
+  Added strict generated TypeScript checks to CI; these are not browser/host evidence.
+- Independent AI foundation review found and verified repairs for deep source
+  literal validation, immutable source/hash pairing and cross-runtime depth errors.
+  Second integration review additionally found oversized legal wire responses and
+  unresolved selection references in unused components; repairs are in progress.
+- Real target acceptance remains blocked by the unavailable local pinned host and
+  restricted network/browser environment. This does not authorize issue closure,
+  M3 release, or beginning later milestone releases. Full scope stays open.

@@ -1,0 +1,12 @@
+(webuilib1 common
+  (component editor
+    (form create save
+      (fields (id "Identifier" input) (title "Text" input))
+      (states "Saving" "Save failed" "No saved value" "Saved")
+      (buttons "Save" "Clear display")))
+  (component browser
+    (list listing browse (columns (title "Text"))
+      (states "Loading" "Load failed" "No entries" "Entries loaded")
+      (select detail selected_id id))
+    (detail detail fetch (columns (id "Identifier") (title "Text") (revision "Revision"))
+      (states "Loading selection" "Selection failed" "No selection" "Selection loaded"))))

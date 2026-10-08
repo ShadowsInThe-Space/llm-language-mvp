@@ -1,0 +1,15 @@
+(websrc1 history "Saved text history"
+  (schema (table entries
+    (id (Text 64) primary) (title (Text 512)) (revision Nat)))
+  (action save ((id (Text 64)) (title (Text 512))) public
+    (insert entries (values (id id) (title title) (revision 0)) (project id title)))
+  (action browse () public
+    (select_list entries (project id title) (order (id desc))
+      (limit 8) (offset 0) (where)))
+  (action fetch ((selected_id (Text 64))) public
+    (select_unique entries id selected_id (project id title revision)))
+  (library common)
+  (import common editor editor)
+  (import common browser browser)
+  (use editor)
+  (use browser))

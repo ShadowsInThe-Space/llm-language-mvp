@@ -158,6 +158,37 @@ def type_descriptor(codec: CodecType) -> dict[str, object]:
     return describe(codec)
 
 
+def max_wire_bytes(codec: CodecType) -> int:
+    """Bound canonical ASCII wire bytes, including all structural envelopes.
+
+    Counts use exact bounded-size Python integers and deliberately overapproximate
+    values excluded by independent node/depth limits. No value is constructed.
+    """
+    validate_type(codec)
+
+    def bound(item: CodecType) -> int:
+        if isinstance(item, TextType):
+            # A valid one-byte control scalar can require six ASCII escape bytes.
+            return 2 + 6 * item.capacity
+        if isinstance(item, IntType):
+            return 19  # quotes, optional minus sign, sixteen safe decimal digits
+        if isinstance(item, NatType):
+            return 18
+        if isinstance(item, BoolType):
+            return 5  # false
+        if isinstance(item, OptionType):
+            return max(27, 23 + bound(item.item))
+        if isinstance(item, ListType):
+            return 2 + item.capacity * bound(item.item) + max(0, item.capacity - 1)
+        assert isinstance(item, RecordType)
+        # IDs/field names are checked ASCII identifiers and require no escaping.
+        envelope = len('{"fields":{},"record":""}') + len(item.name)
+        fields = sum(len(name) + 3 + bound(child) for name, child in item.fields)
+        return envelope + fields + len(item.fields) - 1
+
+    return bound(codec)
+
+
 def _object(value: object, keys: set[str], path: str) -> dict[str, object]:
     if type(value) is not dict or set(value) != keys:
         _fail("W_CODEC_VALUE", "Exact object fields required", path)
@@ -428,6 +459,27 @@ export function validateType(type: CodecType): void {
     }
   }
   visit(type, 1);
+}
+export function maxWireBytes(type: CodecType): bigint {
+  validateType(type);
+  function bound(t: CodecType): bigint {
+    switch (t.kind) {
+      case "text": return 2n + 6n * BigInt(t.capacity);
+      case "int": return 19n;
+      case "nat": return 18n;
+      case "bool": return 5n;
+      case "option": {
+        const some = 23n + bound(t.elem); return some > 27n ? some : 27n;
+      }
+      case "list": return 2n + BigInt(t.capacity) * bound(t.elem) + BigInt(Math.max(0, t.capacity - 1));
+      case "record": {
+        let count = BigInt('{"fields":{},"record":""}'.length + t.name.length + t.fields.length - 1);
+        for (const field of t.fields) count += BigInt(field.name.length + 3) + bound(field.type);
+        return count;
+      }
+    }
+  }
+  return bound(type);
 }
 function scalarText(value: unknown, capacity: number, path: string): string {
   if (typeof value !== "string") fail("W_CODEC_TEXT", "Valid Unicode scalar text required", path);

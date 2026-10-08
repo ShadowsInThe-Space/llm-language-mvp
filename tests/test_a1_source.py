@@ -13,7 +13,6 @@ from llmlang.a1.source import (
     parse_source,
 )
 
-
 SAMPLE = '''(a1src1
   (limits 10000 1000 64)
   (record Task (title (Text 32)) (done Bool))

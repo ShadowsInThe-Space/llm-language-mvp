@@ -30,6 +30,7 @@ Every public operation validates the complete descriptor before use:
 ```python
 validate_type(codec) -> None
 type_descriptor(codec) -> dict[str, object]
+max_wire_bytes(codec) -> int
 encode_value(codec, native_value) -> object
 decode_value(codec, parsed_wire_value) -> object
 encode_json(codec, native_value) -> str
@@ -45,7 +46,7 @@ HTTP callers must use `decode_json` on the bounded raw body instead.
 
 The standalone TypeScript module exports `CodecType`, `CodecError`,
 `CODEC_VERSION`, `validateType`, `encodeValue`, `decodeValue`, `encodeJson` and
-`decodeJson` and `parseWireJson`. The untyped parser handles the action envelope
+`decodeJson`, `parseWireJson` and `maxWireBytes`. The untyped parser handles the action envelope
 before selecting its declared input codec: dispatch must independently enforce
 the exact action/input envelope fields and action allowlist, then decodeValue
 with the selected trusted type. Parsing alone does not license any value type.
@@ -132,6 +133,44 @@ separators `,` and `:`, no insignificant whitespace or trailing newline.
 Limits also apply to canonical output, whose Unicode escapes can use more
 bytes than an equivalent incoming Unicode JSON string.
 
+## Static canonical wire bounds
+
+`max_wire_bytes(codec)` validates the exact complete descriptor and returns a
+conservative bound for canonical ASCII wire encoding, including structural and
+nominal envelopes. It constructs no values and uses exact Python integer
+arithmetic; descriptor depth/capacity/node limits also bound computation and
+integer size. The TS counterpart `maxWireBytes(type)` uses bigint for exact
+counts, rather than rounding large multiplicative list bounds to JS Number.
+These bigints are compiler/runtime metadata counts, not user Int wire values.
+
+Let B(T) be this bound, n a list capacity, k a nonempty record's field count,
+and len an ASCII byte length. All names are validated ASCII identifiers without
+characters requiring JSON escapes.
+
+| Type | B(T) |
+| --- | --- |
+| Text(n) | `2 + 6*n` |
+| Int / Nat / Bool | `19 / 18 / 5` |
+| Option(T) | `max(27, 23 + B(T))` |
+| List(T,n) | `2 + n*B(T) + max(0,n-1)` |
+| Record(ID,fields) | `len('{"fields":{},"record":""}') + len(ID) + sum(len(fieldname)+3+B(fieldtype)) + k-1` |
+
+Text's factor six is required: valid single-byte U+0001 can encode as six ASCII
+bytes `\u0001`; excluding NUL does not remove that worst case. Integer bounds
+include quotes and the Int minus sign; Bool uses false. Option counts the exact
+tag/value envelope and compares None against Some. Lists count array brackets
+and commas, not the reconstructed native capacity container. Records count all
+field keys, colons, commas and the exact nominal ID envelope.
+
+A Web action's output bound must fit MAX_WIRE_BYTES before code generation.
+Requests must also include their actual action/input envelope overhead; testing
+only input payload size is insufficient. No capacity may be silently lowered
+to make a bound pass. A valid 50-row task list with Text(64) IDs and Text(512)
+titles can exceed the body budget through worst-case escaping; reducing a
+declared list limit is an explicit source/interface change. Static bounds may
+overapproximate values excluded by independent node/depth budgets. Therefore a
+passing byte bound alone does not prove those other resource gates.
+
 Stable error codes: `W_CODEC_TYPE`, `W_CODEC_VALUE`, `W_CODEC_INTEGER`,
 `W_CODEC_TEXT`, `W_CODEC_CAPACITY`, `W_CODEC_JSON`, `W_CODEC_LIMIT`.
 Python CodecError exposes code/message/path and `to_dict()` in diagnostic-v1.
@@ -147,6 +186,12 @@ A subsequent differential RED exposed a depth discrepancy for 32 nested arrays
 containing Bool: Python returned W_CODEC_VALUE while TS returned W_CODEC_LIMIT.
 Counting primitive/key depth in the Python preflight and matching TS key depth
 made that test GREEN without increasing the bounds.
+An integration RED subsequently found that legal typed browse results could
+exceed canonical wire bytes. RED tests first imported the absent static helper;
+the implemented bounds now reject a 50-row task codec statically and permit its
+explicit 8-row counterpart. Additional Python/Node comparisons check the bound
+against actual worst-case escaped canonical encodings and agree on an exact
+large nested-list count exceeding JS's safe Number range.
 
 The differential suite executes emitted TypeScript in Node and compares native
 decoded data, exact canonical output, and rejection codes against Python. Cases

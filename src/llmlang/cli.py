@@ -59,6 +59,9 @@ def _parser() -> argparse.ArgumentParser:
     web = commands.add_parser("compile-web", help="Compile a w1 application to Vinext/D1")
     web.add_argument("source", type=Path)
     web.add_argument("--out", type=Path, required=True)
+    from llmlang.web.general.cli import add_arguments
+
+    add_arguments(commands.add_parser("compile-general-web", help="Compile general web sources"))
     for name in ("check", "run", "hello", "factory"):
         command = commands.add_parser(name)
         command.add_argument("--spec", type=Path, required=True)
@@ -189,6 +192,10 @@ def main(argv: list[str] | None = None) -> int:
         return execute(args)
     if args.command == "compile-web":
         return _compile_web(args.source, args.out)
+    if args.command == "compile-general-web":
+        from llmlang.web.general.cli import execute as execute_general
+
+        return execute_general(args)
     limits = Limits(max_branches=args.max_branches, solver_timeout_ms=args.solver_timeout_ms)
     try:
         spec = parse_spec(read_text(args.spec, limits.max_source_bytes), limits)

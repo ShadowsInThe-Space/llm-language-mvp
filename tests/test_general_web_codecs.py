@@ -12,6 +12,7 @@ from pathlib import Path
 
 from llmlang.web.general.codecs import (
     MAX_SAFE_INTEGER,
+    MAX_WIRE_BYTES,
     BoolType,
     CodecError,
     IntType,
@@ -25,12 +26,88 @@ from llmlang.web.general.codecs import (
     emit_typescript_runtime,
     encode_json,
     encode_value,
+    max_wire_bytes,
     parse_wire_json,
     type_descriptor,
 )
 
 
 class CodecAcceptance(unittest.TestCase):
+    def test_static_wire_bound_accounts_for_escape_and_composite_overheads(self) -> None:
+        self.assertEqual(max_wire_bytes(TextType(0)), 2)
+        self.assertEqual(max_wire_bytes(TextType(8)), 50)
+        self.assertEqual(max_wire_bytes(IntType()), 19)
+        self.assertEqual(max_wire_bytes(NatType()), 18)
+        self.assertEqual(max_wire_bytes(BoolType()), 5)
+        self.assertEqual(max_wire_bytes(OptionType(TextType(0))), 27)
+        self.assertEqual(max_wire_bytes(ListType(TextType(8), 2)), 103)
+        task = RecordType(
+            "tasks.browseRow",
+            (("id", TextType(64)), ("title", TextType(512)), ("done", BoolType())),
+        )
+        self.assertGreater(max_wire_bytes(ListType(task, 50)), MAX_WIRE_BYTES)
+        self.assertLessEqual(max_wire_bytes(ListType(task, 8)), MAX_WIRE_BYTES)
+        with self.assertRaises(CodecError):
+            max_wire_bytes(TextType(True))
+        nested = TextType(1)
+        for _ in range(31):
+            nested = ListType(nested, 4096)
+        self.assertGreater(max_wire_bytes(nested), 2**53)
+
+    @unittest.skipUnless(shutil.which("node"), "Node TypeScript target unavailable")
+    def test_wire_bound_matches_node_and_bounds_real_canonical_values(self) -> None:
+        row = RecordType(
+            "pkg.Row", (("text", TextType(8)), ("number", IntType()), ("flag", BoolType()))
+        )
+        value = {
+            "record": "pkg.Row",
+            "fields": {"text": "\x01" * 8, "number": -MAX_SAFE_INTEGER, "flag": False},
+        }
+        cases = (
+            (TextType(8), "\x01" * 8),
+            (TextType(8), "😀😀"),
+            (IntType(), -MAX_SAFE_INTEGER),
+            (NatType(), MAX_SAFE_INTEGER),
+            (BoolType(), False),
+            (row, value),
+            (ListType(row, 2), {"list": [value, value], "capacity": 2}),
+            (OptionType(row), {"tag": "Some", "value": value}),
+            (OptionType(TextType(0)), {"tag": "None", "value": None}),
+        )
+        payload = [
+            {"type": type_descriptor(codec), "value": native}
+            for codec, native in cases
+        ]
+        expected = []
+        for codec, native in cases:
+            encoded = encode_json(codec, native)
+            bound = max_wire_bytes(codec)
+            self.assertLessEqual(len(encoded.encode("ascii")), bound)
+            expected.append({"bound": str(bound), "encoded": encoded})
+        large = type_descriptor(ListType(TextType(32768), 4096))
+        payload.append({"type": large})
+        expected.append({"bound": str(max_wire_bytes(ListType(TextType(32768), 4096)))})
+        nested = TextType(1)
+        for _ in range(31):
+            nested = ListType(nested, 4096)
+        payload.append({"type": type_descriptor(nested)})
+        expected.append({"bound": str(max_wire_bytes(nested))})
+        harness = "\nconst boundCases = " + json.dumps(payload, ensure_ascii=True) + ";\n"
+        harness += (
+            "console.log(JSON.stringify(boundCases.map(c => Object.hasOwn(c,'value') "
+            "? {bound:maxWireBytes(c.type as CodecType).toString(),"
+            "encoded:encodeJson(c.type as CodecType,c.value)} "
+            ": {bound:maxWireBytes(c.type as CodecType).toString()})));\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            script = Path(directory) / "bounds.ts"
+            script.write_text(emit_typescript_runtime() + harness, encoding="utf-8")
+            completed = subprocess.run(
+                ["node", str(script)], text=True, capture_output=True, check=False, timeout=15
+            )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(json.loads(completed.stdout), expected)
+
     def test_action_envelope_parser_checks_raw_json_before_type_selection(self) -> None:
         self.assertEqual(
             parse_wire_json(b'{"action":"save","input":{"record":"R","fields":{"n":"1"}}}'),

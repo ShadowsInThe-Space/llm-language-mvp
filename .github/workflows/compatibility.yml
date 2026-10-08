@@ -27,3 +27,9 @@ jobs:
       - run: python -m pytest -q
       - run: python -m ruff check src tests scripts
       - run: python -m mypy --no-incremental src
+      - name: Install pinned generated-target typecheck tools
+        if: matrix.python == '3.13'
+        run: npm install --prefix "$RUNNER_TEMP/llmlang-types" --no-package-lock --ignore-scripts typescript@5.9.3 @types/react@19.2.2
+      - name: Check generated general web target types
+        if: matrix.python == '3.13'
+        run: python scripts/check_general_target.py --toolchain "$RUNNER_TEMP/llmlang-types"

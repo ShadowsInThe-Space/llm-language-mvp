@@ -60,6 +60,9 @@ class EffectLimits:
     max_call_depth: int = 64
 
 
+DEFAULT_LIMITS = EffectLimits()
+
+
 @dataclass(frozen=True, slots=True)
 class EffectSummary:
     name: str
@@ -127,7 +130,7 @@ def check_effect_graph(
     *,
     client_entries: Sequence[str] = (),
     server_entries: Sequence[str] = (),
-    limits: EffectLimits = EffectLimits(),
+    limits: EffectLimits = DEFAULT_LIMITS,
 ) -> EffectCheckResult:
     """Check an adapter-derived graph, never authority or producer proof claims.
 
