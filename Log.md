@@ -719,3 +719,10 @@ KI-Fachreview.
   found an unbound-loop-variable warning and one 102-character test line.
   Bound the per-function inference environment explicitly and wrapped that line;
   the 15 portable-runtime tests still pass. Full CI reruns on the repair commit.
+- Verified repair checkpoint `90d993d2008c7f900ce01fb95fd78bd6bffebfa6`:
+  https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37814005914
+  is fully green on Python 3.12 and 3.13: 672 tests plus 208 subtests per version,
+  Ruff and strict Mypy (51 source files). Strict generated TypeScript passed for
+  both examples. The dedicated React SSR/jsdom hydration run passed all five tests
+  without the baseline's optional-toolchain skip. Both installed-wheel checks
+  passed. The follow-up changes only the evidence documentation.

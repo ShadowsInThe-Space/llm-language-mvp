@@ -96,3 +96,13 @@ Two final Ruff findings were repaired by explicitly binding the per-function
 inference environment and wrapping a test line; the repair receives another full
 CI run. The final focused runtime suite contains fifteen passing tests. No
 package release approval is inferred from these implementation checks.
+
+Final verified repair checkpoint:
+`90d993d2008c7f900ce01fb95fd78bd6bffebfa6`, Actions run
+https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37814005914.
+Both Python matrix jobs are fully green: 672 tests plus 208 subtests each, Ruff,
+strict Mypy on 51 source files, both strict generated TypeScript checks, all five
+dedicated React SSR/jsdom hydration tests and both installed-wheel checks.
+The baseline's single optional-toolchain skip is exercised by that dedicated
+React run. This closes the implementation slice's CI findings, not the remaining
+host, D1, browser or release acceptance.
