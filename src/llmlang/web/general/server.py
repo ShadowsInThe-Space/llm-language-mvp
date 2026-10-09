@@ -222,7 +222,9 @@ export function createDispatcher(
   function error(status: number, label: string): Response {
     return response(JSON.stringify({error: label}), status);
   }
-  async function rejectTransport(request: Request, status: number, label: string): Promise<Response> {
+  async function rejectTransport(
+    request: Request, status: number, label: string,
+  ): Promise<Response> {
     // Dispose small bodies to EOF before responding; perform no decoding or authority work.
     // This also avoids leaving a reusable upstream connection with an unread small body.
     try { await readBounded(request, maxBytes, timeoutMs); }
