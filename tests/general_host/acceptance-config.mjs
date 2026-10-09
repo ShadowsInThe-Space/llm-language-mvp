@@ -9,8 +9,10 @@ export function immutableHostConfig(config) {
   }
   const copy = structuredClone(config);
   // Wrangler 4.80.0's custom-build path bypasses runBuild's module watcher.
-  // Its documented watch_dir array accepts []; the fixed command does no build
-  // and changes no generated application files. Config/assets remain watched.
-  copy.build = {...copy.build, command: 'node -e ""', watch_dir: []};
+  // Its initial worker construction waits for the custom watcher's ready event,
+  // which an empty watch list never produces. Watch only the immutable original
+  // built config beside this sibling config; no source, state or report paths.
+  // The fixed command changes no generated files. Assets remain watched.
+  copy.build = {...copy.build, command: 'node -e ""', watch_dir: ["wrangler.json"]};
   return copy;
 }

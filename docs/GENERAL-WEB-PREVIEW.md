@@ -6,6 +6,13 @@ The latest published package remains v0.6.0. Final browser acceptance and
 release approval are pending; see the [candidate notes](releases/v0.7.0.md)
 for checkpoint evidence.
 
+The historical [assurance document](ASSURANCE.md) is frozen with the P0
+compatibility baseline. Its mathematical statement and unsupported-language
+list describe P0, not the later A1 or general web profiles. A1 has its own
+[acceptance boundary](../specs/A1-ACCEPTANCE.md), including bounded text and lists.
+M3 checks types, effects, capabilities and bounded runtime values; these checks
+and host tests do not prove the complete website or host correct.
+
 ## Compile both applications
 
 After installing the repository development dependencies, run:

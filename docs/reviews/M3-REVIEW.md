@@ -7,12 +7,12 @@ formal proof of the compiler, website, authentication adapter or database.
 Release-Review: pending
 
 Reviewed implementation: `milestone/m3` through
-`3c740ebb8a231255aa6afb0cb4b8931e0980a09e`, with the subsequent dependency-lock,
-conditional-INSERT target-probe and diagnostic changes in
-`6a868f9fcfe9f1a9f38d7cd11d6846b9ce0bdd4b` inspected. Further uncommitted probe
-and release-document changes were inspected as a draft, without extending CI
-evidence to them. The latter checkpoint still requires its own successful
-complete target run. This draft
+`5335719133985fa00f08cc8bf2bf94f88a0a2b21`, including the committed host dependency
+lock, immutable host configuration, strengthened conditional-INSERT probe,
+multiline display styling and candidate release documents. A subsequent
+restoration of frozen documentation and relocated assurance clarification is
+being reviewed. The final checkpoint still requires a successful complete run.
+This draft
 does not authorize issue closure, final merge or publication.
 
 ## Scope and method
@@ -59,7 +59,7 @@ a partially failing package run into successful release acceptance.
 | #32: save/load/select/clear, Unicode, errors, reload/restart | Actual click/keyboard, multiline textContent, paging, local clear, error preservation, stale genuine detail response and delayed hydration tests on three engines; actual host stopped/restarted against the same D1 state | All 24 browser flow tests and D1 persistence checks passed; whole 33-test target suite is still red |
 | #32: client separation and manipulated values | Actual bundle/maps audit; real-host origin, envelope/field injection rejection and no-write checks; protected host-policy tests remain separate | Covered, but the full target job must be green |
 | #32: provenance and exact codecs | Closed nominal records; decimal-string safe integers; Unicode/UTF-8, bytes/nodes/depth limits; Python/TS differential tests and full build recomputation | Covered by regressions, generated execution and wheel checks |
-| #32: early atomic conditional query on real target | Actual local D1 concurrent revision UPDATE gives one winner and one conflict; bounded INSERT SELECT probe checks policy, capacity and RETURNING in the mutation statement | CAS and initial INSERT probe passed; strengthened spare-capacity replay probe execution pending |
+| #32: early atomic conditional query on real target | Actual local D1 concurrent revision UPDATE gives one winner and one conflict; bounded INSERT SELECT probe checks policy, capacity and RETURNING in the mutation statement | CAS passed; strengthened spare-capacity replay probe passed in run 37978716172; complete final target run remains required |
 | #32: independent review, full regression and release docs green | This independent AI review; two Python CI matrices, Ruff/Mypy, strict TypeScript, real React SSR/hydration and wheel checks | Pending complete target rerun and final release documents/exact candidate gate |
 
 The history mapping covers the user flows explicitly named by #32 and the
@@ -89,7 +89,8 @@ historical W2 application, while M3 has separate source and acceptance evidence.
 The candidate README/release notes distinguish v0.7.0 preparation from the
 published v0.6.0 package and distinguish local D1 from cloud deployment.
 
-The reviewed QUICKSTART and ASSURANCE updates separate frozen P0 proof statements
+The frozen QUICKSTART and ASSURANCE documents retain their historical bytes.
+An additive clarification in GENERAL-WEB-PREVIEW separates their P0 statements
 from structured A1 support and M3 web checks. Known target limits, public-data
 examples, trusted host authorization and the absence of a whole-website proof
 are stated without treating testing as a formal theorem. The final publication
@@ -135,10 +136,20 @@ wording and exact evidence references still need their completed-run update.
   Shutdown now requires a closed listening port, including the missing-process-
   group case. The original fail-open counterexample now fails the acceptance
   harness instead of falsely reporting persistence after restart.
+- The pinned Wrangler custom-build watcher restarted its proxy during POST
+  requests. The acceptance host now uses the same built modules, bindings and
+  assets with a no-op custom build and an empty custom-build watch directory;
+  no application retry or generated-source patch hides the failure. The
+  configuration and its preservation checks were inspected; complete target
+  execution remains required.
+- Editing the frozen assurance guide broke the historical raw-file digest gate.
+  Its owner is restoring the exact baseline bytes, keeping the frozen test
+  expectations unchanged and placing profile clarification in an additive guide.
 
 No additional implementation blocker was found in these repaired slices. The
-remaining red target response is being repaired at the host lifecycle boundary;
-an identified cause does not make the failing target run acceptable.
+remaining gates are a successful complete host run and a full regression after
+the protected-document restoration. Identifying or locally repairing a cause
+does not make a failing package run acceptable.
 
 ## Directly verified evidence and open gates
 
@@ -182,12 +193,29 @@ not the dispatcher's JSON error envelope. Host lifecycle stabilization and a
 complete rerun remain required. Application writes must not be retried merely
 to conceal this failure.
 
+Run
+[37978716172](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37978716172)
+checked out `5335719133985fa00f08cc8bf2bf94f88a0a2b21`. Both Python jobs exposed
+one failed frozen-file assertion for `docs/ASSURANCE.md`: 702 tests and 260
+subtests passed, with one optional skip. Ruff, strict Mypy and the provisioned
+strict TypeScript, React and wheel checks passed. The strengthened actual local
+D1 conditional INSERT SELECT probe passed with changes `[1,0,0,0,1,0]` and one
+remaining slot in the replay scope. The host then failed to become ready within
+90 seconds; browser tests were not reached. The frozen document must be restored
+and host startup corrected before the complete package rerun. Changing the
+expected digest or counting earlier partial target runs would not close these
+regressions. The reviewer independently checked that all 55 frozen raw-file
+digests match their unchanged fixture after the working-tree restoration.
+
 Before approval, the reviewer must inspect the successful complete target rerun,
-the executed conditional-INSERT probe and full regression on the final code
-checkpoint, including the committed dependency lock. Final README/CHANGELOG,
-version/release notes, issue completion evidence and the exact candidate gate
-must also be prepared and checked on the work branch. At draft time the release
-plan is deliberately not ready and all three issues remain open.
+the executed strengthened conditional-INSERT probe and full regression on the
+final code checkpoint, including the committed dependency lock and final
+README/CHANGELOG/version/release notes. After approval and before merge, the
+maintainer must attach issue completion evidence, close all three issues as
+completed, set readiness and pass the exact candidate gate on the work branch.
+This order avoids treating a gate that requires the review marker as a
+precondition for writing that same marker. At draft time the release plan is
+deliberately not ready and all three issues remain open.
 
 ## Assurance and product limits
 

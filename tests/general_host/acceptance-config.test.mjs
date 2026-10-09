@@ -15,7 +15,7 @@ test("immutable acceptance config preserves built routing, modules and bindings"
   const original = structuredClone(built);
   const accepted = immutableHostConfig(built);
   assert.deepEqual(accepted, {...original,
-    build: {cwd: ".", command: 'node -e ""', watch_dir: []},
+    build: {cwd: ".", command: 'node -e ""', watch_dir: ["wrangler.json"]},
   });
   assert.deepEqual(built, original);
   accepted.assets.directory = "elsewhere";
@@ -25,7 +25,7 @@ test("immutable acceptance config preserves built routing, modules and bindings"
 test("acceptance setup requires a built worker and rejects malformed host config", () => {
   const valid = {main: "index.js", no_bundle: true, assets: {directory: "../client"}};
   assert.deepEqual(immutableHostConfig(valid).build,
-    {command: 'node -e ""', watch_dir: []});
+    {command: 'node -e ""', watch_dir: ["wrangler.json"]});
   for (const invalid of [null, [], {}, {...valid, no_bundle: false},
     {...valid, main: ""}, {...valid, assets: {}}, {...valid, build: []}]) {
     assert.throws(() => immutableHostConfig(invalid), /built worker/);
