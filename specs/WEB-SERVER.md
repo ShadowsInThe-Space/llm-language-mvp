@@ -51,6 +51,16 @@ many empty chunks. A timeout ends the response without awaiting stream
 cancellation. Strict UTF-8/JSON parsing rejects duplicate keys, malformed JSON,
 excessive depth/nodes and bare numeric tokens.
 
+Origin, method and content-type/encoding rejection first disposes the body under
+the same byte, read-count and time bounds. Small bodies are read to EOF without
+JSON decoding, authorization, pure evaluation or database work before the error
+response. Overflow, timeout or invalid declared length instead triggers
+best-effort cancellation without awaiting its completion. A cancellation that
+throws, rejects or never settles cannot delay the rejection. The original
+403/405/415 status is preserved even if body disposition fails; ordinary declared
+length rejection retains its 400/413 status. This closes the unread-body transport
+boundary, but does not by itself prove upstream keepalive behavior in a provider.
+
 After selecting a closed action, codecs validate the entire nominal input.
 Int/Nat arrive as canonical decimal strings and decode into exact safe native
 integers. Positional binding types are validated again, Bool binds as 0/1, and
@@ -113,6 +123,8 @@ type, `no-store`, exact allowed-origin CORS, `Vary: Origin`, and `nosniff`.
 `stripTypeScriptTypes`. The harness provides a deliberately minimal D1-shaped
 test double. It checks transport and envelope validation before database calls,
 stream byte/time bounds, trusted host authorization, nominal wire outputs,
+bounded early-rejection body disposal, original rejection status preservation,
+small-body EOF and nonawaited throwing/rejecting/nonsettling cancellation,
 safe positional bindings, invalid provider rows, generic errors, conflict
 outcomes and prototype-sensitive names. Transform tests additionally run the
 actual emitted A1 pure runtime, check changed positional SQL bindings and

@@ -9,7 +9,7 @@
     "start": "node start.mjs",
     "db:apply": "node apply-schema.mjs",
     "test:conditional-insert": "node check-conditional-insert.mjs",
-    "test:config": "node --test settings.test.mjs acceptance-config.test.mjs",
+    "test:config": "node --test settings.test.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

@@ -136,22 +136,31 @@ for (const operation of payload.operations) {
   const headers = {"content-type": operation.contentType ?? "application/json"};
   if (operation.origin !== null) headers.origin = operation.origin ?? "https://app.test";
   if (operation.contentLength !== undefined) headers["content-length"] = operation.contentLength;
+  if (operation.contentEncoding !== undefined)
+    headers["content-encoding"] = operation.contentEncoding;
   const method = operation.method ?? "POST";
+  const bodyTrace = {pulls:0,cancels:0,closed:false};
   let body = operation.raw ?? JSON.stringify({action: operation.action ?? "find",
                                               input: operation.input ?? payload.input});
   if (operation.bytes) body = new Uint8Array(operation.bytes);
   if (operation.stream || operation.hang) {
     let index = 0;
     body = new ReadableStream({pull(controller) {
+      bodyTrace.pulls++;
       if (operation.hang) return new Promise(() => {});
-      if (index === operation.stream.length) controller.close();
+      if (index === operation.stream.length) {bodyTrace.closed=true;controller.close();}
       else controller.enqueue(new TextEncoder().encode(operation.stream[index++]));
-    }});
+    }, cancel() {
+      bodyTrace.cancels++;
+      if (operation.cancelMode === "hang") return new Promise(() => {});
+      if (operation.cancelMode === "reject") return Promise.reject(new Error("cancel failed"));
+      if (operation.cancelMode === "throw") throw new Error("cancel failed");
+    }}, {highWaterMark:0});
   }
   const request = new Request("https://app.test/api", {method, headers,
-    ...(method === "POST" ? {body, duplex: "half"} : {})});
+    ...(!["GET","HEAD"].includes(method) ? {body, duplex: "half"} : {})});
   const response = await dispatch(request);
-  results.push({status: response.status, body: await response.json(), calls, authCalls});
+  results.push({status: response.status, body: await response.json(), calls, authCalls, bodyTrace});
 }
 console.log(JSON.stringify(results));
 '''
@@ -281,6 +290,50 @@ class ServerTests(unittest.TestCase):
         )
         self.assertEqual([result["status"] for result in results], [413, 413, 400, 408, 413])
         self.assertTrue(all(result["calls"] == [] for result in results))
+
+    def test_early_rejections_dispose_small_bodies_without_auth_or_database(self) -> None:
+        stream = ["{", '"action":"private","input":'
+                  '{"record":"privateInput","fields":{"id":"one"}}}']
+        cases = (
+            {"origin": "https://evil.test"}, {"origin": None}, {"method": "PATCH"},
+            {"contentType": "text/plain"}, {"contentEncoding": "gzip"},
+        )
+        operations = ({**case, "stream": stream, "authorize": "allow"} for case in cases)
+        results = self.run_operations(*operations, {})
+        for result, status in zip(results[:-1], (403, 403, 405, 415, 415), strict=True):
+            self.assertEqual(result["status"], status)
+            self.assertEqual(result["calls"], [])
+            self.assertEqual(result["authCalls"], [])
+            self.assertEqual(result["bodyTrace"], {"pulls": 3, "cancels": 0, "closed": True})
+        self.assertEqual(results[-1]["status"], 200)
+
+    def test_rejected_body_disposition_is_bounded_and_preserves_rejection_status(self) -> None:
+        cases = (
+            {"stream": ["x" * 20000, "x" * 20000]},
+            {"hang": True, "timeoutMs": 5},
+            {"stream": ["unused"], "contentLength": "999999"},
+            {"stream": ["unused"], "contentLength": "invalid"},
+        )
+        results = self.run_operations(*({**case, "origin": "https://evil.test",
+                                         "cancelMode": "hang"} for case in cases))
+        for result in results:
+            self.assertEqual(result["status"], 403)
+            self.assertEqual(result["calls"], [])
+            self.assertEqual(result["authCalls"], [])
+            self.assertEqual(result["bodyTrace"]["cancels"], 1)
+            self.assertFalse(result["bodyTrace"]["closed"])
+        self.assertEqual([result["bodyTrace"]["pulls"] for result in results], [2, 1, 0, 0])
+
+    def test_declared_length_rejections_cancel_before_read_without_awaiting_cancel(self) -> None:
+        operations = (
+            {"stream": ["unused"], "contentLength": length, "cancelMode": mode}
+            for length in ("999999", "invalid") for mode in ("hang", "throw", "reject")
+        )
+        results = self.run_operations(*operations)
+        self.assertEqual([result["status"] for result in results], [413] * 3 + [400] * 3)
+        self.assertTrue(all(result["calls"] == [] for result in results))
+        for result in results:
+            self.assertEqual(result["bodyTrace"], {"pulls": 0, "cancels": 1, "closed": False})
 
     def test_private_and_admin_require_trusted_host_authorization(self) -> None:
         results = self.run_operations(

@@ -114,13 +114,22 @@ function object(value: unknown, names: string[]): Record<string, unknown> {
     throw new Error("Invalid fields");
   return row;
 }
+function cancelUnconsumedBody(request: Request): void {
+  // A hostile cancellation may reject, throw, or never settle. Never await it.
+  try { if (request.body !== null) void request.body.cancel().catch(() => undefined); }
+  catch { /* Preserve the original transport rejection. */ }
+}
 async function readBounded(
   request: Request, limit: number, timeoutMs: number,
 ): Promise<Uint8Array> {
   const length = request.headers.get("content-length");
   if (length !== null) {
-    if (!/^[0-9]{1,8}$/.test(length)) throw new BoundaryError(400, "InvalidRequest");
-    if (Number(length) > limit) throw new BoundaryError(413, "RequestTooLarge");
+    if (!/^[0-9]{1,8}$/.test(length)) {
+      cancelUnconsumedBody(request); throw new BoundaryError(400, "InvalidRequest");
+    }
+    if (Number(length) > limit) {
+      cancelUnconsumedBody(request); throw new BoundaryError(413, "RequestTooLarge");
+    }
   }
   if (request.body === null) throw new BoundaryError(400, "InvalidRequest");
   const reader = request.body.getReader();
@@ -213,13 +222,20 @@ export function createDispatcher(
   function error(status: number, label: string): Response {
     return response(JSON.stringify({error: label}), status);
   }
+  async function rejectTransport(request: Request, status: number, label: string): Promise<Response> {
+    // Dispose small bodies to EOF before responding; perform no decoding or authority work.
+    // This also avoids leaving a reusable upstream connection with an unread small body.
+    try { await readBounded(request, maxBytes, timeoutMs); }
+    catch { cancelUnconsumedBody(request); }
+    return error(status, label);
+  }
   return async (request: Request): Promise<Response> => {
-    if (request.headers.get("origin") !== origin) return error(403, "Forbidden");
-    if (request.method !== "POST") return error(405, "MethodNotAllowed");
+    if (request.headers.get("origin") !== origin) return rejectTransport(request, 403, "Forbidden");
+    if (request.method !== "POST") return rejectTransport(request, 405, "MethodNotAllowed");
     const contentType = request.headers.get("content-type") ?? "";
     if (!/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(contentType)
       || ![null, "identity"].includes(request.headers.get("content-encoding")))
-      return error(415, "UnsupportedMediaType");
+      return rejectTransport(request, 415, "UnsupportedMediaType");
     let envelope: Record<string, unknown>, action: Action, native: Record<string, unknown>;
     try {
       const raw = await readBounded(request, maxBytes, timeoutMs);

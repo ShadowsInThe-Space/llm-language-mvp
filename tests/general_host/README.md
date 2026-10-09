@@ -13,15 +13,6 @@ Its CLI builds with `vinext build`; Wrangler serves the resulting
 direct dependency. Acceptance also requires a committed npm lockfile, captured
 on the CI runner when local package network access is unavailable.
 
-The runner creates a sibling acceptance host config that preserves built module,
-asset and binding paths. A fixed no-op custom build watches only the immutable
-original `wrangler.json`, enabling Wrangler's initial watcher-ready event while
-bypassing Wrangler 4.80.0's module rebuild watcher. The original build and generated
-apps remain unchanged; built config and client assets must also remain immutable
-while serving. This does not retry failed requests. Wrangler's typed
-`dev.watch: false` option is not used because its pinned implementation does not
-honor it.
-
 Run from the repository root with its Python environment installed:
 
 ```sh

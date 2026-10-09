@@ -781,3 +781,26 @@ KI-Fachreview.
   unapproved. The existing PR #39 landing-page improvements are already absorbed;
   stale version links, P0-only assurance wording and audit limitations are
   reconciled on this one milestone branch rather than merging an obsolete README.
+
+### 2026-10-09 — Correcting the host diagnosis without weakening acceptance
+
+- The candidate documentation edit accidentally touched frozen `docs/ASSURANCE.md`.
+  The regression caught its digest drift; restored its exact original bytes and
+  moved current profile context to the additive M3 guide. All 55 historical raw
+  hashes match without editing the baseline fixture or expected hashes.
+- `cb7f3bce1e13b0c0d2d3898cc087671511cac328` / run `37979355263`
+  restores the full green Python/type/wheel matrix. The strengthened actual D1
+  INSERT SELECT probe passed counts `[1,0,0,0,1,0]`, including replay rejection
+  with one free slot. The subsequent seed still received HTTP 503 after an
+  early rejected request, so the milestone remains unapproved.
+- Pinned Wrangler source inspection corrected the initial restart diagnosis:
+  its proxy compares a request-path URL with a root URL when classifying errors.
+  Therefore ordinary transport failures can receive its misleading restart text
+  even when the worker is unchanged. Startup custom-build log lines are not proof
+  of a later reload. The speculative custom watcher was removed entirely.
+- The concrete remaining hypothesis is unread request bodies on early rejection.
+  The server fix uses the existing bounded reader to consume small rejected
+  bodies without decoding or authorization/database work, preserving the original
+  rejection status and byte/time limits. Overflow/timeout cancellation must never
+  introduce an unbounded wait. The existing real-target rejected-request/following-
+  read sequence remains the integration regression, with no request retries.
