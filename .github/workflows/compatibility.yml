@@ -8,10 +8,64 @@ on:
 permissions:
   contents: read
 jobs:
+  general-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+      - name: Prepare unmodified generated applications
+        run: PYTHONPATH=src python scripts/prepare_general_host.py
+      - name: Install exact host dependency tree
+        working-directory: tests/general_host
+        run: npm ci --ignore-scripts
+      - name: Build pinned Vinext and Cloudflare target
+        working-directory: tests/general_host
+        run: npm run build
+      - name: Check immutable host configuration
+        working-directory: tests/general_host
+        run: npm run test:config
+      - name: Inspect built client and source maps
+        run: python scripts/check_general_client_bundle.py --client-dir tests/general_host/dist/client --program-dir tests/general_host/generated
+      - name: Install supported browsers
+        working-directory: tests/general_host
+        run: npx --no-install playwright install --with-deps chromium firefox webkit
+      - name: Check D1 concurrency, process restart and browsers
+        run: python scripts/run_general_host_acceptance.py --host-dir tests/general_host
+      - name: Require committed dependency lock
+        run: git ls-files --error-unmatch tests/general_host/package-lock.json
+      - name: Preserve host acceptance evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: general-host-acceptance
+          if-no-files-found: warn
+          path: |
+            tests/general_host/package-lock.json
+            tests/general_host/host-acceptance.log
+            tests/general_host/playwright-report
+            tests/general_host/test-results
+            tests/general_host/results.json
+            tests/general_host/evidence
+      - name: Show host diagnostics
+        if: ${{ failure() }}
+        run: |
+          if [ -f tests/general_host/host-acceptance.log ]; then
+            cat tests/general_host/host-acceptance.log
+          fi
   baseline:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
         python: ['3.12', '3.13']
     steps:
@@ -26,4 +80,25 @@ jobs:
       - run: python -m pip install --no-deps -e .
       - run: python -m pytest -q
       - run: python -m ruff check src tests scripts
+        if: ${{ !cancelled() }}
       - run: python -m mypy --no-incremental src
+        if: ${{ !cancelled() }}
+      - name: Install pinned generated-target typecheck tools
+        if: ${{ matrix.python == '3.13' && !cancelled() }}
+        run: npm install --prefix "$RUNNER_TEMP/llmlang-types" --no-package-lock --ignore-scripts typescript@5.9.3 @types/react@19.2.2 react@19.2.6 react-dom@19.2.6 jsdom@26.1.0
+      - name: Check generated general web target types
+        if: ${{ matrix.python == '3.13' && !cancelled() }}
+        run: python scripts/check_general_target.py --toolchain "$RUNNER_TEMP/llmlang-types"
+      - name: Check actual React SSR and hydration boundaries
+        if: ${{ matrix.python == '3.13' && !cancelled() }}
+        run: LLMLANG_REACT_TOOLCHAIN="$RUNNER_TEMP/llmlang-types" python -m unittest discover -s tests -p test_general_web_client.py -q
+      - name: Check general compiler from isolated installed wheel
+        if: ${{ matrix.python == '3.13' && !cancelled() }}
+        run: |
+          python -m pip install -r requirements.release.lock
+          python -m pip wheel --no-build-isolation --no-deps --wheel-dir "$RUNNER_TEMP/general-wheel" .
+          python -m venv "$RUNNER_TEMP/general-wheel-venv"
+          "$RUNNER_TEMP/general-wheel-venv/bin/python" -m pip install -r requirements.lock "$RUNNER_TEMP"/general-wheel/*.whl
+          export PYTHONPATH=
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/general-wheel-venv/bin/python" "$GITHUB_WORKSPACE/scripts/check_general_wheel.py" --examples "$GITHUB_WORKSPACE/examples/web/general"

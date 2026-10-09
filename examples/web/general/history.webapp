@@ -1,0 +1,24 @@
+(websrc1 history "Saved text history"
+  (schema (table entries
+    (id (Text 64) primary) (title (Text 4096)) (revision Nat)))
+  (action save ((id (Text 64)) (title (Text 4096))) public
+    (insert entries (values (id id) (title title) (revision 0)) (project id title))
+    (transform title preserve_text (title)))
+  (action browse () public
+    (select_list entries (project id title) (order (id desc))
+      (limit 1) (offset 0) (where)))
+  (action browse_next ((cursor_id (Text 64))) public
+    (select_list entries (project id title) (order (id desc))
+      (limit 1) (offset 0) (where) (cursor (id cursor_id))))
+  (action fetch ((selected_id (Text 64))) public
+    (select_unique entries id selected_id (project id title revision)))
+  (pure_library helpers)
+  (library common)
+  (import common editor editor)
+  (use editor)
+  (list listing browse (columns (title "Text"))
+    (states "Loading" "Load failed" "No entries" "Entries loaded")
+    (select detail selected_id id)
+    (paginate browse_next (cursor_id id)))
+  (detail detail fetch (columns (id "Identifier") (title "Text") (revision "Revision"))
+    (states "Loading selection" "Selection failed" "No selection" "Selection loaded")))

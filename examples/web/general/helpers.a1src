@@ -1,0 +1,5 @@
+(a1src1
+  (limits 10000 1000 64)
+  (fn preserve_text ((text (Text 4096))) (Text 4096)
+    (return text))
+  (entry preserve_text))

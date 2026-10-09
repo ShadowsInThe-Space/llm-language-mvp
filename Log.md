@@ -588,3 +588,249 @@ Der vierte Durchgang schloss den letzten Wildcardpfad: `list_empty` verlangt
 jetzt einen expliziten Elementtyp mit übereinstimmender Kapazität.
 Vor Release folgen frische Wheel-Installation, GitHub-CI und unabhängiger
 KI-Fachreview.
+
+
+## 2026-10-08 — M3 implementation started (#21, #22, #32)
+
+- Authorized scope: the full roadmap, delivered one milestone at a time; current
+  work branch `milestone/m3`, release candidate remains `ready: false`.
+- Four bounded GPT-6.1-Sol workers handle effect checking, wire codecs, typed SQL
+  queries and the additive A1 source frontend. Integration and independent review
+  remain separate responsibilities. Existing W1/W2/pkg1 fixtures remain frozen.
+- The workspace had no checkout. All 273 upstream blobs, the root tree and the
+  signed upstream commit `853d7e73aec56fa37325833b3ec1a0394cc2d0a4` were
+  reconstructed through the GitHub connector and verified by Git object hashes.
+  Local history is a shallow checkout at that original commit.
+- Python 3.13 environment created. Locked dependency installation is blocked by
+  DNS/network access; pytest, Ruff, Mypy and Z3 are unavailable locally. Isolated
+  stdlib unittest behavior checks do not replace the mandated full acceptance.
+- TDD regression: canonical JSON sorting changed record_make field dictionary
+  order and caused valid nonalphabetical record declarations to fail validation.
+  RED: one canonical roundtrip error, two other checks passed. GREEN: compare
+  the exact field-name set (as the existing type checker already does), preserving
+  nominal identities, field types and ordered declarations in the semantic hash.
+  All three `test_a1_canonical_record.py` tests now pass on Python 3.13.
+- No release, completion claim or issue closure. Real D1/browser evidence and
+  the full matrix remain required before M3 acceptance.
+
+- Remote GitHub Actions remains available despite local DNS failure. Checkpoint
+  `a25c74daaba21731bf0cb9298332e6014f634965` passed the full Python 3.12/3.13
+  matrix: 533 pytest tests (plus 3 subtests), Ruff and strict Mypy. This evidence
+  covers that checkpoint only, not later uncommitted M3 implementation.
+- Second TDD regression: normative primitive string type spellings on const
+  instructions raised AttributeError in the interpreter. RED: 4 subtest errors;
+  GREEN after guarding the text-object branch: 2 tests, all 12 primitive and
+  invalid-literal subcases pass. The formal type contract is unchanged.
+- Integrated the README proposal from PR #39 head
+  `923273a8d776eb442d13b4008138d2901a6edfab` into M3, qualifying independent
+  checking to supported calculation profiles, correcting the released-version
+  marker and repository URLs, and pointing the setup checkout at v0.6.0.
+  PR #39 remains open until package integration is accepted; no separate main merge.
+
+- Foundation checkpoint `4ad2113ecff5e470d4f09badd77ad29bcdcf7493` passed
+  585 pytest tests plus 150 subtests in CI; Ruff found two style/default issues,
+  fixed before the next checkpoint. Mypy was not reached in that run.
+- Added general typed program validation, canonical web/UI-library sources,
+  server/client emitters and source-bound builds. Both example sources consume
+  the same UI library; no history/planner-specific compiler branches were added.
+- TDD compiler and CLI: missing-module/entrypoint RED, then deterministic build,
+  modified-library invalidation, artifact tamper rejection and no-clobber CLI GREEN.
+  Added strict generated TypeScript checks to CI; these are not browser/host evidence.
+- Independent AI foundation review found and verified repairs for deep source
+  literal validation, immutable source/hash pairing and cross-runtime depth errors.
+  Second integration review additionally found oversized legal wire responses and
+  unresolved selection references in unused components; repairs are in progress.
+- Real target acceptance remains blocked by the unavailable local pinned host and
+  restricted network/browser environment. This does not authorize issue closure,
+  M3 release, or beginning later milestone releases. Full scope stays open.
+
+- Integration review repairs completed: static wire byte/node budgets include
+  worst-case escaping and the request envelope; unused component selections are
+  checked; current eight-row examples compile and recompute exactly. Independent
+  AI recheck reproduced rejection of both original counterexamples and the
+  5,361-node/byte-fitting edge case. This is progress review, not release approval.
+- Third core TDD regression: 1,200 shallow function declarations with a terminal
+  entry failed due recursive static DFS. RED: three errors; iterative DFS preserves
+  deterministic cycle rejection while allowing the declared graph. GREEN: three
+  tests cover valid shallow execution, cycle rejection and the unchanged runtime
+  call-depth limit. No Python recursion-limit tuning or budget bypass.
+
+- Checkpoint `4779faa3e398df72b71b7acec4d890fd50a37e14`: full pytest
+  638 tests plus 176 subtests and Ruff passed; both generated examples passed
+  strict TypeScript 5.9.3 with React 19.2.2 types. Mypy identified 14 variable
+  reuse/narrowing errors in four new files. These were fixed without suppressions
+  or relaxed strictness; focused effects/program/source/build tests remain green.
+  The next exact checkpoint must pass the full matrix before calling this code
+  baseline verified. M3 scope/release acceptance remains independently incomplete.
+
+- Verified exact implementation checkpoint
+  `3bc7b319565644dff577cae96b20dcc4ac971968`: GitHub Actions run
+  https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37800192253
+  succeeded on Python 3.12 and 3.13. Each matrix job passed 638 tests plus
+  176 subtests, Ruff and strict Mypy (50 source files). The Python 3.13 job also
+  passed strict generated-target TypeScript for both history and tasks.
+- This is a verified implementation checkpoint, not M3 completion. Outstanding
+  executable pure-library integration, pinned host, actual D1/browser and final
+  wheel/release acceptance are tracked in docs/GENERAL-WEB-PREVIEW.md.
+  No issue was closed, final PR created, main merged or release published.
+- Resource counters for aggregate tokens, wall-time tokens/s and complete elapsed
+  session duration are unavailable; no worker token counts are estimated.
+
+### 2026-10-08 — M3 executable pure libraries, continuation
+
+- Continued with six bounded GPT-6.1-Sol workers, including an independent read-only
+  AI reviewer. Added exact typed parameter transforms to existing query actions;
+  all arguments read original decoded inputs and replacements apply together.
+  Authorization precedes execution, and SQL binding checks follow transformation.
+- Added an independent portable A1 runtime with explicit exported-entry whitelist,
+  strict native-value monitors, safe integers, Unicode checks and capped resource
+  budgets. The historical Node target and frozen core format remain unchanged.
+  General program admission and runtime emission share the portable validator.
+- Both history and task sources execute the same title-preview library. Generated
+  server runtime, source snapshot and runtime identity are manifest-bound. Client
+  output remains byte-identical when only the server helper body changes.
+- Review reproduced shallow nominal literal admission and unsafe target literals;
+  new regressions require static rejection before executable program admission.
+  The compiler still permits unused libraries as explicitly non-executed provenance.
+- Client review found SSR controls usable before hydration. Added disabled readiness
+  gates and an actual React SSR/jsdom hydration regression, including StrictMode.
+- Checkpoint `2132f35be5de295f4addd798cd87685cb8b6697c` ran full CI: both Python
+  versions passed 662 tests plus 203 subtests with one optional React test skipped
+  in the baseline run; strict Mypy passed 51 source files. The separately provisioned
+  React job passed all five tests, and isolated installed-wheel compilation/binding
+  passed for both applications. Ruff and generated TypeScript exposed remaining
+  formatting/type errors; this checkpoint is not declared fully green.
+- Real Node SQLite end-to-end tests execute source, pure transformation, emitted
+  SQL, codec and response paths for both examples, including CAS conflict and
+  database close/reopen. This is SQLite evidence, not Cloudflare D1 acceptance.
+- Remaining package acceptance still includes the pinned external Vinext host,
+  actual D1/browser runs, built client/source-map inspection and final release
+  review. No issue closure, main merge or release is authorized by these checks.
+- Independent AI recheck found no open blocker in the bounded pure-transform
+  slice. Final focused runs passed 91 general-web tests (one local React skip)
+  and 15 portable-runtime tests. Added actual callback reachability, nested
+  structured boundaries, fresh collection budgets and aggregate text-work checks.
+- Checkpoint `f3fddd56c466ca8318a4dde5607c34ea822b348a`, Actions run
+  https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37813625006:
+  Python 3.12 and 3.13 each passed 672 tests plus 208 subtests; one optional
+  React test was skipped in the baseline and all five passed in the dedicated
+  provisioned React run. Strict Mypy passed 51 source files; both generated
+  applications passed strict TypeScript and installed-wheel checks. Ruff alone
+  found an unbound-loop-variable warning and one 102-character test line.
+  Bound the per-function inference environment explicitly and wrapped that line;
+  the 15 portable-runtime tests still pass. Full CI reruns on the repair commit.
+- Verified repair checkpoint `90d993d2008c7f900ce01fb95fd78bd6bffebfa6`:
+  https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37814005914
+  is fully green on Python 3.12 and 3.13: 672 tests plus 208 subtests per version,
+  Ruff and strict Mypy (51 source files). Strict generated TypeScript passed for
+  both examples. The dedicated React SSR/jsdom hydration run passed all five tests
+  without the baseline's optional-toolchain skip. Both installed-wheel checks
+  passed. The follow-up changes only the evidence documentation.
+
+### 2026-10-09 — M3 host acceptance and history behavior correction
+
+- The remaining host environment was not an external authorization blocker.
+  Added a pinned Vinext 1.0.0-beta.5/Vite 8.0.13/React 19.2.6 fixture using
+  official Cloudflare plugin 1.31.0 and Wrangler 4.80.0, built workerd output,
+  local D1 bindings and Chromium/Firefox/WebKit acceptance. No generated target
+  file is hand-patched. The local shell cannot resolve package hosts; CI owns
+  dependency installation and execution. This does not require a cloud deployment.
+- Initial host checkpoint `0e1c091f9842fb8b7f944f32244cfd7be2355db4` built
+  successfully and passed client/source-map inspection (10 JS files, seven maps).
+  The actual D1 run exposed a non-JSON response from the Tasks route. Added host
+  diagnostics; no D1/browser acceptance is claimed from this failing run.
+- Acceptance review also found previously overlooked functional gaps: the example
+  truncated stored text, had no multiline control, and hid records beyond the
+  first page. Corrected both examples to preserve admitted 4096-byte UTF-8 text,
+  including empty and multiline input. The shared A1 helper is intentionally
+  neutral; nonidentity transforms remain covered by dedicated runtime tests.
+- Added generic closed keyset cursors with lexicographic ordering and a primary-key
+  tie breaker, checked continuation-action contracts, textarea controls and visible
+  successful-request counters without introducing an unmodeled clock effect.
+  One-row example pages retain the exact existing 32768-byte wire bound.
+- Independent review reproduced D1's 100-binding limit with a 107-binding query;
+  compilation now rejects excess binding/SQL-byte budgets. Previous-page memory
+  is bounded while forward paging remains available. Review also closed inline
+  source-map audit and false-positive process-restart evidence gaps with regressions.
+- Focused general tests passed locally; full exact-snapshot CI, pinned lockfile,
+  genuine local D1 and browser evidence still gate completion. M4 tenant, session,
+  general idempotency, transaction and migration work is not pulled into M3.
+
+### 2026-10-09 — Real target evidence and remaining host lifecycle failure
+
+- Checkpoint `3c740ebb8a231255aa6afb0cb4b8931e0980a09e`, Actions run
+  `37977221372`, passed 703 tests and 260 subtests on each Python version,
+  Ruff, strict Mypy, generated TypeScript, six dedicated React tests and both
+  isolated-wheel examples. The pinned host built and its ten client scripts and
+  seven source maps passed the static bundle audit.
+- Actual local D1 passed concurrent revision updates with exactly one winner,
+  rejected writes, and read-only persistence checks after a verified stopped
+  process and restart. All 24 browser interaction cases passed across Chromium,
+  Firefox and WebKit; one of nine API cases received a transient HTTP 503.
+  Thus 32/33 was partial acceptance, not a release pass.
+- Committed the exact CI-produced npm lockfile in `6a868f9`, then removed
+  bootstrap dependency resolution. Run `37977968445` passed the real local D1
+  conditional INSERT SELECT probe but reproduced the HTTP 503 during seed checks.
+  Its body identifies the pinned Wrangler proxy's worker-restart path; the
+  generated dispatcher does not produce that response. Host lifecycle repair is
+  required; no write retries or softened assertions hide the failure.
+- Review strengthened the conditional-insert probe: replay rejection must occur
+  with policy enabled and capacity remaining, so capacity cannot mask a missing
+  replay predicate. SQLite mutation discrimination passes; actual D1 must rerun.
+- Candidate version/docs are prepared but remain explicitly unpublished and
+  unapproved. The existing PR #39 landing-page improvements are already absorbed;
+  stale version links, P0-only assurance wording and audit limitations are
+  reconciled on this one milestone branch rather than merging an obsolete README.
+
+### 2026-10-09 — Correcting the host diagnosis without weakening acceptance
+
+- The candidate documentation edit accidentally touched frozen `docs/ASSURANCE.md`.
+  The regression caught its digest drift; restored its exact original bytes and
+  moved current profile context to the additive M3 guide. All 55 historical raw
+  hashes match without editing the baseline fixture or expected hashes.
+- `cb7f3bce1e13b0c0d2d3898cc087671511cac328` / run `37979355263`
+  restores the full green Python/type/wheel matrix. The strengthened actual D1
+  INSERT SELECT probe passed counts `[1,0,0,0,1,0]`, including replay rejection
+  with one free slot. The subsequent seed still received HTTP 503 after an
+  early rejected request, so the milestone remains unapproved.
+- Pinned Wrangler source inspection corrected the initial restart diagnosis:
+  its proxy compares a request-path URL with a root URL when classifying errors.
+  Therefore ordinary transport failures can receive its misleading restart text
+  even when the worker is unchanged. Startup custom-build log lines are not proof
+  of a later reload. The speculative custom watcher was removed entirely.
+- The concrete remaining hypothesis is unread request bodies on early rejection.
+  The server fix uses the existing bounded reader to consume small rejected
+  bodies without decoding or authorization/database work, preserving the original
+  rejection status and byte/time limits. Overflow/timeout cancellation must never
+  introduce an unbounded wait. The existing real-target rejected-request/following-
+  read sequence remains the integration regression, with no request retries.
+
+### 2026-10-09 — Complete M3 technical acceptance
+
+- Bounded rejected-body disposal passed its three RED-to-GREEN stream regressions
+  and all 17 dispatcher tests. The unchanged real D1 rejection/following-read
+  sequence now passes under the original pinned Wrangler host. The speculative
+  custom watcher helpers are deleted; neither target dependencies nor generated
+  application artifacts were patched, and no request retry was introduced.
+- Exact code checkpoint `6b8d4a09f03001f09cea9c4bdf3f0de928a849c3`, Actions
+  https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37980399274,
+  passed every job: 706 pytest tests and 260 subtests on each Python 3.12/3.13,
+  Ruff, strict Mypy on 51 source files, both generated TypeScript targets, all six
+  provisioned React tests and both isolated-wheel examples. The baseline's one
+  optional React skip is covered by that separately provisioned six-test run.
+- Built Vinext acceptance passed all 33 Chromium/Firefox/WebKit browser/API cases
+  without retries in 47 seconds. The client audit passed ten JavaScript files and
+  seven external source maps. Both host settings tests and the committed lock gate
+  passed. Actual local D1 verified conditional INSERT SELECT mutation counts
+  `[1,0,0,0,1,0]` with spare replay capacity, 26 seed requests including one CAS
+  winner, and five persisted-value reads after the old process/listener stopped.
+- An independent AI specialist independently fetched these exact job logs and
+  found no remaining implementation blocker. Final documentation and the review
+  attestation are prepared on the work branch. Issue evidence, the exact final
+  candidate gate, one package PR and main-SHA release validation remain the normal
+  delivery sequence; passing local-provider tests is not a cloud deployment claim.
+- The separate reviewer approved the final source/document scope in
+  `docs/reviews/M3-REVIEW.md` after independently reading the complete green logs
+  and final documentation changes. Readiness is now enabled for the complete
+  unchanged issue set #21/#22/#32. It authorizes the candidate delivery gates,
+  not an unvalidated main merge or publication.

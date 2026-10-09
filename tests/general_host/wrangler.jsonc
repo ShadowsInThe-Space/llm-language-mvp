@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "llmlang-general-acceptance",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-02-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {"not_found_handling": "none", "binding": "ASSETS"},
+  "vars": {"HOST_ALLOWED_ORIGIN": "http://127.0.0.1:8787"},
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "llmlang-general-acceptance",
+    "database_id": "00000000-0000-0000-0000-000000000003"
+  }]
+}

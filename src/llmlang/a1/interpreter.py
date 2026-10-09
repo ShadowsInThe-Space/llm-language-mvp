@@ -82,8 +82,9 @@ def interpret(
             value: Any
             if op == "const":
                 value = instruction.get("value")
-                if instruction.get("type", {}).get("kind") == "text":
-                    value = _text(value, instruction["type"]["capacity"])
+                constant_type = instruction["type"]
+                if isinstance(constant_type, dict) and constant_type.get("kind") == "text":
+                    value = _text(value, constant_type["capacity"])
             elif op == "record_make":
                 value = {
                     "record": instruction["record"],

@@ -232,7 +232,7 @@ def validate_module(module: object) -> dict[str, Any]:
                 )
                 assert isinstance(type_name, str) and isinstance(supplied, dict)
                 _require(
-                    tuple(supplied) == records[type_name],
+                    set(supplied) == set(records[type_name]),
                     "E_A1_RECORD_FIELDS",
                     "record fields differ",
                     iloc,
@@ -317,19 +317,19 @@ def validate_module(module: object) -> dict[str, Any]:
     visiting: set[str] = set()
     visited: set[str] = set()
 
-    def visit(name: str) -> None:
-        if name in visiting:
-            raise A1IRError("E_A1_CALL_CYCLE", "call graph must be acyclic", name)
-        if name in visited:
-            return
-        visiting.add(name)
-        for child in sorted(graph[name]):
-            visit(child)
-        visiting.remove(name)
-        visited.add(name)
-
     for name in sorted(graph):
-        visit(name)
+        pending = [(name, False)]
+        while pending:
+            current, leaving = pending.pop()
+            if leaving:
+                visiting.remove(current)
+                visited.add(current)
+            elif current in visiting:
+                raise A1IRError("E_A1_CALL_CYCLE", "call graph must be acyclic", current)
+            elif current not in visited:
+                visiting.add(current)
+                pending.append((current, True))
+                pending.extend((child, False) for child in sorted(graph[current], reverse=True))
     try:
         validate_types(module)
     except A1TypeError as exc:

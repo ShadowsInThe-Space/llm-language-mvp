@@ -1,0 +1,6 @@
+(webuilib1 common
+  (component editor
+    (form create save
+      (fields (id "Identifier" input) (title "Text" textarea))
+      (states "Saving" "Save failed" "No saved value" "Saved")
+      (buttons "Save" "Clear display"))))
