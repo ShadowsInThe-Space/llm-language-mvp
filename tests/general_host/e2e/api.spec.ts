@@ -39,10 +39,18 @@ for (const app of ["history", "tasks"] as const) {
             id, title: "This write must be rejected", ...attack.fields,
           }}, ...attack.extra,
         }});
-        expect(response.status(), attack.name).toBe(attack.status);
+        const rejectedBody = await response.text();
+        const rejectedContext = JSON.stringify({app, project: info.project.name,
+          attack: attack.name, id, phase: "rejected-save", status: response.status(),
+          body: rejectedBody});
+        expect(response.status(), rejectedContext).toBe(attack.status);
         const absent = await call(request, app, origin, "fetch", {selected_id: id});
-        expect(absent.status()).toBe(200);
-        expect(await absent.json()).toEqual({tag: "None", value: null});
+        const absentBody = await absent.text();
+        const absentContext = JSON.stringify({app, project: info.project.name,
+          attack: attack.name, id, phase: "absence-fetch", status: absent.status(),
+          body: absentBody});
+        expect(absent.status(), absentContext).toBe(200);
+        expect(JSON.parse(absentBody), absentContext).toEqual({tag: "None", value: null});
       }
     });
 }

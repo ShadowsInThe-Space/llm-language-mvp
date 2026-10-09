@@ -34,6 +34,14 @@ the same built worker with the same state and checks persistence before browser
 tests. It does not delete prior state. Use a fresh disposable fixture checkout
 for another complete run.
 
+`node check-conditional-insert.mjs` uses the same local Wrangler configuration
+and persistence directory to probe a conditional `INSERT … SELECT` in test-only
+tables. It checks the individual mutation counts for initial success, replay,
+full capacity across actors, and blocked policy. The final read only verifies
+the outcome. Multiple statements in one CLI invocation do not establish a
+batch transaction; this probe does not establish concurrent booking or the
+later M4 reservation/idempotence contract.
+
 For manual local inspection after building:
 
 ```sh

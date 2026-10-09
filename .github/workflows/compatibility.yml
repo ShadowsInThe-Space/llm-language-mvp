@@ -26,12 +26,7 @@ jobs:
         run: PYTHONPATH=src python scripts/prepare_general_host.py
       - name: Install exact host dependency tree
         working-directory: tests/general_host
-        run: |
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only --ignore-scripts
-          fi
-          npm ci --ignore-scripts
-          node -e 'const fs=require("node:fs"),z=require("node:zlib"); console.log("HOST_LOCK_GZIP="+z.gzipSync(fs.readFileSync("package-lock.json")).toString("base64"))'
+        run: npm ci --ignore-scripts
       - name: Build pinned Vinext and Cloudflare target
         working-directory: tests/general_host
         run: npm run build
@@ -61,7 +56,7 @@ jobs:
         if: ${{ failure() }}
         run: |
           if [ -f tests/general_host/host-acceptance.log ]; then
-            tail -n 160 tests/general_host/host-acceptance.log
+            cat tests/general_host/host-acceptance.log
           fi
   baseline:
     runs-on: ubuntu-latest

@@ -7,7 +7,8 @@ The caller supplies the shared generated `codecs.ts` alongside this module.
 
 Emission is deterministic. Client metadata contains the program name/title,
 expanded checked views, and only input/output codec descriptors for actions used
-by those views, including their declared next-page actions. It does not include SQL, query ASTs, schema definitions, unused
+by those views, including their declared next-page actions. It does not include
+SQL, query ASTs, schema definitions, unused
 actions, authorization requirements, capabilities, server bindings, or a pure
 library's executable code. Values deliberately declared as labels, input choices,
 or projected public fields remain public. The UI renderer has no application
@@ -16,8 +17,9 @@ name, table name, history, or tasks branches.
 ## Components and controls
 
 On the server render and initial client render, a readiness state is false.
-Form inputs/textareas/selects/checkboxes are inside a disabled fieldset, and Save, Load,
-Select, Clear, Previous, and Next buttons are disabled until the React effect subscribes to the
+Form inputs/textareas/selects/checkboxes are inside a disabled fieldset, and Save,
+Load, Select, Clear, Previous, and Next buttons are disabled until the React effect
+subscribes to the
 controller and marks the UI ready. The form handler also checks readiness before
 calling its controller. This prevents unhydrated native form submission or lost
 early actions. A Vinext App Router host supplies a `"use client"` wrapper that
@@ -90,8 +92,8 @@ explicit user action.
 The exported `createClientController(endpoint?, fetcher?)` owns the same state
 machine used by React. It exposes `getState`, `subscribe`, `submitForm`,
 `loadList`, `getPagination`, `nextPage`, `previousPage`, `selectRow`, `clear`, and
-`dispose`. State snapshots are defensive
-clones. The plain TypeScript runtime is delimited by `BEGIN GENERAL CLIENT
+`dispose`. State snapshots are defensive clones. The plain TypeScript runtime
+is delimited by `BEGIN GENERAL CLIENT
 RUNTIME` / `END GENERAL CLIENT RUNTIME` comments for focused executable tests;
 this is the actual controller, not a second simulated implementation.
 

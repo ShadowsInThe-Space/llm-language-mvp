@@ -73,6 +73,8 @@ def main() -> None:
     if state.exists():
         raise FileExistsError("Acceptance requires a fresh disposable D1 state directory")
     subprocess.run(["npm", "run", "db:apply"], cwd=host, env=environment, check=True, timeout=90)
+    subprocess.run(["npm", "run", "test:conditional-insert"], cwd=host, env=environment,
+                   check=True, timeout=90)
     with (host / "host-acceptance.log").open("wb") as log:
         first = start(host, environment, log)
         try:
