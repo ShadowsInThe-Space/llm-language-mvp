@@ -1,6 +1,13 @@
 # Assurance und bekannte Grenzen
 
-## Akzeptierte Aussage
+Dieses Dokument beschreibt die formale Aussage und Belegprüfung des P0-Profils.
+Das strukturierte A1-Profil hat eine eigene
+[Akzeptanzgrenze](../specs/A1-ACCEPTANCE.md). Der
+[allgemeine Web-Compiler](GENERAL-WEB-PREVIEW.md) prüft Typen, Effekte,
+Capabilities und begrenzte Laufzeitwerte; diese Prüfungen und seine Hosttests
+sind kein formaler Beweis der vollständigen Website oder des Hosts.
+
+## Akzeptierte Aussage im P0-Profil
 
 Für jede öffentliche Funktion und jeden typkorrekten Input gilt im abstrakten P0-Modell:
 Unter ihrer Vorbedingung erfüllt das Ergebnis ihre Nachbedingung, und alle erreichten
@@ -58,10 +65,12 @@ Physische RAM-Verfügbarkeit und Hostfehler sind nicht bewiesen. Sehr große Ein
 Zertifikate und Verzweigungen werden budgetiert; reale Ausführung kann resource_exhausted
 melden, obwohl der mathematische Core-Vertrag bewiesen ist.
 
-## Nicht unterstützte Spracheigenschaften
+## Nicht unterstützte Spracheigenschaften im P0-Profil
 
 Strings, allgemeine Rekursion, Schleifen, Arrays, I64/Overflow/Division, abhängige Typen,
-affine Ressourcen, Nebenläufigkeit und FFI bleiben spätere Profile. Die rationale
+affine Ressourcen, Nebenläufigkeit und FFI sind keine P0-Spracheigenschaften.
+A1 unterstützt bereits seine eigenen begrenzten Text- und Listenwerte; das
+erweitert die hier beschriebene P0-Beweisaussage nicht. Die rationale
 Zertifikatssprache ist für Integerarithmetik absichtlich unvollständig; `2*x=1` wird
 ohne zulässigen Leerheitsbeleg nicht als contract_empty gemeldet.
 

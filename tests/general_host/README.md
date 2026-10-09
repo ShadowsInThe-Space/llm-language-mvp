@@ -13,6 +13,14 @@ Its CLI builds with `vinext build`; Wrangler serves the resulting
 direct dependency. Acceptance also requires a committed npm lockfile, captured
 on the CI runner when local package network access is unavailable.
 
+The runner creates a sibling acceptance host config that preserves built module,
+asset and binding paths. A fixed no-op custom build with `build.watch_dir: []`
+bypasses Wrangler 4.80.0's module rebuild watcher. The original build and generated
+apps remain unchanged; built config and client assets must also remain immutable
+while serving. This does not retry failed requests. Wrangler's typed
+`dev.watch: false` option is not used because its pinned implementation does not
+honor it.
+
 Run from the repository root with its Python environment installed:
 
 ```sh
@@ -36,9 +44,12 @@ for another complete run.
 
 `node check-conditional-insert.mjs` uses the same local Wrangler configuration
 and persistence directory to probe a conditional `INSERT … SELECT` in test-only
-tables. It checks the individual mutation counts for initial success, replay,
-full capacity across actors, and blocked policy. The final read only verifies
-the outcome. Multiple statements in one CLI invocation do not establish a
+tables. It checks the individual mutation counts for initial success, full
+capacity across actors, blocked policy, and independent replay exclusion. The
+replay case uses a separate enabled scope with capacity two and one confirmed
+reservation, so one slot remains available when the repeated actor/request is
+rejected. This isolates the replay predicate from the capacity and policy gates.
+The final read verifies both stored outcomes and the remaining replay capacity. Multiple statements in one CLI invocation do not establish a
 batch transaction; this probe does not establish concurrent booking or the
 later M4 reservation/idempotence contract.
 
@@ -59,7 +70,11 @@ token, deployed database or external Sites service is required.
 
 Only built client assets are public; `generated/` contains private server IR and
 is never configured as an asset directory. The bundle check inspects built
-JavaScript and source maps. Browser reports are written to `evidence/`, traces
+JavaScript and decoded external source maps with a static filename/string-marker
+audit, deriving exact SQL and Pure entry markers from generated server artifacts.
+Inline maps are rejected. This checks the inspected build, not semantic isolation
+against arbitrary encoding or split strings, or host authentication.
+Browser reports are written to `evidence/`, traces
 and screenshots to `test-results/`, and server output to `host-acceptance.log`.
 Successful execution demonstrates the pinned local host and local D1 provider;
 it does not demonstrate deployment or a remote Cloudflare database.

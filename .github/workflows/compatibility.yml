@@ -30,6 +30,9 @@ jobs:
       - name: Build pinned Vinext and Cloudflare target
         working-directory: tests/general_host
         run: npm run build
+      - name: Check immutable host configuration
+        working-directory: tests/general_host
+        run: npm run test:config
       - name: Inspect built client and source maps
         run: python scripts/check_general_client_bundle.py --client-dir tests/general_host/dist/client --program-dir tests/general_host/generated
       - name: Install supported browsers

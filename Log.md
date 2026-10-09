@@ -755,3 +755,29 @@ KI-Fachreview.
 - Focused general tests passed locally; full exact-snapshot CI, pinned lockfile,
   genuine local D1 and browser evidence still gate completion. M4 tenant, session,
   general idempotency, transaction and migration work is not pulled into M3.
+
+### 2026-10-09 — Real target evidence and remaining host lifecycle failure
+
+- Checkpoint `3c740ebb8a231255aa6afb0cb4b8931e0980a09e`, Actions run
+  `37977221372`, passed 703 tests and 260 subtests on each Python version,
+  Ruff, strict Mypy, generated TypeScript, six dedicated React tests and both
+  isolated-wheel examples. The pinned host built and its ten client scripts and
+  seven source maps passed the static bundle audit.
+- Actual local D1 passed concurrent revision updates with exactly one winner,
+  rejected writes, and read-only persistence checks after a verified stopped
+  process and restart. All 24 browser interaction cases passed across Chromium,
+  Firefox and WebKit; one of nine API cases received a transient HTTP 503.
+  Thus 32/33 was partial acceptance, not a release pass.
+- Committed the exact CI-produced npm lockfile in `6a868f9`, then removed
+  bootstrap dependency resolution. Run `37977968445` passed the real local D1
+  conditional INSERT SELECT probe but reproduced the HTTP 503 during seed checks.
+  Its body identifies the pinned Wrangler proxy's worker-restart path; the
+  generated dispatcher does not produce that response. Host lifecycle repair is
+  required; no write retries or softened assertions hide the failure.
+- Review strengthened the conditional-insert probe: replay rejection must occur
+  with policy enabled and capacity remaining, so capacity cannot mask a missing
+  replay predicate. SQLite mutation discrimination passes; actual D1 must rerun.
+- Candidate version/docs are prepared but remain explicitly unpublished and
+  unapproved. The existing PR #39 landing-page improvements are already absorbed;
+  stale version links, P0-only assurance wording and audit limitations are
+  reconciled on this one milestone branch rather than merging an obsolete README.

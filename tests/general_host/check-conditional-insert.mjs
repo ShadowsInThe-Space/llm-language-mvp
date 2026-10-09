@@ -32,7 +32,7 @@ const statements = [
     quantity INTEGER NOT NULL CHECK(quantity = 1),
     PRIMARY KEY(scope, actor, request_id))`,
   `INSERT INTO __llmlang_m3_capacities (scope, capacity, enabled)
-    VALUES ('allowed', 1, 1), ('blocked', 1, 0)`,
+    VALUES ('allowed', 1, 1), ('blocked', 1, 0), ('replay', 2, 1)`,
   reservation("allowed", "actor-one", "request-one"),
   "SELECT changes() AS changed",
   reservation("allowed", "actor-one", "request-one"),
@@ -40,6 +40,13 @@ const statements = [
   reservation("allowed", "actor-two", "request-two"),
   "SELECT changes() AS changed",
   reservation("blocked", "actor-one", "request-one"),
+  "SELECT changes() AS changed",
+  // The replay scope remains enabled and has a spare slot after this insert.
+  // Removing NOT EXISTS must now cause a uniqueness failure, not be masked by
+  // a full-capacity predicate that would still produce zero inserted rows.
+  reservation("replay", "actor-one", "request-one"),
+  "SELECT changes() AS changed",
+  reservation("replay", "actor-one", "request-one"),
   "SELECT changes() AS changed",
   `SELECT slot.scope, slot.capacity,
     COALESCE(SUM(reservation.quantity), 0) AS reserved
@@ -61,24 +68,33 @@ const results = JSON.parse(output);
 assert.ok(Array.isArray(results), "Wrangler must return per-statement D1 results");
 assert.equal(results.length, statements.length, "Every probe statement needs a result");
 for (const result of results) assert.equal(result.success, true, "D1 statement failed");
-const changes = [4, 6, 8, 10].map(index => {
+const changes = [4, 6, 8, 10, 12, 14].map(index => {
   const rows = results[index].results;
   assert.ok(Array.isArray(rows) && rows.length === 1, "Each mutation needs its own changes() result");
   return rows[0].changed;
 });
-assert.deepEqual(changes, [1, 0, 0, 0],
-  "Initial reservation must insert once; replay, full capacity and blocked policy must not insert");
+assert.deepEqual(changes, [1, 0, 0, 0, 1, 0],
+  "Initial reservations insert once; capacity, policy and spare-capacity replay reject insertion");
 assert.deepEqual(results[3].results, [
   {scope: "allowed", actor: "actor-one", request_id: "request-one", quantity: 1},
 ], "The initial mutation must return exactly its inserted row");
-for (const index of [5, 7, 9]) assert.deepEqual(results[index].results, [],
-  "Rejected conditional mutations must return no inserted rows");
 assert.deepEqual(results[11].results, [
+  {scope: "replay", actor: "actor-one", request_id: "request-one", quantity: 1},
+], "The replay setup must insert one row with capacity remaining");
+for (const index of [5, 7, 9, 13]) assert.deepEqual(results[index].results, [],
+  "Rejected conditional mutations must return no inserted rows");
+assert.deepEqual(results[15].results, [
   {scope: "allowed", capacity: 1, reserved: 1},
   {scope: "blocked", capacity: 1, reserved: 0},
+  {scope: "replay", capacity: 2, reserved: 1},
 ], "Confirmed reservations must remain within each scope's capacity");
+const replayScope = results[15].results.find(row => row.scope === "replay");
+const replayRemainingCapacity = replayScope.capacity - replayScope.reserved;
+assert.equal(replayRemainingCapacity, 1,
+  "Replay rejection must be demonstrated with enabled policy and spare capacity");
 console.log(JSON.stringify({
   evidence: "actual local D1 conditional INSERT SELECT: initial/replay/capacity/policy",
   changes,
+  replayRemainingCapacity,
   limitation: "single-statement target probe; no batch-transaction or concurrent booking claim",
 }));

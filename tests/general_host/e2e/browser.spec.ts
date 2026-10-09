@@ -64,7 +64,10 @@ async function save(page: Page, app: string, id: string, title: string,
     .toHaveText(`Saved · Confirmation ${confirmation}`);
   await expect(create.getByRole("definition").nth(0)).toHaveText(id);
   // textContent compares exact Unicode and line breaks, without whitespace folding.
-  expect(await create.getByRole("definition").nth(1).textContent()).toBe(title);
+  const confirmedText = create.getByRole("definition").nth(1);
+  expect(await confirmedText.textContent()).toBe(title);
+  await expect(confirmedText).toHaveCSS("white-space", "pre-wrap");
+  await expect(confirmedText).toHaveCSS("overflow-wrap", "anywhere");
 }
 
 async function promoteTask(page: Page, id: string, title: string, confirmation = 1) {
@@ -80,7 +83,9 @@ async function promoteTask(page: Page, id: string, title: string, confirmation =
   await expect(edit.getByRole("status"))
     .toHaveText(`Updated · Confirmation ${confirmation}`);
   await expect(edit.getByRole("definition")).toContainText([id, title, "1", "Yes"]);
-  expect(await edit.getByRole("definition").nth(1).textContent()).toBe(title);
+  const confirmedText = edit.getByRole("definition").nth(1);
+  expect(await confirmedText.textContent()).toBe(title);
+  await expect(confirmedText).toHaveCSS("white-space", "pre-wrap");
 }
 
 async function load(page: Page, app: string) {
@@ -108,14 +113,20 @@ async function select(page: Page, app: string, id: string, title: string, confir
   const row = listing.getByRole("row").filter({hasText: id});
   await expect(row).toHaveCount(1);
   await expect(listing.locator("tbody tr")).toHaveCount(1);
-  expect(await row.getByRole("cell").nth(0).textContent()).toBe(title);
+  const listedText = row.getByRole("cell").nth(0);
+  expect(await listedText.textContent()).toBe(title);
+  await expect(listedText).toHaveCSS("white-space", "pre-wrap");
+  await expect(listedText).toHaveCSS("overflow-wrap", "anywhere");
   const response = apiResponse(page, app, "fetch");
   await row.getByRole("button", {name: /^Select /}).click();
   expect((await response).status()).toBe(200);
   await expect(detail.getByRole("status"))
     .toHaveText(`Selection loaded · Confirmation ${confirmation}`);
   await expect(detail.getByRole("cell", {name: id, exact: true})).toBeVisible();
-  expect(await detail.getByRole("cell").nth(1).textContent()).toBe(title);
+  const selectedText = detail.getByRole("cell").nth(1);
+  expect(await selectedText.textContent()).toBe(title);
+  await expect(selectedText).toHaveCSS("white-space", "pre-wrap");
+  await expect(selectedText).toHaveCSS("overflow-wrap", "anywhere");
 }
 
 function deferred() {

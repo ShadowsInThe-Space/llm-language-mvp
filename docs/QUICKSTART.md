@@ -4,6 +4,9 @@
 
 You can try the compiler and proof demo without an AI account or API key.
 The examples are included; no new model request is made.
+The first five steps use the published v0.6.0 Developer Preview. M3 is an
+unpublished v0.7.0 candidate on `milestone/m3`; its separate instructions follow
+below. Use the published version until the candidate passes its release gates.
 
 ## 1. Install
 
@@ -13,7 +16,7 @@ Run these commands in a terminal on Linux or macOS:
 ```bash
 git clone https://github.com/ShadowsInThe-Space/llm-language-mvp.git
 cd llm-language-mvp
-git checkout v0.5.0
+git checkout v0.6.0
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
@@ -48,7 +51,9 @@ Inspect the generated files:
 **This command generates source files. It does not start a website or create a database.**
 The generated app needs the Vinext/React/D1 host integration described in the
 [deployment guide (German)](W1-GUIDE.md#zielbuild-und-datenbank).
-The repository does not yet include a standalone one-command web host.
+This published W2 walkthrough does not start a host. The M3 candidate includes
+a pinned local acceptance host with separate generation, build and database
+setup steps; it does not replace the historical W2 deployment.
 You can view the previously deployed [example website](https://hello-ai-world.adaptiveaisolutions.chatgpt.site);
 its access settings may require the owner's permission.
 
@@ -95,15 +100,47 @@ It uses temporary copies and leaves the example sources unchanged.
 See [the pkg1 guide](PKG1-GUIDE.md) for individual commands and limitations.
 Package commands are currently validated on Linux only.
 
+## 6. Try the M3 general web candidate
+
+On the existing checkout, switch to the candidate and reinstall from its source:
+
+```bash
+git checkout milestone/m3
+python -m pip install -e .
+python -m llmlang compile-general-web examples/web/general/history.webapp \
+  --library common=examples/web/general/common.webuilib \
+  --pure-library helpers=examples/web/general/helpers.a1src --out build/general-history
+python -m llmlang compile-general-web examples/web/general/tasks.webapp \
+  --library common=examples/web/general/common.webuilib \
+  --pure-library helpers=examples/web/general/helpers.a1src --out build/general-tasks
+```
+
+Choose fresh output directories. These commands generate checked React, server,
+codec, schema and library artifacts; they do not start a website. Both examples
+share a UI library and a server-side A1 helper. Textareas preserve admitted
+multiline Unicode text up to 4096 UTF-8 bytes, and typed keyset pages reach older
+records. See the [general web guide](GENERAL-WEB-PREVIEW.md) for contracts and
+the [pinned host instructions](../tests/general_host/README.md) for building and
+running both examples with local D1. Publish only built client assets, never the
+whole compiler output directory.
+
+Candidate acceptance and publication remain pending. Check the
+[candidate release notes](releases/v0.7.0.md) for current evidence and remaining
+gates; successful compilation alone does not establish browser or D1 behavior.
+
 ## For contributors
 
 Install development tools with `python -m pip install -e '.[dev]'`.
-The full test suite also needs Node.js 24 for its SQLite runtime tests.
+The full test suite also needs Node.js 24 for its SQLite runtime tests. The M3
+host pins Node 24.19.0 and its JavaScript dependencies separately.
 Then run `python -m pytest -q` and `python -m ruff check src tests scripts`.
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for how to help.
 
 ## Verification of these instructions
 
-On September 13, 2026, the compile, integrity-check and proof-demo commands were
-run on Linux using the existing Python 3.12 environment. A fresh internet-based
-package installation and the Windows instructions were not tested.
+The historical W2 compile, integrity-check and proof-demo walkthrough was run
+on September 13, 2026, on Linux using the existing Python 3.12 environment.
+That dated walkthrough is not M3 host acceptance. Candidate evidence is tracked
+in its release notes and the pinned host guide. This documentation update does
+not claim a fresh internet-based installation, Windows verification or complete
+browser acceptance.

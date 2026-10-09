@@ -2,6 +2,9 @@
 
 This is an implementation preview on `milestone/m3`, not a released M3 package.
 W1, W2, pkg1 and their historical generated fixtures remain unchanged.
+The latest published package remains v0.6.0. Final browser acceptance and
+release approval are pending; see the [candidate notes](releases/v0.7.0.md)
+for checkpoint evidence.
 
 ## Compile both applications
 
@@ -48,6 +51,11 @@ text fits the bounded wire response. Generic keyset pagination makes older recor
 reachable, with stable ordering and a primary-key tie breaker. A successful load
 increments a visible local confirmation counter. Clear resets display and paging
 state without sending a request or deleting records.
+Previous-page navigation retains at most 32 cursors and 262144 serialized
+UTF-8 bytes per list. Next continues beyond that window; Previous stops at its
+oldest retained cursor. Clear resets navigation to the first page. Load refreshes
+the current confirmed page. Page changes leave confirmed detail selection visible
+until another selection or explicit detail Clear.
 
 ## Host contract
 
@@ -74,10 +82,16 @@ worker against Cloudflare's local D1 implementation; the historical Sites host a
 deployment remain separate. A source build or strict TypeScript check alone does
 not demonstrate browser or D1 behavior.
 
-## What remains before M3 acceptance
+## Candidate evidence and remaining acceptance
 
-- Run a clean build in the pinned Vinext host with generated modules unchanged.
-- Run actual D1 conditional-write/concurrency and persistence/restart tests.
+The reported candidate checkpoint has passed a pinned Vinext build, inspection
+of built client JavaScript and source maps, and actual local D1 conditional-write,
+concurrency and process-restart checks. These are checkpoint results; they must
+be rerun against the final candidate. Full browser acceptance and the host
+lifecycle fix remain pending. There is no cloud deployment claim.
+
+- Revalidate the clean pinned Vinext build and unchanged generated modules.
+- Revalidate actual D1 conditional-write/concurrency and persistence/restart tests.
 - Exercise both applications in the supported browser matrix, including keyboard,
   focus, labels, Unicode, failures, stale selections, reload and clear behavior.
 - Inspect built client modules and source maps for server capability separation.
@@ -86,4 +100,9 @@ not demonstrate browser or D1 behavior.
 
 Current tests include actual SQLite queries and Node execution of generated
 TypeScript/controller boundaries with a controlled D1-shaped double. The latter
-is explicitly not D1 provider evidence. There is no whole-website formal proof.
+is explicitly not D1 provider evidence; the pinned host exercises the actual
+local D1 provider separately. Built-client inspection is a static filename and
+string-marker audit of the inspected artifacts and decoded external source maps.
+It derives exact SQL and Pure entry markers from generated server artifacts;
+inline maps are rejected. It does not prove semantic isolation against arbitrary
+encoding or split strings, host authentication, or a whole website's correctness.

@@ -335,7 +335,7 @@ function FormPanel({view, controller, state, ready}: {view: Extract<View, {kind:
     <button type="button" disabled={!ready} onClick={() => controller.clear(view.name)}>{view.clearLabel}</button>
     {confirmed && <dl aria-label="Saved values">{Object.entries(confirmed.fields).map(([name, value]) =>
       <React.Fragment key={name}><dt>{view.fields.find(field => field.param === name)?.label ?? name}</dt>
-        <dd>{display(value)}</dd></React.Fragment>)}</dl>}
+        <dd style={{whiteSpace: "pre-wrap", overflowWrap: "anywhere"}}>{display(value)}</dd></React.Fragment>)}</dl>}
     </fieldset>
   </form>;
 }
@@ -357,7 +357,7 @@ function DataPanel({view, controller, state, ready}: {view: Exclude<View, {kind:
     {rows.length > 0 && <table><thead><tr>{view.columns.map(column => <th key={column.column} scope="col">{column.label}</th>)}
       {view.kind === "list" && view.selection && <th scope="col">Details</th>}</tr></thead>
       <tbody>{rows.map((row, index) => <tr key={index}>{view.columns.map(column =>
-        <td key={column.column}>{display(row.fields[column.column])}</td>)}
+        <td key={column.column} style={{whiteSpace: "pre-wrap", overflowWrap: "anywhere"}}>{display(row.fields[column.column])}</td>)}
         {view.kind === "list" && view.selection && <td><button type="button" disabled={!ready}
           onClick={() => {void controller.selectRow(view.name, row);}}>Select {index + 1}</button></td>}
       </tr>)}</tbody></table>}
