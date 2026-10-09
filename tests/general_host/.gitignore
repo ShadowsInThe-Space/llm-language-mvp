@@ -1,0 +1,11 @@
+node_modules/
+generated/
+dist/
+.wrangler/
+.state/
+.acceptance-state/
+evidence/
+test-results/
+playwright-report/
+host-acceptance.log
+results.json

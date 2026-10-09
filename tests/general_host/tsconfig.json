@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "types": ["node", "react"]
+  },
+  "include": ["app/**/*.ts", "app/**/*.tsx", "generated/**/*.ts", "generated/**/*.tsx", "worker/**/*.ts", "cloudflare.d.ts"]
+}

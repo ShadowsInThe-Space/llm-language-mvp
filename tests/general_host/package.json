@@ -1,0 +1,32 @@
+{
+  "name": "llmlang-general-host-acceptance",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=24"},
+  "scripts": {
+    "build": "vinext build",
+    "start": "node start.mjs",
+    "db:apply": "node apply-schema.mjs",
+    "test:config": "node --test settings.test.mjs",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-server-dom-webpack": "19.2.6",
+    "vinext": "1.0.0-beta.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.31.0",
+    "@playwright/test": "1.60.0",
+    "@types/node": "25.9.2",
+    "@types/react": "19.2.16",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.1",
+    "@vitejs/plugin-rsc": "0.5.27",
+    "typescript": "5.9.3",
+    "vite": "8.0.13",
+    "wrangler": "4.80.0"
+  }
+}
