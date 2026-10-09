@@ -1,8 +1,7 @@
 # Milestone delivery: one work package, one merge, one release
 
-Effective policy: 2026-09-20. Current published release: v0.5.0.
-This workflow is initially prepared on `milestone/m2`; it becomes part of `main`
-with the complete M2 delivery, not through a separate process-only merge.
+Effective policy: 2026-09-20; introduced with the complete M2 package.
+The authoritative publication status is [GitHub Releases](https://github.com/ShadowsInThe-Space/llm-language-mvp/releases).
 
 ## Fixed rules
 
@@ -85,6 +84,10 @@ python scripts/release_gate.py --repository ShadowsInThe-Space/llm-language-mvp 
 
 Commit the final package and open the single PR. Required checks:
 `baseline (3.12)`, `baseline (3.13)`, `milestone-complete`.
+For M3 and subsequent packages, the `general-host` compatibility job must also
+pass before merge. It builds the pinned host, inspects public assets and runs
+actual local D1/restart and Chromium/Firefox/WebKit acceptance. The main release
+workflow waits for this job as part of its compatibility validation.
 The gate runs on every relevant PR update without a skip-success path.
 It also rejects already-closed milestones and already-tagged/released versions,
 so a completed package cannot authorize another main merge. Publication retries

@@ -1,10 +1,11 @@
-# General web compiler — M3 work branch
+# General web compiler — v0.7.0 Web Preview
 
-This is an implementation preview on `milestone/m3`, not a released M3 package.
+This guide describes the v0.7.0 Web Preview source. Publication is a separate
+release step; [GitHub Releases](https://github.com/ShadowsInThe-Space/llm-language-mvp/releases)
+is authoritative for availability. Once that release is published, use
+`git checkout v0.7.0` and install its source before following these commands.
 W1, W2, pkg1 and their historical generated fixtures remain unchanged.
-The latest published package remains v0.6.0. Final browser acceptance and
-release approval are pending; see the [candidate notes](releases/v0.7.0.md)
-for checkpoint evidence.
+See the [release notes](releases/v0.7.0.md) for evidence and publication status.
 
 The historical [assurance document](ASSURANCE.md) is frozen with the P0
 compatibility baseline. Its mathematical statement and unsupported-language
@@ -89,21 +90,23 @@ worker against Cloudflare's local D1 implementation; the historical Sites host a
 deployment remain separate. A source build or strict TypeScript check alone does
 not demonstrate browser or D1 behavior.
 
-## Candidate evidence and remaining acceptance
+## Acceptance evidence and release status
 
-The reported candidate checkpoint has passed a pinned Vinext build, inspection
-of built client JavaScript and source maps, and actual local D1 conditional-write,
-concurrency and process-restart checks. These are checkpoint results; they must
-be rerun against the final candidate. Full browser acceptance and the host
-lifecycle fix remain pending. There is no cloud deployment claim.
+The [CI run 37980399274](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37980399274)
+at `6b8d4a09f03001f09cea9c4bdf3f0de928a849c3` passed the pinned Vinext build and
+all 33 Playwright tests across Chromium, Firefox and WebKit in 47 seconds.
+It also passed the actual local
+D1 seed/CAS sequence of 26 requests, five read checks after a complete process
+restart, and the separate conditional-insert probe. The probe returned mutation
+counts `1,0,0,0,1,0`, including replay rejection with a spare slot. Built-client
+inspection covered ten JavaScript files and seven external source maps.
 
-- Revalidate the clean pinned Vinext build and unchanged generated modules.
-- Revalidate actual D1 conditional-write/concurrency and persistence/restart tests.
-- Exercise both applications in the supported browser matrix, including keyboard,
-  focus, labels, Unicode, failures, stale selections, reload and clear behavior.
-- Inspect built client modules and source maps for server capability separation.
-- Complete independent package review, release documentation, installed-wheel
-  acceptance and the exact milestone gate before closing #21, #22 or #32.
+The same run passed 706 tests plus 260 subtests on each of Python 3.12 and 3.13,
+Ruff, strict Mypy over 51 files, generated TypeScript, six React checks, and
+isolated installed-wheel checks for both applications. These are results for
+that exact commit. Release review, completed issue evidence, the exact milestone
+gate, the final merge and publication remain separate requirements. Passing CI
+does not claim publication or a cloud deployment.
 
 Current tests include actual SQLite queries and Node execution of generated
 TypeScript/controller boundaries with a controlled D1-shaped double. The latter

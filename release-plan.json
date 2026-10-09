@@ -5,7 +5,7 @@
   "branch": "milestone/m3",
   "version": "0.7.0",
   "prerelease": true,
-  "ready": false,
+  "ready": true,
   "required_issues": [21, 22, 32],
   "review_file": "docs/reviews/M3-REVIEW.md",
   "notes_file": "docs/releases/v0.7.0.md"

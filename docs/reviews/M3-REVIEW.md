@@ -1,19 +1,20 @@
-# M3 independent AI package review — draft
+# M3 independent AI package review
 
 Date: 2026-10-09. Reviewer: separate Codex AI reviewer (`/root/m3_review`).
 This is an independent implementation review, not an academic endorsement or a
 formal proof of the compiler, website, authentication adapter or database.
 
-Release-Review: pending
+Release-Review: approved
 
 Reviewed implementation: `milestone/m3` through
-`5335719133985fa00f08cc8bf2bf94f88a0a2b21`, including the committed host dependency
-lock, immutable host configuration, strengthened conditional-INSERT probe,
-multiline display styling and candidate release documents. A subsequent
-restoration of frozen documentation and relocated assurance clarification is
-being reviewed. The final checkpoint still requires a successful complete run.
-This draft
-does not authorize issue closure, final merge or publication.
+`6b8d4a09f03001f09cea9c4bdf3f0de928a849c3`, with complete green
+[CI run 37980399274](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37980399274).
+The reviewer also read the subsequent documentation-only README, CHANGELOG,
+v0.7.0 notes, quickstart, general/host guides and release-workflow updates.
+Approval covers this complete M3 implementation and reviewed release material.
+It does not assert issue closure, candidate-gate completion, final merge or
+publication. The maintainer must complete those steps and revalidate the final
+package commit and exact main SHA under the release workflow.
 
 ## Scope and method
 
@@ -39,8 +40,9 @@ GitHub job steps and logs, with the checked-out commit verified.
 
 ## Acceptance mapping
 
-“Covered” below identifies concrete implementation and tests; it does not convert
-a partially failing package run into successful release acceptance.
+"Covered" below identifies concrete implementation and tests. Acceptance uses
+the complete successful run at the reviewed checkpoint, rather than combining
+earlier partial failures into a passing result.
 
 | Issue and criterion | Concrete implementation/evidence | Current assessment |
 | --- | --- | --- |
@@ -48,7 +50,7 @@ a partially failing package run into successful release acceptance.
 | #21: client DB writes rejected | Client locations reject DB requirements, including unused declarations; emitted clients contain only checked public UI/codec contracts | Covered by negative graph/emission tests and built-asset audit |
 | #21: transitive capability subsets | Iterative acyclic dependency checking reconstructs complete callee requirements, including callbacks and pure helper calls | Covered by transitive negative tests |
 | #21: stable diagnostics | Closed shapes, deterministic ordering, graph/resource limits and dedicated location/effect diagnostic tests | Covered within the versioned structural contract |
-| #21: browser values cannot mint identity/admin | Closed action/input envelopes, exact nominal fields; protected actions require a trusted host callback; authorization precedes pure execution and database access | Covered by protected-action boundary tests; real public-host injection tests mostly pass, one unrelated successful-read HTTP 503 remains unresolved |
+| #21: browser values cannot mint identity/admin | Closed action/input envelopes, exact nominal fields; protected actions require a trusted host callback; authorization precedes pure execution and database access | Covered by protected-action boundary tests and passing real public-host injection tests |
 | #22: existing history/demo behavior through composition | General source stores complete admitted Text4096, including empty/multiline Unicode; typed forms, list/detail selection, keyset pages, local clear and observable successful-request counters | All actual browser flow tests passed; additive-profile differences are stated below |
 | #22: second data model, same toolchain | Tasks adds Bool completion, Nat priority/revision and conditional update; both applications reuse the same UI editor and A1 helper sources | Both strict target checks, installed-wheel checks and actual browser flows passed |
 | #22: no manual target patches | Host preparation compares complete outputs with compiler builds and refuses existing destinations; host imports generated modules unchanged | Covered by preparation tests and successful pinned target build |
@@ -56,11 +58,11 @@ a partially failing package run into successful release acceptance.
 | #22: provenance recorded | Canonical source/library snapshots, source positions, semantic/effect hashes, compiler/codec/runtime identities and hashes for every generated file; check_build recompiles and compares all artifacts | Covered by complete recomputation, tamper and installed-wheel tests |
 | #32: both apps entirely from language/libraries | Explicit websrc1/webuilib1/a1src1 inputs lower through the same general model; no domain-specific emitter branches | Covered by both source examples and unrelated-schema tests |
 | #32: same compiler/runtime without handpatches | Source-bound builds, same generated client/dispatcher/codecs/runtime and unchanged host imports | Covered by preparation, strict TypeScript and wheel checks |
-| #32: save/load/select/clear, Unicode, errors, reload/restart | Actual click/keyboard, multiline textContent, paging, local clear, error preservation, stale genuine detail response and delayed hydration tests on three engines; actual host stopped/restarted against the same D1 state | All 24 browser flow tests and D1 persistence checks passed; whole 33-test target suite is still red |
-| #32: client separation and manipulated values | Actual bundle/maps audit; real-host origin, envelope/field injection rejection and no-write checks; protected host-policy tests remain separate | Covered, but the full target job must be green |
+| #32: save/load/select/clear, Unicode, errors, reload/restart | Actual click/keyboard, multiline textContent and computed styling, paging, local clear, error preservation, stale genuine detail response and delayed hydration tests on three engines; actual host stopped/restarted against the same D1 state | All 24 browser flow tests and D1 persistence checks passed in the complete 33-test target suite |
+| #32: client separation and manipulated values | Actual bundle/maps audit; real-host origin, envelope/field injection rejection and no-write checks; protected host-policy tests remain separate | Covered by the successful complete target job |
 | #32: provenance and exact codecs | Closed nominal records; decimal-string safe integers; Unicode/UTF-8, bytes/nodes/depth limits; Python/TS differential tests and full build recomputation | Covered by regressions, generated execution and wheel checks |
-| #32: early atomic conditional query on real target | Actual local D1 concurrent revision UPDATE gives one winner and one conflict; bounded INSERT SELECT probe checks policy, capacity and RETURNING in the mutation statement | CAS passed; strengthened spare-capacity replay probe passed in run 37978716172; complete final target run remains required |
-| #32: independent review, full regression and release docs green | This independent AI review; two Python CI matrices, Ruff/Mypy, strict TypeScript, real React SSR/hydration and wheel checks | Pending complete target rerun and final release documents/exact candidate gate |
+| #32: early atomic conditional query on real target | Actual local D1 concurrent revision UPDATE gives one winner and one conflict; bounded INSERT SELECT probe checks policy, capacity and RETURNING in the mutation statement | Both CAS and strengthened spare-capacity replay probe passed in the complete final target run |
+| #32: independent review, full regression and release docs green | This independent AI review; two Python CI matrices, Ruff/Mypy, strict TypeScript, real React SSR/hydration and wheel checks; complete release-doc delta reviewed | Covered at the approved code checkpoint; final package gate, merge and publication remain maintainer steps |
 
 The history mapping covers the user flows explicitly named by #32 and the
 roadmap's persistent values, selection and local clear. It is an additive general
@@ -86,15 +88,16 @@ certificate reconstruction is explicitly scoped to supported calculation
 profiles; web generation, structural validation, tests and artifact integrity
 are described separately. The hosted screenshot and walkthrough identify the
 historical W2 application, while M3 has separate source and acceptance evidence.
-The candidate README/release notes distinguish v0.7.0 preparation from the
-published v0.6.0 package and distinguish local D1 from cloud deployment.
+The README/release notes distinguish v0.7.0 source preparation from authoritative
+GitHub publication status and distinguish local D1 from cloud deployment.
 
-The frozen QUICKSTART and ASSURANCE documents retain their historical bytes.
-An additive clarification in GENERAL-WEB-PREVIEW separates their P0 statements
-from structured A1 support and M3 web checks. Known target limits, public-data
+The frozen ASSURANCE document retains its historical bytes. Current QUICKSTART
+instructions and an additive clarification in GENERAL-WEB-PREVIEW distinguish
+P0 statements from structured A1 support and M3 web checks. Known target limits, public-data
 examples, trusted host authorization and the absence of a whole-website proof
-are stated without treating testing as a formal theorem. The final publication
-wording and exact evidence references still need their completed-run update.
+are stated without treating testing as a formal theorem. The final documentation
+uses the complete green run and makes v0.7.0 tag instructions conditional on
+publication. No fresh internet installation or Windows verification is claimed.
 
 ## Confirmed findings and independently verified repairs
 
@@ -136,22 +139,56 @@ wording and exact evidence references still need their completed-run update.
   Shutdown now requires a closed listening port, including the missing-process-
   group case. The original fail-open counterexample now fails the acceptance
   harness instead of falsely reporting persistence after restart.
-- The pinned Wrangler custom-build watcher restarted its proxy during POST
-  requests. The acceptance host now uses the same built modules, bindings and
-  assets with a no-op custom build and an empty custom-build watch directory;
-  no application retry or generated-source patch hides the failure. The
-  configuration and its preservation checks were inspected; complete target
-  execution remains required.
+- Real-target POST requests received a non-JSON HTTP 503 after early transport
+  rejection. The provider's restart wording and startup custom-build messages
+  did not establish that the worker actually reloaded. The speculative custom
+  watcher was removed. Early 403/405/415 responses now dispose small bodies to
+  EOF with the existing byte/read/time limits, without decoding or invoking
+  authorization, pure helpers or database operations. Oversized, stalled or
+  failed streams preserve their original rejection status; cancellation is not
+  awaited. The reviewer independently passed all 17 server tests. The unchanged
+  real-target rejection-followed-by-read sequence now passes without retries.
 - Editing the frozen assurance guide broke the historical raw-file digest gate.
-  Its owner is restoring the exact baseline bytes, keeping the frozen test
-  expectations unchanged and placing profile clarification in an additive guide.
+  Its owner restored the exact baseline bytes, kept the frozen test expectations
+  unchanged and placed profile clarification in an additive guide. All 55 frozen
+  raw-file digests match; the full compatibility suite passed again.
 
-No additional implementation blocker was found in these repaired slices. The
-remaining gates are a successful complete host run and a full regression after
-the protected-document restoration. Identifying or locally repairing a cause
-does not make a failing package run acceptable.
+No unresolved implementation or documentation blocker remains in the reviewed
+M3 scope. The earlier red target and frozen-file regressions are closed by their
+unchanged assertions passing in the complete green run. This approval does not
+waive final package CI, live issue/milestone gates or main revalidation.
 
-## Directly verified evidence and open gates
+## Directly verified final evidence
+
+The reviewer independently fetched all three job step reports and logs for
+[run 37980399274](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37980399274),
+verified checkout `6b8d4a09f03001f09cea9c4bdf3f0de928a849c3`, and confirmed all
+three jobs completed successfully:
+
+- Python 3.12 and 3.13 each passed 706 pytest tests and 260 subtests, with one
+  optional React-toolchain skip. Ruff passed; strict Mypy passed 51 source files.
+- The provisioned Python 3.13 job passed all six actual React SSR/hydration checks,
+  both strict generated TypeScript checks and both isolated installed-wheel
+  compilation/binding checks. The optional baseline case was therefore exercised.
+- The pinned Vinext build and two host settings checks passed; the actual client
+  audit inspected ten JavaScript files and seven external source maps.
+- Actual local D1 executed the conditional INSERT SELECT probe with changes
+  `[1,0,0,0,1,0]`, including replay rejection with one remaining slot. The
+  generated API seed sequence passed 26 requests, including a single CAS winner
+  A and invalid-write rejection. After shutdown closed the old listening port,
+  the new host passed five persistence reads with the same winner and text.
+- All 33 Chromium/Firefox/WebKit browser and API tests passed in 47.0 seconds,
+  without retries or weakened assertions. They include the previously failing
+  rejection-followed-by-valid-read sequence, multiline computed styling,
+  stale-response checks and delayed hydration.
+- The committed npm lockfile gate passed. These results use the same exact
+  implementation checkpoint; production/cloud deployment is not asserted.
+
+The reviewed final documentation delta changes no implementation or frozen
+compatibility bytes. A complete CI run on the assembled final package remains
+required before merge, as does exact main validation before publication.
+
+## Earlier checkpoints and regression closure
 
 GitHub Actions run
 [37977221372](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37977221372)
@@ -183,15 +220,16 @@ same 10-JS/seven-map audit. Actual local D1 executed the initial conditional
 INSERT SELECT probe with changes `[1,0,0,0]`. That initial replay case also had
 full capacity, so it does not independently establish the replay predicate;
 the revised probe adds an enabled capacity-two scope with one remaining slot.
-The revised source was inspected but has not yet been executed in a recorded
-successful target run.
+At that checkpoint the revised source had been inspected but had not yet been
+executed in a recorded successful target run; the final run establishes it.
 
 Run 37977968445 then failed during seed reads. The captured HTTP 503 body states
 that the worker restarted mid-request and only GET/HEAD are retried automatically.
-This is evidence of the pinned Wrangler proxy/worker lifecycle problem; it is
-not the dispatcher's JSON error envelope. Host lifecycle stabilization and a
-complete rerun remain required. Application writes must not be retried merely
-to conceal this failure.
+This establishes a provider transport failure rather than the dispatcher's JSON
+error envelope; its text does not establish an actual worker restart. The
+maintainer's pinned proxy inspection also questioned its restart classification.
+A complete rerun was required rather than retrying application writes to conceal
+the failure; that unchanged sequence passes in the final run.
 
 Run
 [37978716172](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37978716172)
@@ -201,21 +239,35 @@ subtests passed, with one optional skip. Ruff, strict Mypy and the provisioned
 strict TypeScript, React and wheel checks passed. The strengthened actual local
 D1 conditional INSERT SELECT probe passed with changes `[1,0,0,0,1,0]` and one
 remaining slot in the replay scope. The host then failed to become ready within
-90 seconds; browser tests were not reached. The frozen document must be restored
-and host startup corrected before the complete package rerun. Changing the
+90 seconds; browser tests were not reached. The frozen document required
+restoration and host startup required correction before the package rerun. Changing the
 expected digest or counting earlier partial target runs would not close these
 regressions. The reviewer independently checked that all 55 frozen raw-file
 digests match their unchanged fixture after the working-tree restoration.
 
-Before approval, the reviewer must inspect the successful complete target rerun,
-the executed strengthened conditional-INSERT probe and full regression on the
-final code checkpoint, including the committed dependency lock and final
-README/CHANGELOG/version/release notes. After approval and before merge, the
-maintainer must attach issue completion evidence, close all three issues as
-completed, set readiness and pass the exact candidate gate on the work branch.
-This order avoids treating a gate that requires the review marker as a
-precondition for writing that same marker. At draft time the release plan is
-deliberately not ready and all three issues remain open.
+Run
+[37979355263](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37979355263)
+checked out `cb7f3bce1e13b0c0d2d3898cc087671511cac328`. Both complete baseline
+jobs passed: 703 tests and 260 subtests each, Ruff, strict Mypy, and provisioned
+strict TypeScript, six React checks and both installed-wheel checks. The
+strengthened D1 INSERT probe passed again. Host startup succeeded, but seed's
+valid task fetch immediately after the foreign-origin rejection received the
+same HTTP 503. This request ordering supports the unread-body hypothesis without
+proving causation. The subsequent bounded-disposal fix and restored original
+host configuration then passed the complete target run.
+
+The reviewer completed the target, strengthened conditional-INSERT, full
+regression, dependency-lock and final documentation checks before approval.
+The intermediate run at `5566b5d5c6bd6e6e9c183c8049acb6afbee50771` also passed
+the full host suite, but a 102-character helper signature failed Ruff. The sole
+line-wrap correction was inspected, and the final run passed every job together.
+
+After approval and before merge, the maintainer must attach issue completion
+evidence, close all three issues as completed, set readiness and pass the exact
+candidate gate on the work branch. This order avoids treating a gate that
+requires the review marker as a precondition for writing that same marker. At
+the time approval was written, readiness remained false and the three issues
+were still open; this document does not claim those administrative steps occurred.
 
 ## Assurance and product limits
 

@@ -1,5 +1,10 @@
 # General web host acceptance
 
+This fixture belongs to the v0.7.0 Web Preview source. Once the release is
+available in [GitHub Releases](https://github.com/ShadowsInThe-Space/llm-language-mvp/releases),
+use `git checkout v0.7.0` before installing and building it. This guide does not
+claim that publication has occurred.
+
 This disposable host imports the generated history and tasks applications without
 editing their output. The `/history` and `/tasks` pages use their corresponding
 `/api/history` and `/api/tasks` POST routes. Routes receive the real local D1
@@ -70,3 +75,14 @@ Browser reports are written to `evidence/`, traces
 and screenshots to `test-results/`, and server output to `host-acceptance.log`.
 Successful execution demonstrates the pinned local host and local D1 provider;
 it does not demonstrate deployment or a remote Cloudflare database.
+
+The [CI run 37980399274](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37980399274)
+at `6b8d4a09f03001f09cea9c4bdf3f0de928a849c3` passed all 33
+Chromium/Firefox/WebKit tests in 47 seconds, the
+26-request local D1 seed/CAS sequence, five read checks after process restart,
+and built-client inspection of ten JavaScript files and seven external maps.
+The conditional-insert probe also passed mutation counts `1,0,0,0,1,0`, including
+replay rejection with spare capacity. The same run passed both Python baselines,
+Ruff, strict Mypy, generated TypeScript, six React checks and both installed-wheel
+checks. Release publication remains a separate step whose status is recorded in
+GitHub Releases.

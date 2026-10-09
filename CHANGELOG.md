@@ -1,16 +1,16 @@
 # Changelog
 
-Notable changes are grouped by milestone release. A section explicitly marked
-candidate describes the work branch, not a published package. Unreleased entries
-are likewise unavailable on main until accepted and released.
+Notable changes are grouped by milestone source version. GitHub Releases records
+publication status; a versioned source section does not itself publish a package.
+Unreleased entries remain unavailable until accepted and released.
 Release policy: [one package, one merge, one release](docs/RELEASE-WORKFLOW.md).
 
 ## [Unreleased]
 
 ## [0.7.0] - 2026-10-09
 
-**Web Preview candidate; acceptance and publication pending.** This date records
-candidate preparation. v0.6.0 remains the latest published package.
+**Web Preview.** Publication follows the exact checked main SHA through the gated
+release workflow. See GitHub Releases for availability.
 
 ### Added
 
@@ -45,25 +45,35 @@ candidate preparation. v0.6.0 remains the latest published package.
 - Controls remain disabled until React hydration is ready; failures preserve
   confirmed values and stale responses cannot replace current state.
 
-### Compatibility and candidate validation
+### Fixed
+
+- Early transport rejections now consume small request bodies through the
+  existing bounded reader, preserving the rejection status without decoding,
+  authorization or DB work. Overflow/timeout cancellation never waits for a
+  hostile cancellation promise. This fixes the following-request HTTP 503 found
+  against the actual local host, without retries or an extra worker watcher.
+
+### Compatibility and validation
 
 - P0, w1, w2, pkg1 and frozen A1 contracts remain unchanged. This additive profile
   does not clone the W2 HTTP/idempotency protocol or migrate its stored data.
-- Baseline checkpoint: 703 tests plus 260 subtests passed on Python 3.12/3.13,
-  with Ruff, strict Mypy, generated TypeScript, React and installed-wheel checks.
 - Pinned Vinext build, inspection of ten client JavaScript files and seven source
-  maps, local D1 conditional-write/concurrency and process restart passed.
-- Browser checkpoint: 32 of 33 Playwright tests passed; one HTTP 503 remains
-  unresolved. Full browser acceptance, final independent review and the exact
-  milestone gate are still required. No cloud deployment or whole-website proof
-  is claimed.
+  maps, two host settings checks, local D1 conditional-write/concurrency and
+  process restart passed.
+- All 33 Chromium/Firefox/WebKit acceptance tests passed in 47 seconds. The D1
+  probe returned `[1,0,0,0,1,0]`, including replay rejection with a free slot;
+  26 seed requests and five restart reads passed. The revision race had exactly
+  one winner. This bounded probe is not the M4 booking/idempotency contract.
+- Both Python 3.12/3.13 jobs passed 706 tests plus 260 subtests, Ruff and strict
+  Mypy on 51 source files. Both generated targets passed strict TypeScript;
+  six React checks and both isolated installed-wheel checks passed.
 
-Checkpoint: `3c740ebb8a231255aa6afb0cb4b8931e0980a09e`,
-[Actions run 37977221372](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37977221372).
+Complete checked checkpoint: `6b8d4a09f03001f09cea9c4bdf3f0de928a849c3`,
+[Actions run 37980399274](https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37980399274).
 
-See [candidate notes](docs/releases/v0.7.0.md) and
-[the implementation guide](docs/GENERAL-WEB-PREVIEW.md). The candidate status and
-checkpoint results must be updated only after the final evidence passes.
+See [release notes](docs/releases/v0.7.0.md) and
+[the implementation guide](docs/GENERAL-WEB-PREVIEW.md). No cloud deployment or
+whole-website proof is claimed.
 
 ## [0.6.0] - 2026-09-20
 
@@ -120,6 +130,6 @@ Earlier implementation versions are documented in historical `Log.md` and
 `RELEASE.json`; this changelog does not invent retroactive GitHub releases.
 
 [Unreleased]: https://github.com/ShadowsInThe-Space/llm-language-mvp/compare/v0.6.0...HEAD
-[0.7.0]: https://github.com/ShadowsInThe-Space/llm-language-mvp/tree/milestone/m3
+[0.7.0]: https://github.com/ShadowsInThe-Space/llm-language-mvp/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ShadowsInThe-Space/llm-language-mvp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ShadowsInThe-Space/llm-language-mvp/releases/tag/v0.5.0

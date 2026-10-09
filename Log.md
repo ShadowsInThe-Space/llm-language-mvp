@@ -804,3 +804,33 @@ KI-Fachreview.
   rejection status and byte/time limits. Overflow/timeout cancellation must never
   introduce an unbounded wait. The existing real-target rejected-request/following-
   read sequence remains the integration regression, with no request retries.
+
+### 2026-10-09 — Complete M3 technical acceptance
+
+- Bounded rejected-body disposal passed its three RED-to-GREEN stream regressions
+  and all 17 dispatcher tests. The unchanged real D1 rejection/following-read
+  sequence now passes under the original pinned Wrangler host. The speculative
+  custom watcher helpers are deleted; neither target dependencies nor generated
+  application artifacts were patched, and no request retry was introduced.
+- Exact code checkpoint `6b8d4a09f03001f09cea9c4bdf3f0de928a849c3`, Actions
+  https://github.com/ShadowsInThe-Space/llm-language-mvp/actions/runs/37980399274,
+  passed every job: 706 pytest tests and 260 subtests on each Python 3.12/3.13,
+  Ruff, strict Mypy on 51 source files, both generated TypeScript targets, all six
+  provisioned React tests and both isolated-wheel examples. The baseline's one
+  optional React skip is covered by that separately provisioned six-test run.
+- Built Vinext acceptance passed all 33 Chromium/Firefox/WebKit browser/API cases
+  without retries in 47 seconds. The client audit passed ten JavaScript files and
+  seven external source maps. Both host settings tests and the committed lock gate
+  passed. Actual local D1 verified conditional INSERT SELECT mutation counts
+  `[1,0,0,0,1,0]` with spare replay capacity, 26 seed requests including one CAS
+  winner, and five persisted-value reads after the old process/listener stopped.
+- An independent AI specialist independently fetched these exact job logs and
+  found no remaining implementation blocker. Final documentation and the review
+  attestation are prepared on the work branch. Issue evidence, the exact final
+  candidate gate, one package PR and main-SHA release validation remain the normal
+  delivery sequence; passing local-provider tests is not a cloud deployment claim.
+- The separate reviewer approved the final source/document scope in
+  `docs/reviews/M3-REVIEW.md` after independently reading the complete green logs
+  and final documentation changes. Readiness is now enabled for the complete
+  unchanged issue set #21/#22/#32. It authorizes the candidate delivery gates,
+  not an unvalidated main merge or publication.
