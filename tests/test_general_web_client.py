@@ -25,6 +25,7 @@ from llmlang.web.general.program import (
     FormView,
     InputField,
     ListView,
+    Pagination,
     ParamTransform,
     ProgramError,
     QueryAction,
@@ -44,8 +45,8 @@ from llmlang.web.general.queries import (
 )
 
 
-def application(table: str = "entries", title: str = "title") -> WebProgram:
-    fields = (("id", TextType(64)), (title, TextType(32)), ("count", NatType()),
+def application(table: str = "entries", title: str = "title", text_capacity: int = 32) -> WebProgram:
+    fields = (("id", TextType(64)), (title, TextType(text_capacity)), ("count", NatType()),
               ("delta", IntType()), ("done", BoolType()))
     schema = Schema((Table(table, tuple(Column(name, kind, primary_key=name == "id")
                                        for name, kind in fields) +
@@ -61,7 +62,7 @@ def application(table: str = "entries", title: str = "title") -> WebProgram:
                     SelectUnique(table, "id", Param("selected_id", TextType(64)), columns)),
     ), (
         FormView("editor", "save", (
-            InputField("id", "ID"), InputField(title, "Title", "select", (("First", "alpha"), ("Second", "beta"))),
+            InputField("id", "ID", "textarea"), InputField(title, "Title", "select", (("First", "alpha"), ("Second", "beta"))),
             InputField("count", "Count"), InputField("delta", "Delta"), InputField("done", "Done", "checkbox"),
         ), states),
         ListView("listing", "list", (DisplayColumn(title, "Title"),), states,
@@ -70,7 +71,147 @@ def application(table: str = "entries", title: str = "title") -> WebProgram:
     ))
 
 
+def paginated_application(text_capacity: int = 32, page_size: int = 2) -> WebProgram:
+    original = application(text_capacity=text_capacity)
+    listing = replace(original.actions[1].query,
+                      order=(Order("title"), Order("count", "desc")), limit=page_size)
+    title_cursor = Param("last_title", TextType(text_capacity))
+    count_cursor, id_cursor = Param("last_count", NatType()), Param("last_id", TextType(64))
+    next_query = replace(listing, cursor=(("title", title_cursor),
+                                         ("count", count_cursor), ("id", id_cursor)))
+    editor = replace(original.views[0], fields=(original.views[0].fields[0],
+                     InputField("title", "Title", "textarea"), *original.views[0].fields[2:]))
+    return replace(original, actions=(original.actions[0],
+                   replace(original.actions[1], query=listing), original.actions[2],
+                   QueryAction("more", (title_cursor, count_cursor, id_cursor), next_query)),
+                   views=(editor, replace(original.views[1], pagination=Pagination(
+                       "more", (("last_title", "title"), ("last_count", "count"),
+                                ("last_id", "id")))), original.views[2]))
+
+
 class ClientTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("node"), "Node TypeScript execution unavailable")
+    def test_keyset_pages_preserve_confirmed_cursors_and_textarea_values(self) -> None:
+        source = emit_client(paginated_application())
+        runtime = source.split("// BEGIN GENERAL CLIENT RUNTIME\n", 1)[1].split(
+            "// END GENERAL CLIENT RUNTIME", 1)[0]
+        script = r'''
+import assert from 'node:assert/strict';
+import {createClientController} from './controller.ts';
+import {createClientController as createLargeClientController} from './large-controller.ts';
+const calls = [], pending = [];
+const fetcher = async (_, options) => {
+  calls.push({body:JSON.parse(options.body),signal:options.signal});
+  return await new Promise(resolve => pending.push(resolve));
+};
+const client = createClientController('/api/general', fetcher);
+const row = (id,title,record='listRow') => ({record,fields:{id,title,count:'2',delta:'-1',done:false}});
+const response = (rows,status=200) => new Response(JSON.stringify(rows),
+  {status,headers:{'Content-Type':'application/json'}});
+assert.deepEqual(client.getPagination('listing'),{page:1,canNext:false,canPrevious:false});
+await client.nextPage('listing'); await client.previousPage('listing');
+assert.equal(calls.length,0);
+let operation = client.submitForm('editor',{id:'one',title:'A\nB\n😀',count:'2',delta:'-1',done:false});
+assert.equal(calls.at(-1).body.input.fields.title,'A\nB\n😀');
+pending.shift()(response(row('one','A\nB\n😀','saveRow'))); await operation;
+assert.equal(client.getState('editor').value.fields.title,'A\nB\n😀');
+operation = client.loadList('listing');
+assert.deepEqual(calls.at(-1).body,{action:'list',input:{}});
+pending.shift()(response([row('one','A'),row('two','B')])); await operation;
+assert.deepEqual(client.getPagination('listing'),{page:1,canNext:true,canPrevious:false});
+assert.equal(client.getState('listing').confirmation,1);
+operation = client.nextPage('listing');
+assert.deepEqual(calls.at(-1).body,{action:'more',input:{record:'moreInput',
+  fields:{last_title:'B',last_count:'2',last_id:'two'}}});
+assert.equal(client.getPagination('listing').canNext,false);
+pending.shift()(response({error:'ServiceUnavailable'},500)); await operation;
+assert.equal(client.getState('listing').value.list[1].fields.id,'two');
+assert.deepEqual(client.getPagination('listing'),{page:1,canNext:true,canPrevious:false});
+assert.equal(client.getState('listing').confirmation,1);
+operation = client.nextPage('listing');
+pending.shift()(response([row('three','C','moreRow')])); await operation;
+assert.deepEqual(client.getPagination('listing'),{page:2,canNext:false,canPrevious:true});
+assert.equal(client.getState('listing').value.list.length,1);
+assert.equal(client.getState('listing').confirmation,2);
+operation = client.selectRow('listing',client.getState('listing').value.list[0]);
+assert.deepEqual(calls.at(-1).body,{action:'detail',input:{record:'detailInput',fields:{selected_id:'three'}}});
+pending.shift()(response({tag:'Some',value:row('three','C','detailRow')})); await operation;
+assert.equal(client.getState('selected').value.value.fields.id,'three');
+const before = calls.length; await client.nextPage('listing'); assert.equal(calls.length,before);
+operation = client.loadList('listing');
+assert.equal(calls.at(-1).body.action,'more');
+pending.shift()(response([row('three','C','moreRow')])); await operation;
+assert.equal(client.getState('listing').confirmation,3);
+operation = client.previousPage('listing');
+assert.deepEqual(calls.at(-1).body,{action:'list',input:{}});
+pending.shift()(response([row('one','A'),row('two','B')])); await operation;
+const stale = client.nextPage('listing'), staleResponse = pending.shift();
+const staleCall = calls.at(-1);
+operation = client.loadList('listing');
+assert.equal(staleCall.signal.aborted,true);
+pending.shift()(response([row('one','A'),row('two','B')])); await operation;
+staleResponse(response([row('three','C','moreRow')])); await stale;
+assert.equal(client.getPagination('listing').page,1);
+assert.equal(client.getState('listing').confirmation,5);
+operation = client.nextPage('listing'); const clearedResponse = pending.shift();
+client.clear('listing');
+assert.deepEqual(client.getPagination('listing'),{page:1,canNext:false,canPrevious:false});
+clearedResponse(response([row('three','C','moreRow')])); await operation;
+assert.equal(client.getState('listing').value,null);
+operation = client.loadList('listing');
+assert.deepEqual(calls.at(-1).body,{action:'list',input:{}});
+pending.shift()(response([])); await operation;
+assert.deepEqual(client.getPagination('listing'),{page:1,canNext:false,canPrevious:false});
+assert.equal(client.getState('listing').confirmation,6);
+operation = client.loadList('listing');
+pending.shift()(response([row('one','A'),row('two','B')])); await operation;
+for (let i=0;i<40;i++) {
+  operation = client.nextPage('listing');
+  pending.shift()(response([row('one','A','moreRow'),row('two','B','moreRow')])); await operation;
+}
+assert.equal(client.getPagination('listing').page,41);
+for (let i=0;i<31;i++) {
+  operation = client.previousPage('listing');
+  pending.shift()(response([row('one','A','moreRow'),row('two','B','moreRow')])); await operation;
+}
+assert.deepEqual(client.getPagination('listing'),{page:10,canNext:true,canPrevious:false});
+const boundedCalls = calls.length; await client.previousPage('listing');
+assert.equal(calls.length,boundedCalls);
+let largeRequests=0;
+const largeClient = createLargeClientController('/api/general',async (_,options) => {
+  largeRequests++;
+  const action=JSON.parse(options.body).action;
+  return response([row(String(largeRequests).padStart(4,'0'),'\u0001'.repeat(4000),
+    action === 'list' ? 'listRow' : 'moreRow')]);
+});
+await largeClient.loadList('listing');
+for (let i=0;i<40;i++) await largeClient.nextPage('listing');
+assert.equal(largeClient.getPagination('listing').page,41);
+let previousHops=0;
+while (largeClient.getPagination('listing').canPrevious) {
+  await largeClient.previousPage('listing'); previousHops++;
+}
+assert.equal(previousHops,9,'24KiB cursors hit byte ceiling before 32-entry ceiling');
+assert.equal(largeClient.getPagination('listing').page,32);
+assert.equal(largeClient.getPagination('listing').canNext,true);
+largeClient.dispose();
+client.dispose(); console.log('keyset controller behavior passed');
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / "codecs.ts").write_text(emit_typescript_runtime())
+            (folder / "controller.ts").write_text(runtime.replace('"./codecs"', '"./codecs.ts"'))
+            large_source = emit_client(paginated_application(text_capacity=4096, page_size=1))
+            large_runtime = large_source.split("// BEGIN GENERAL CLIENT RUNTIME\n", 1)[1].split(
+                "// END GENERAL CLIENT RUNTIME", 1)[0]
+            (folder / "large-controller.ts").write_text(
+                large_runtime.replace('"./codecs"', '"./codecs.ts"'))
+            (folder / "test.ts").write_text(script)
+            result = subprocess.run(["node", str(folder / "test.ts")], text=True,
+                                    capture_output=True, check=False, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("keyset controller behavior passed", result.stdout)
+
     def test_emission_is_deterministic_checked_and_domain_independent(self) -> None:
         first = emit_client(application())
         self.assertEqual(first, emit_client(application()))
@@ -141,7 +282,7 @@ const ssrFieldset = document.querySelector('fieldset');
 assert.ok(ssrFieldset.disabled, 'SSR form must remain inert');
 for (const button of document.querySelectorAll('button'))
   assert.ok(button.disabled || button.closest('fieldset[disabled]'), 'SSR button is active');
-for (const control of document.querySelectorAll('input,select'))
+for (const control of document.querySelectorAll('input,select,textarea'))
   assert.ok(control.disabled || control.closest('fieldset[disabled]'), 'SSR control is active');
 let submitted = false;
 document.querySelector('form').addEventListener('submit', () => submitted = true);
@@ -150,6 +291,13 @@ assert.equal(submitted, false, 'SSR disabled submit must not cause a native subm
 global.window = dom.window; global.document = document;
 global.HTMLElement = dom.window.HTMLElement;
 global.IS_REACT_ACT_ENVIRONMENT = true;
+const row = (id,record) => ({record,fields:{id,title:'A',count:'2',delta:'-1',done:false}});
+global.fetch = async (_,options) => {
+  const action = JSON.parse(options.body).action;
+  return new Response(JSON.stringify(action === 'list'
+    ? [row('one','listRow'),row('two','listRow')] : [row('three','moreRow')]),
+    {headers:{'Content-Type':'application/json'}});
+};
 const {hydrateRoot} = require('react-dom/client');
 (async () => {
   let root;
@@ -157,11 +305,24 @@ const {hydrateRoot} = require('react-dom/client');
     root = hydrateRoot(document.getElementById('root'), element());
   });
   assert.equal(document.querySelector('fieldset').disabled, false, 'Hydration enables controls');
-  for (const button of document.querySelectorAll('button')) assert.equal(button.disabled, false);
-  for (const input of document.querySelectorAll('input,select')) {
+  for (const button of document.querySelectorAll('button'))
+    assert.equal(button.disabled, ['Previous','Next'].includes(button.textContent));
+  assert.equal(document.querySelectorAll('textarea').length,2);
+  for (const input of document.querySelectorAll('input,select,textarea')) {
     assert.equal(input.labels.length, 1);
     assert.equal(input.labels[0].htmlFor, input.id);
   }
+  const button = label => [...document.querySelectorAll('button')]
+    .find(item => item.textContent === label);
+  // The controller captures the injected fetch when it is constructed at hydration.
+  await React.act(async () => {button('Load').click();});
+  assert.equal(button('Next').disabled,false);
+  assert.equal(button('Previous').disabled,true);
+  assert.ok(document.querySelector('[aria-label="listing"] [role="status"]').textContent
+    .includes('Confirmation 1'));
+  await React.act(async () => {button('Next').click();});
+  assert.equal(button('Next').disabled,true);
+  assert.equal(button('Previous').disabled,false);
   const form = document.querySelector('form');
   let prevented;
   await React.act(async () => {
@@ -176,7 +337,7 @@ const {hydrateRoot} = require('react-dom/client');
 '''
         with tempfile.TemporaryDirectory(prefix="hydration-", dir=toolchain) as directory:
             folder = Path(directory)
-            (folder / "App.tsx").write_text(emit_client(application()))
+            (folder / "App.tsx").write_text(emit_client(paginated_application()))
             (folder / "codecs.ts").write_text(emit_typescript_runtime())
             (folder / "package.json").write_text('{"type":"commonjs"}')
             (folder / "test.cjs").write_text(script)
@@ -209,6 +370,7 @@ const fetcher = async (endpoint, options) => {
   return await new Promise(resolve => pending.push(resolve));
 };
 const client = createClientController('/custom/general', fetcher);
+assert.equal(client.getState('editor').confirmation, 0);
 const row = (id, title = 'alpha') => ({record:'detailRow',fields:{id,title,count:'2',delta:'-1',done:false}});
 const response = (value, status = 200) => new Response(JSON.stringify(value), {status,headers:{'Content-Type':'application/json'}});
 let updates = 0;
@@ -223,11 +385,13 @@ assert.equal(calls[0].options.redirect, 'error');
 pending.shift()(response({...row('one'),record:'saveRow'})); await operation;
 assert.equal(client.getState('editor').status, 'success');
 assert.equal(client.getState('editor').value.fields.count, 2);
+assert.equal(client.getState('editor').confirmation, 1);
 const confirmed = client.getState('editor').value;
 operation = client.submitForm('editor', {...draft, id:'bad'});
 pending.shift()(response({error:'ServiceUnavailable'}, 500)); await operation;
 assert.equal(client.getState('editor').status, 'error');
 assert.deepEqual(client.getState('editor').value, confirmed);
+assert.equal(client.getState('editor').confirmation, 1);
 transportFailure = true;
 await client.submitForm('editor', draft);
 assert.equal(client.getState('editor').status, 'error');
@@ -244,9 +408,11 @@ operation = client.loadList('listing');
 assert.deepEqual(calls.at(-1).body, {action:'list',input:{}});
 pending.shift()(response([])); await operation;
 assert.equal(client.getState('listing').status, 'empty');
+assert.equal(client.getState('listing').confirmation, 1);
 operation = client.loadList('listing');
 pending.shift()(response([{...row('one'), record:'listRow'}])); await operation;
 const listed = client.getState('listing').value.list[0];
+assert.equal(client.getState('listing').confirmation, 2);
 const first = client.selectRow('listing', listed);
 const firstCall = calls.at(-1);
 const second = client.selectRow('listing', {...listed,fields:{...listed.fields,id:'two'}});

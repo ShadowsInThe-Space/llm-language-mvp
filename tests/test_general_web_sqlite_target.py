@@ -14,8 +14,8 @@ from pathlib import Path
 from llmlang.web.general.build import compile_source
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples/web/general"
-TITLE = "😀é漢x" * 40 + "tail"
-UPDATED_TITLE = "🧠n\u0303猫" * 40 + "trailing"
+TITLE = "😀é漢x" * 40 + "\nsecond line\ttail"
+UPDATED_TITLE = "🧠n\u0303猫" * 40 + "\nsecond line\ttrailing"
 
 RUNNER = r'''
 import fs from "node:fs";
@@ -87,10 +87,10 @@ class SQLiteTargetTests(unittest.TestCase):
                 capture_output=True, text=True, check=True, timeout=20)
             return json.loads(result.stdout)
 
-    def test_history_source_pure_preview_queries_and_reopened_database(self):
+    def test_history_source_lossless_queries_and_reopened_database(self):
         self.assertGreater(len(TITLE), 120)
-        self.assertLessEqual(len(TITLE.encode("utf-8")), 512)
-        expected = TITLE[:120]
+        self.assertLessEqual(len(TITLE.encode("utf-8")), 4096)
+        expected = TITLE
         operations = [
             {"action": "save", "input": input_value("save", id="history-1", title=TITLE)},
             {"action": "browse", "input": {}},
@@ -111,9 +111,9 @@ class SQLiteTargetTests(unittest.TestCase):
                 "id": "history-1", "title": expected, "revision": "0"}}})
         self.assertEqual(reopened, detail)
 
-    def test_task_source_pure_preview_atomic_revision_and_persistence(self):
+    def test_task_source_lossless_atomic_revision_and_persistence(self):
         self.assertGreater(len(UPDATED_TITLE), 120)
-        self.assertLessEqual(len(UPDATED_TITLE.encode("utf-8")), 512)
+        self.assertLessEqual(len(UPDATED_TITLE.encode("utf-8")), 4096)
         operations = [
             {"action": "save", "input": input_value("save", id="task-1", title=TITLE)},
             {"action": "browse", "input": {}},
@@ -130,18 +130,18 @@ class SQLiteTargetTests(unittest.TestCase):
         self.assertEqual([value["status"] for value in
                          (saved, listed, detail, updated, stale, reopened)],
                          [200, 200, 200, 200, 409, 200])
-        self.assertEqual(saved["stored"], [{"id": "task-1", "title": TITLE[:120],
+        self.assertEqual(saved["stored"], [{"id": "task-1", "title": TITLE,
             "revision": 0, "done": 0, "priority": 0}])
-        initial = {"id": "task-1", "title": TITLE[:120],
+        initial = {"id": "task-1", "title": TITLE,
                    "revision": "0", "done": False, "priority": "0"}
         self.assertEqual(listed["body"], [{"record": "browseRow", "fields": initial}])
         self.assertEqual(detail["body"], {"tag": "Some", "value": {
             "record": "fetchRow", "fields": initial}})
-        fields = {"id": "task-1", "title": UPDATED_TITLE[:120],
+        fields = {"id": "task-1", "title": UPDATED_TITLE,
                   "revision": "1", "done": True, "priority": "3"}
         self.assertEqual(updated["body"], {"tag": "Some", "value": {
             "record": "updateRow", "fields": fields}})
-        self.assertEqual(updated["stored"], [{"id": "task-1", "title": UPDATED_TITLE[:120],
+        self.assertEqual(updated["stored"], [{"id": "task-1", "title": UPDATED_TITLE,
             "revision": 1, "done": 1, "priority": 3}])
         self.assertEqual(stale["body"], {"error": "ConditionNotMet"})
         self.assertEqual(stale["stored"], updated["stored"])

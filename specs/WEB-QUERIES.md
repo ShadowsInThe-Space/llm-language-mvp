@@ -43,7 +43,7 @@ strings, expression fragments or user-selected undeclared identifiers.
 * `Insert(table, values, projection)` supplies exactly every column once.
 * `SelectUnique(table, key, value, projection)` requires a declared primary or
   unique key, returning zero or one row.
-* `SelectList(table, projection, order, limit, offset=0, where=())` uses one or
+* `SelectList(table, projection, order, limit, offset=0, where=(), cursor=())` uses one or
   more `Order(column, "asc" | "desc")` declarations, a limit of 1–1000, and an
   offset of 0–10000. The primary key is appended ascending when absent from the
   order, making ties deterministic. Optional predicates are equality bindings
@@ -59,6 +59,58 @@ Field bindings are tuples of `(column_name, value)` pairs. Compilation orders
 bindings by schema column declaration, independently of supplied field order.
 Duplicate fields, duplicate order columns, unknown columns and illegal bounds
 fail with `QueryError`.
+
+## Keyset cursors
+
+`effective_order(schema, query)` returns the checked explicit `Order` tuple and
+adds the primary key ascending when it is absent. An explicitly ordered primary
+key keeps its declared position and direction. This helper is shared with the
+program checker so page links and SQL use the same total order.
+
+An empty `SelectList.cursor` requests the first page. A nonempty cursor is an
+immutable tuple of `(column, value_or_Param)` pairs, covering every effective
+order column exactly once in exactly that order. Cursor types must equal the
+schema column types, including Text capacity. Partial, reordered, duplicate,
+unknown, null and mistyped cursors fail. A nonempty cursor cannot be combined
+with a nonzero offset; limit and offset bounds otherwise stay unchanged.
+
+Compilation emits a strict lexicographic predicate after the cursor row. ASC
+columns use `>` and DESC columns use `<`; equal prefixes use `=`. For an order
+of priority DESC followed by id ASC, the generated predicate is:
+
+```sql
+("priority" < ? OR ("priority" = ? AND "id" > ?))
+```
+
+Existing equality filters are joined with AND around the entire parenthesized
+cursor predicate, so no OR branch can escape the filters. Every comparison value
+is a positional binding. Prefix values repeat in binding order as needed; no
+value or operator fragment is interpolated. Static parameters validate every
+repeated occurrence and preserve exact parameter-set/type checks.
+
+The compiled general web target permits at most 100 positional bindings and
+100000 UTF-8 SQL bytes per statement. These fixed budgets align with the
+[documented D1 query limits](https://developers.cloudflare.com/d1/platform/limits/)
+(verified 2026-10-09) and apply before an execution artifact is returned. Counts
+include equality filters, repeated cursor-prefix values, LIMIT and OFFSET.
+With 13 order columns, a full cursor consumes 91 comparison bindings plus two
+list-bound bindings; seven equality filters reach exactly 100. A 14-column
+cursor consumes 107 total bindings and fails compilation, as does adding an
+eighth equality filter to the 13-column case. Schema/query validation remains
+bounded independently of these target limits. Current identifier/column bounds
+already constrain SQL size below the SQL limit, which is checked explicitly to
+protect future extensions. The SQLite reference adapter follows the same target
+budgets rather than accepting a query that the emitted D1 target cannot bind.
+
+The primary key tie breaker lets callers traverse more than one page even when
+other order columns are equal. Program-level pagination additionally requires
+cursor source columns to be projected and checks that its next action is the
+same query apart from typed cursor bindings. The query layer also permits an
+independently supplied checked cursor when those columns are not projected.
+
+Separate requests do not share a database snapshot. Inserts, deletes or changes
+to ordering columns between pages may affect traversal. The cursor itself does
+not grant access, change an equality filter or relax authorization.
 
 ## Prepared descriptors and execution boundary
 
@@ -95,6 +147,8 @@ provide the single-statement atomic behavior demonstrated here.
 and actual SQLite. It checks SQL/value injection separation, deterministic
 bindings, explicit projections, schema closure, parameter type/set validation,
 UTF-8 capacities, integer bounds, Bool representation, null rejection, bounded
-total ordering, stale revision behavior, result decoding and concurrent CAS.
+total ordering, keyset pages across tied/mixed/Unicode/Bool/Nat order values,
+filtered cursor predicates, stale revision behavior, result decoding and
+concurrent CAS.
 These checks establish bounded local behavior, not a formal database proof or
 D1-host acceptance.

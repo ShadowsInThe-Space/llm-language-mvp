@@ -31,6 +31,7 @@ jobs:
             npm install --package-lock-only --ignore-scripts
           fi
           npm ci --ignore-scripts
+          node -e 'const fs=require("node:fs"),z=require("node:zlib"); console.log("HOST_LOCK_GZIP="+z.gzipSync(fs.readFileSync("package-lock.json")).toString("base64"))'
       - name: Build pinned Vinext and Cloudflare target
         working-directory: tests/general_host
         run: npm run build
@@ -56,6 +57,12 @@ jobs:
             tests/general_host/test-results
             tests/general_host/results.json
             tests/general_host/evidence
+      - name: Show host diagnostics
+        if: ${{ failure() }}
+        run: |
+          if [ -f tests/general_host/host-acceptance.log ]; then
+            tail -n 160 tests/general_host/host-acceptance.log
+          fi
   baseline:
     runs-on: ubuntu-latest
     timeout-minutes: 15

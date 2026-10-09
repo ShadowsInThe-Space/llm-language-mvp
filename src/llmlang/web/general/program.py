@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Literal, NoReturn, cast
 
 from llmlang.a1.effects import CHECKER as EFFECT_CHECKER
@@ -63,10 +63,11 @@ from .queries import (
     SelectUnique,
     Table,
     compile_query,
+    effective_order,
 )
 
 type Authorization = Literal["public", "authenticated", "admin"]
-type Control = Literal["input", "select", "checkbox"]
+type Control = Literal["input", "select", "checkbox", "textarea"]
 FORMAT = "web-program-v1"
 CODEC_VERSION = "web-codecs-v1"
 QUERY_VERSION = "web-queries-v1"
@@ -143,12 +144,19 @@ class Selection:
 
 
 @dataclass(frozen=True, slots=True)
+class Pagination:
+    action: str
+    bindings: tuple[tuple[str, str], ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ListView:
     name: str
     action: str
     columns: tuple[DisplayColumn, ...]
     states: ViewStates
     selection: Selection | None = None
+    pagination: Pagination | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -337,13 +345,16 @@ def _query_shape(query: Query, path: str) -> None:
         if any(type(order) is not Order for order in query.order):
             _fail("W_PROGRAM_ACTION", "Declared ordering required", path)
         _tuple(query.where, path + ".where")
-        if len(query.where) > MAX_COLUMNS or len(query.order) > MAX_COLUMNS:
+        _tuple(query.cursor, path + ".cursor")
+        if (len(query.where) > MAX_COLUMNS or len(query.order) > MAX_COLUMNS
+                or len(query.cursor) > MAX_COLUMNS):
             _fail("W_PROGRAM_ACTION", "Predicate/ordering budget exceeded", path)
-        for pair in query.where:
-            _tuple(pair, path + ".where")
-            if len(pair) != 2:
-                _fail("W_PROGRAM_ACTION", "Exact predicate binding required", path)
-            inputs.append(pair[1])
+        for name, bindings in (("where", query.where), ("cursor", query.cursor)):
+            for pair in bindings:
+                _tuple(pair, path + "." + name)
+                if len(pair) != 2:
+                    _fail("W_PROGRAM_ACTION", "Exact predicate binding required", path)
+                inputs.append(pair[1])
     elif isinstance(query, SelectUnique):
         inputs.append(query.value)
     elif isinstance(query, ConditionalUpdate):
@@ -424,7 +435,48 @@ def _action(action: QueryAction, schema: Schema) -> ActionContract:
                           compiled, input_codec, output, action.transforms)
 
 
-def _view(view: View, actions: dict[str, ActionContract]) -> None:
+def _pagination(view: ListView, actions: dict[str, ActionContract], schema: Schema) -> None:
+    if view.pagination is None:
+        return
+    path = "views." + view.name + ".pagination"
+    pagination = view.pagination
+    if type(pagination) is not Pagination:
+        _fail("W_PROGRAM_VIEW", "Declared pagination binding required", path)
+    if type(pagination.action) is not str or not _NAME.fullmatch(pagination.action):
+        _fail("W_PROGRAM_VIEW", "Declared next-page action name required", path)
+    if type(pagination.bindings) is not tuple or not 1 <= len(pagination.bindings) <= MAX_COLUMNS:
+        _fail("W_PROGRAM_VIEW", "Bounded immutable pagination bindings required", path)
+    bindings: dict[str, str] = {}
+    for pair in pagination.bindings:
+        if (type(pair) is not tuple or len(pair) != 2
+                or any(type(name) is not str or not _NAME.fullmatch(name) for name in pair)
+                or pair[0] in bindings):
+            _fail("W_PROGRAM_VIEW", "Distinct parameter-to-column bindings required", path)
+        bindings[pair[0]] = pair[1]
+    first = actions[view.action]
+    target = actions.get(pagination.action)
+    if (target is None or not isinstance(first.query, SelectList)
+            or not isinstance(target.query, SelectList) or target.transforms
+            or first.query.cursor or not target.query.cursor
+            or replace(target.query, cursor=()) != first.query
+            or target.authorization != first.authorization):
+        _fail("W_PROGRAM_VIEW", "Next page must preserve the first query and authorization", path)
+    columns = {column.name: column.type for column in first.compiled.result.columns}
+    params = {param.name: param.type for param in target.params}
+    expected: dict[str, str] = {}
+    for order, (column, value) in zip(effective_order(schema, first.query),
+                                    target.query.cursor, strict=True):
+        if (column != order.column or column not in columns or type(value) is not Param
+                or value.name in expected or columns[column] != value.type):
+            _fail("W_PROGRAM_VIEW", "Cursor must bind each projected effective ordering column",
+                  path)
+        expected[value.name] = column
+    expected_params = {name: columns[column] for name, column in expected.items()}
+    if bindings != expected or params != expected_params:
+        _fail("W_PROGRAM_VIEW", "Pagination must exactly bind next-action cursor inputs", path)
+
+
+def _view(view: View, actions: dict[str, ActionContract], schema: Schema) -> None:
     if type(view) not in (FormView, ListView, DetailView):
         _fail("W_PROGRAM_VIEW", "Closed view node required", "views")
     _name(view.name, "views.name")
@@ -455,8 +507,10 @@ def _view(view: View, actions: dict[str, ActionContract]) -> None:
             seen.add(field.param)
             type_ = params[field.param]
             _tuple(field.choices, path + ".choices")
-            if field.control not in ("input", "select", "checkbox"):
+            if field.control not in ("input", "select", "checkbox", "textarea"):
                 _fail("W_PROGRAM_VIEW", "Unknown field control", path)
+            if field.control == "textarea" and not isinstance(type_, TextType):
+                _fail("W_PROGRAM_VIEW", "Textarea requires Text", path)
             if isinstance(type_, BoolType) != (field.control == "checkbox"):
                 _fail("W_PROGRAM_VIEW", "Bool requires checkbox; checkbox requires Bool", path)
             if field.control == "select":
@@ -496,13 +550,14 @@ def _view(view: View, actions: dict[str, ActionContract]) -> None:
                 _fail("W_PROGRAM_VIEW", "Display columns must be distinct projected fields", path)
             seen_columns.add(column.column)
         if isinstance(view, ListView):
-            if not isinstance(action.query, SelectList) or action.params:
+            if not isinstance(action.query, SelectList) or action.params or action.query.cursor:
                 _fail("W_PROGRAM_VIEW", "Lists require a parameter-free bounded SelectList", path)
             if view.selection is not None:
                 if type(view.selection) is not Selection:
                     _fail("W_PROGRAM_VIEW", "Declared selection binding required", path)
                 for name in (view.selection.detail, view.selection.param, view.selection.column):
                     _name(name, path + ".selection")
+            _pagination(view, actions, schema)
         elif not isinstance(action.query, SelectUnique):
             _fail("W_PROGRAM_VIEW", "Details require SelectUnique cardinality", path)
 
@@ -554,7 +609,9 @@ def _query_snapshot(query: Query, schema: Schema) -> dict[str, object]:
                       {"column": item.column, "direction": item.direction} for item in query.order],
                       limit=query.limit, offset=query.offset,
                       where=[{"column": name, "input": _input(value, table.column(name).type)}
-                             for name, value in query.where])
+                             for name, value in query.where],
+                      cursor=[{"column": name, "input": _input(value, table.column(name).type)}
+                              for name, value in query.cursor])
     elif isinstance(query, SelectUnique):
         result.update(kind="select_unique", key=query.key,
                       value=_input(query.value, table.column(query.key).type))
@@ -588,6 +645,11 @@ def _view_snapshot(view: ViewNode, actions: dict[str, ActionContract]) -> dict[s
             result["selection"] = None if view.selection is None else {
                 "detail": view.selection.detail, "param": view.selection.param,
                 "column": view.selection.column,
+            }
+            result["pagination"] = None if view.pagination is None else {
+                "action": view.pagination.action,
+                "bindings": [{"param": param, "column": column}
+                             for param, column in view.pagination.bindings],
             }
     return result
 
@@ -822,7 +884,7 @@ def validate_program(
                 result.extend(expand(
                     scopes[next_scope][name].children, next_scope, (*stack, reference)))
             else:
-                _view(node, actions)
+                _view(node, actions, schema)
                 result.append(node)
         return result
 
@@ -872,7 +934,8 @@ def validate_program(
         )
         effect_functions.append(EffectFunction(
             "ui:" + view.name, "client", frozenset({"network.call"}),
-            frozenset({"network.call"}), calls, ("network.call",)))
+            frozenset({"network.call"}), calls,
+            ("network.call",) * (2 if isinstance(view, ListView) and view.pagination else 1)))
     try:
         effects = check_effect_graph(
             effect_functions, client_entries=tuple("ui:" + view.name for view in expanded),

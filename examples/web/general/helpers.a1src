@@ -1,7 +1,5 @@
 (a1src1
   (limits 10000 1000 64)
-  (fn title_preview ((text (Text 512))) (Text 512)
-    (let count Nat (const 120))
-    (let preview (Text 512) (text_prefix_codepoints text count))
-    (return preview))
-  (entry title_preview))
+  (fn preserve_text ((text (Text 4096))) (Text 4096)
+    (return text))
+  (entry preserve_text))

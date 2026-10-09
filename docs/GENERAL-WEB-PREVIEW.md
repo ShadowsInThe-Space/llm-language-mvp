@@ -26,10 +26,13 @@ snapshots, source positions, checked program IR and an integrity manifest.
 `check_build` recompiles the supplied source snapshot and compares every artifact;
 an offered manifest hash alone does not establish the binding.
 
-The two applications consume the same `common.webuilib` editor/browser components
+The two applications consume the same `common.webuilib` editor component
 and execute `helpers.a1src` on the server before binding write queries. The shared
-`title_preview` entry keeps the first 120 Unicode code points; form labels state
-this saved-preview behavior. The planner uses it for both create and update.
+`preserve_text` entry preserves every admitted text value exactly, including
+multiline Unicode and empty text, up to 4096 UTF-8 bytes. The planner uses it for
+both create and update. This deliberately neutral helper demonstrates checked
+library invocation without changing stored user data; nontrivial transformations
+are separately exercised by the runtime and server regression suites.
 Transform arguments refer to the original decoded inputs, with replacements
 applied together. Parameter and result types must match exactly. Pure execution
 has checked input/output values and bounded budgets; failure prevents the query.
@@ -40,8 +43,11 @@ History stores text entries. The planner adds completion, priority and a revisio
 checked atomic update. IDs are explicitly entered in this first UI. Update uses
 the revision displayed by the selected record. The forms never automatically
 save initial values. Clear removes local displayed results without deleting rows.
-Lists deliberately return at most eight rows so even maximally escaped legal
-text fits the bounded wire response. This preview does not implement pagination.
+Lists deliberately return one row per page so even maximally escaped 4096-byte
+text fits the bounded wire response. Generic keyset pagination makes older records
+reachable, with stable ordering and a primary-key tie breaker. A successful load
+increments a visible local confirmation counter. Clear resets display and paging
+state without sending a request or deleting records.
 
 ## Host contract
 
@@ -62,9 +68,11 @@ Integers cross the wire as canonical decimal strings. A conditional update with
 no matching revision returns `ConditionNotMet`; a zero-row result does not imply
 that a multi-statement D1 batch rolled back.
 
-The generated modules are source outputs, not a complete pinned Vinext project.
-The historical host starter and deployment are maintained separately. A source
-build or strict TypeScript check does not demonstrate browser or D1 behavior.
+The generated modules are source outputs. `tests/general_host` provides a pinned
+Vinext/Cloudflare acceptance host that imports them unchanged. It runs the built
+worker against Cloudflare's local D1 implementation; the historical Sites host and
+deployment remain separate. A source build or strict TypeScript check alone does
+not demonstrate browser or D1 behavior.
 
 ## What remains before M3 acceptance
 

@@ -23,7 +23,7 @@ from .queries import schema_sql
 from .server import emit_server
 from .source import parse_component_library, parse_web_source
 
-COMPILER_VERSION = "general-web.0.2.0"
+COMPILER_VERSION = "general-web.0.3.0"
 
 
 def _json(value: object) -> str:

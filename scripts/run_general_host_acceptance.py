@@ -39,7 +39,7 @@ def stop(process: subprocess.Popen[bytes]) -> None:
     try:
         os.killpg(process.pid, signal.SIGTERM)
     except ProcessLookupError:
-        return
+        pass
     try:
         process.wait(timeout=10)
     except subprocess.TimeoutExpired:

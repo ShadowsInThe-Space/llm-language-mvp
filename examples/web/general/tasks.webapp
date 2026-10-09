@@ -1,30 +1,37 @@
 (websrc1 tasks "Task planner"
   (schema (table tasks
-    (id (Text 64) primary) (title (Text 512)) (revision Nat)
+    (id (Text 64) primary) (title (Text 4096)) (revision Nat)
     (done Bool) (priority Nat)))
-  (action save ((id (Text 64)) (title (Text 512))) public
+  (action save ((id (Text 64)) (title (Text 4096))) public
     (insert tasks (values (id id) (title title) (revision 0)
       (done false) (priority 0)) (project id title))
-    (transform title title_preview (title)))
+    (transform title preserve_text (title)))
   (action browse () public
     (select_list tasks (project id title done priority revision) (order (priority desc))
-      (limit 8) (offset 0) (where)))
+      (limit 1) (offset 0) (where)))
+  (action browse_next ((cursor_priority Nat) (cursor_id (Text 64))) public
+    (select_list tasks (project id title done priority revision) (order (priority desc))
+      (limit 1) (offset 0) (where) (cursor (priority cursor_priority) (id cursor_id))))
   (action fetch ((selected_id (Text 64))) public
     (select_unique tasks id selected_id (project id title revision done priority)))
-  (action update ((id (Text 64)) (title (Text 512)) (revision Nat)
+  (action update ((id (Text 64)) (title (Text 4096)) (revision Nat)
     (done Bool) (priority Nat)) public
     (conditional_update tasks id id revision revision
       (values (title title) (done done) (priority priority))
       (project id title revision done priority))
-    (transform title title_preview (title)))
+    (transform title preserve_text (title)))
   (pure_library helpers)
   (library common)
   (import common editor editor)
-  (import common browser browser)
   (use editor)
-  (use browser)
+  (list listing browse (columns (title "Text") (done "Completed") (priority "Priority"))
+    (states "Loading" "Load failed" "No entries" "Entries loaded")
+    (select detail selected_id id)
+    (paginate browse_next (cursor_priority priority) (cursor_id id)))
+  (detail detail fetch (columns (id "Identifier") (title "Text") (revision "Revision"))
+    (states "Loading selection" "Selection failed" "No selection" "Selection loaded"))
   (form edit update
-    (fields (id "Task identifier" input) (title "Title (first 120 characters saved)" input)
+    (fields (id "Task identifier" input) (title "Title" textarea)
       (revision "Expected revision" input) (done "Completed" checkbox)
       (priority "Priority" input))
     (states "Updating" "Update failed or revision changed" "No update" "Updated")

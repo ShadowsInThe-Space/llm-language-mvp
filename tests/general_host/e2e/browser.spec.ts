@@ -5,18 +5,14 @@ const APPS = [
   {name: "history", heading: "Saved text history"},
   {name: "tasks", heading: "Task planner"},
 ] as const;
-const TEXT_LABEL = "Text (first 120 characters saved)";
 
 function identifier(info: TestInfo, suffix: string): string {
-  return `e2e-${Date.now()}-${info.project.name}-${suffix}-${randomUUID().slice(0, 6)}`;
+  // History sorts descending by ID; fresh z-prefixed records precede older seeds.
+  return `z-${Date.now()}-${info.project.name}-${suffix}-${randomUUID().slice(0, 6)}`;
 }
 
 function titleFor(id: string): string {
-  return `${id} ${"😀é漢x".repeat(40)}`;
-}
-
-function preview(title: string): string {
-  return Array.from(title).slice(0, 120).join("");
+  return `${id}\n${"😀é漢x\n".repeat(200)}End of full text`;
 }
 
 function panels(page: Page) {
@@ -42,11 +38,14 @@ async function frames(page: Page): Promise<void> {
   ));
 }
 
-async function save(page: Page, app: string, id: string, title: string, keyboard = false) {
+async function save(page: Page, app: string, id: string, title: string,
+                    keyboard = false, confirmation = 1) {
   const {create} = panels(page);
   const key = create.getByLabel("Identifier", {exact: true});
-  const text = create.getByLabel(TEXT_LABEL, {exact: true});
-  await expect(create.getByRole("button", {name: "Save", exact: true})).toBeEnabled();
+  const text = create.getByLabel("Text", {exact: true});
+  const submit = create.getByRole("button", {name: "Save", exact: true});
+  await expect(submit).toBeEnabled();
+  await expect(text).toHaveJSProperty("tagName", "TEXTAREA");
   await key.fill(id);
   await text.fill(title);
   const response = apiResponse(page, app, "save");
@@ -54,43 +53,69 @@ async function save(page: Page, app: string, id: string, title: string, keyboard
     await key.focus();
     await page.keyboard.press("Tab");
     await expect(text).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(submit).toBeFocused();
     await page.keyboard.press("Enter");
   } else {
-    await create.getByRole("button", {name: "Save", exact: true}).click();
+    await submit.click();
   }
   expect((await response).status()).toBe(200);
-  await expect(create.getByRole("status")).toHaveText("Saved");
-  await expect(create.getByRole("definition")).toContainText([id, preview(title)]);
+  await expect(create.getByRole("status"))
+    .toHaveText(`Saved · Confirmation ${confirmation}`);
+  await expect(create.getByRole("definition").nth(0)).toHaveText(id);
+  // textContent compares exact Unicode and line breaks, without whitespace folding.
+  expect(await create.getByRole("definition").nth(1).textContent()).toBe(title);
 }
 
-async function promoteTask(page: Page, id: string, title: string) {
+async function promoteTask(page: Page, id: string, title: string, confirmation = 1) {
   const edit = panels(page).edit;
   await edit.getByLabel("Task identifier", {exact: true}).fill(id);
-  await edit.getByLabel("Title (first 120 characters saved)", {exact: true}).fill(title);
+  await edit.getByLabel("Title", {exact: true}).fill(title);
   await edit.getByLabel("Expected revision", {exact: true}).fill("0");
   await edit.getByLabel("Completed", {exact: true}).check();
   await edit.getByLabel("Priority", {exact: true}).fill(String(Date.now()));
   const response = apiResponse(page, "tasks", "update");
   await edit.getByRole("button", {name: "Update task", exact: true}).click();
   expect((await response).status()).toBe(200);
-  await expect(edit.getByRole("status")).toHaveText("Updated");
-  await expect(edit.getByRole("definition")).toContainText([id, preview(title), "1", "Yes"]);
+  await expect(edit.getByRole("status"))
+    .toHaveText(`Updated · Confirmation ${confirmation}`);
+  await expect(edit.getByRole("definition")).toContainText([id, title, "1", "Yes"]);
+  expect(await edit.getByRole("definition").nth(1).textContent()).toBe(title);
 }
 
-async function loadAndSelect(page: Page, app: string, id: string, title: string) {
+async function load(page: Page, app: string) {
+  const response = apiResponse(page, app, "browse");
+  await panels(page).listing.getByRole("button", {name: "Load", exact: true}).click();
+  expect((await response).status()).toBe(200);
+  await expect(panels(page).listing.getByRole("status"))
+    .toHaveText("Entries loaded · Confirmation 1");
+}
+
+async function turnPage(page: Page, app: string, direction: "Next" | "Previous",
+                        pageNumber: number, confirmation: number) {
+  const listing = panels(page).listing;
+  const action = direction === "Previous" && pageNumber === 1 ? "browse" : "browse_next";
+  const response = apiResponse(page, app, action);
+  await listing.getByRole("button", {name: direction, exact: true}).click();
+  expect((await response).status()).toBe(200);
+  await expect(listing.getByText(`Page ${pageNumber}`, {exact: true})).toBeVisible();
+  await expect(listing.getByRole("status"))
+    .toHaveText(`Entries loaded · Confirmation ${confirmation}`);
+}
+
+async function select(page: Page, app: string, id: string, title: string, confirmation = 1) {
   const {listing, detail} = panels(page);
-  const load = apiResponse(page, app, "browse");
-  await listing.getByRole("button", {name: "Load", exact: true}).click();
-  expect((await load).status()).toBe(200);
-  await expect(listing.getByRole("status")).toHaveText("Entries loaded");
-  const row = listing.getByRole("row").filter({hasText: preview(title)});
+  const row = listing.getByRole("row").filter({hasText: id});
   await expect(row).toHaveCount(1);
-  const selected = apiResponse(page, app, "fetch");
+  await expect(listing.locator("tbody tr")).toHaveCount(1);
+  expect(await row.getByRole("cell").nth(0).textContent()).toBe(title);
+  const response = apiResponse(page, app, "fetch");
   await row.getByRole("button", {name: /^Select /}).click();
-  expect((await selected).status()).toBe(200);
-  await expect(detail.getByRole("status")).toHaveText("Selection loaded");
+  expect((await response).status()).toBe(200);
+  await expect(detail.getByRole("status"))
+    .toHaveText(`Selection loaded · Confirmation ${confirmation}`);
   await expect(detail.getByRole("cell", {name: id, exact: true})).toBeVisible();
-  await expect(detail.getByRole("cell", {name: preview(title), exact: true})).toBeVisible();
+  expect(await detail.getByRole("cell").nth(1).textContent()).toBe(title);
 }
 
 function deferred() {
@@ -100,34 +125,44 @@ function deferred() {
 }
 
 for (const app of APPS) {
-  test(`${app.name}: accessible click/keyboard save, real D1 list/detail, clear and reload`,
+  test(`${app.name}: full text, keyboard/click save, real D1 paging, clear and reload`,
     async ({page}, info) => {
-      let writes = 0;
+      let requests = 0;
       page.on("request", request => {
         if (request.method() === "POST" &&
-            new URL(request.url()).pathname === `/api/${app.name}`) writes += 1;
+            new URL(request.url()).pathname === `/api/${app.name}`) requests += 1;
       });
       await page.goto(`/${app.name}`);
       await expect(page.getByRole("heading", {level: 1, name: app.heading})).toBeVisible();
-      const clicked = identifier(info, "click");
-      await save(page, app.name, clicked, titleFor(clicked));
-      const id = identifier(info, "key");
-      const title = titleFor(id);
-      expect(Array.from(title).length).toBeGreaterThan(120);
-      expect(Buffer.byteLength(title)).toBeLessThanOrEqual(512);
-      await save(page, app.name, id, title, true);
-      if (app.name === "tasks") await promoteTask(page, id, title);
-      await loadAndSelect(page, app.name, id, title);
-      const beforeClear = writes;
+      const oldest = identifier(info, "click");
+      const oldestTitle = titleFor(oldest);
+      await save(page, app.name, oldest, oldestTitle);
+      if (app.name === "tasks") await promoteTask(page, oldest, oldestTitle);
+      const newest = identifier(info, "key");
+      const newestTitle = titleFor(newest);
+      expect(Array.from(newestTitle).length).toBeGreaterThan(120);
+      expect(Buffer.byteLength(newestTitle)).toBeGreaterThan(512);
+      expect(Buffer.byteLength(newestTitle)).toBeLessThanOrEqual(4096);
+      await save(page, app.name, newest, newestTitle, true, 2);
+      if (app.name === "tasks") await promoteTask(page, newest, newestTitle, 2);
+      await load(page, app.name);
+      await select(page, app.name, newest, newestTitle);
+      await turnPage(page, app.name, "Next", 2, 2);
+      await select(page, app.name, oldest, oldestTitle, 2);
+      await turnPage(page, app.name, "Previous", 1, 3);
+      await select(page, app.name, newest, newestTitle, 3);
+      const beforeClear = requests;
       await panels(page).create.getByRole("button", {name: "Clear display", exact: true}).click();
-      await expect(panels(page).create.getByRole("status")).toHaveText("No saved value");
+      await expect(panels(page).create.getByRole("status"))
+        .toHaveText("No saved value");
       await expect(panels(page).create.getByRole("definition")).toHaveCount(0);
       await frames(page);
-      expect(writes).toBe(beforeClear);
+      expect(requests).toBe(beforeClear);
       await page.reload();
       await expect(panels(page).listing.getByRole("button", {name: "Load"})).toBeEnabled();
       await expect(panels(page).listing.getByRole("status")).toHaveText("No entries");
-      await loadAndSelect(page, app.name, id, title);
+      await load(page, app.name);
+      await select(page, app.name, newest, newestTitle);
     });
 
   test(`${app.name}: transport failure retains the last confirmed saved value`,
@@ -138,7 +173,7 @@ for (const app of APPS) {
       await save(page, app.name, confirmed, title);
       const create = panels(page).create;
       await create.getByLabel("Identifier", {exact: true}).fill(identifier(info, "fail"));
-      await create.getByLabel(TEXT_LABEL, {exact: true}).fill("Unconfirmed replacement");
+      await create.getByLabel("Text", {exact: true}).fill("Unconfirmed replacement");
       await page.route(`**/api/${app.name}`, async route => {
         if (route.request().postDataJSON()?.action === "save") {
           await route.fulfill({status: 503, contentType: "application/json",
@@ -149,7 +184,8 @@ for (const app of APPS) {
       });
       await create.getByRole("button", {name: "Save", exact: true}).click();
       await expect(create.getByRole("alert")).toHaveText("Save failed");
-      await expect(create.getByRole("definition")).toContainText([confirmed, preview(title)]);
+      await expect(create.getByRole("definition").nth(0)).toHaveText(confirmed);
+      expect(await create.getByRole("definition").nth(1).textContent()).toBe(title);
     });
 
   test(`${app.name}: an older real detail response cannot replace the newer selection`,
@@ -172,16 +208,14 @@ for (const app of APPS) {
       }
       await page.goto(`/${app.name}`);
       await expect(panels(page).listing.getByRole("button", {name: "Load"})).toBeEnabled();
-      const listing = apiResponse(page, app.name, "browse");
-      await panels(page).listing.getByRole("button", {name: "Load"}).click();
-      expect((await listing).status()).toBe(200);
+      await load(page, app.name);
       const firstReady = deferred();
       const releaseFirst = deferred();
       const firstFinished = deferred();
       let firstStatus: number | undefined;
       await page.route(`**/api/${app.name}`, async route => {
         const data = route.request().postDataJSON();
-        if (data?.action !== "fetch" || data?.input?.fields?.selected_id !== ids[0]) {
+        if (data?.action !== "fetch" || data?.input?.fields?.selected_id !== ids[1]) {
           await route.continue();
           return;
         }
@@ -199,20 +233,21 @@ for (const app of APPS) {
         }
       });
       try {
-        const first = panels(page).listing.getByRole("row").filter({hasText: preview(titles[0])});
+        const first = panels(page).listing.getByRole("row").filter({hasText: ids[1]});
         await first.getByRole("button", {name: /^Select /}).click();
         await firstReady.promise;
         expect(firstStatus).toBe(200);
-        const secondResponse = apiResponse(page, app.name, "fetch");
-        const second = panels(page).listing.getByRole("row").filter({hasText: preview(titles[1])});
-        await second.getByRole("button", {name: /^Select /}).click();
-        expect((await secondResponse).status()).toBe(200);
-        await expect(panels(page).detail.getByRole("cell", {name: ids[1], exact: true})).toBeVisible();
+        await turnPage(page, app.name, "Next", 2, 2);
+        await select(page, app.name, ids[0], titles[0]);
         releaseFirst.resolve();
         await firstFinished.promise;
         await frames(page);
-        await expect(panels(page).detail.getByRole("cell", {name: ids[1], exact: true})).toBeVisible();
-        await expect(panels(page).detail.getByRole("cell", {name: ids[0], exact: true})).toHaveCount(0);
+        await expect(panels(page).detail.getByRole("cell", {name: ids[0], exact: true}))
+          .toBeVisible();
+        await expect(panels(page).detail.getByRole("cell", {name: ids[1], exact: true}))
+          .toHaveCount(0);
+        await expect(panels(page).detail.getByRole("status"))
+          .toHaveText("Selection loaded · Confirmation 1");
       } finally {
         releaseFirst.resolve();
       }
@@ -239,7 +274,7 @@ for (const app of APPS) {
         const create = panels(page).create;
         await expect(create).toBeVisible();
         await expect.poll(() => blocked).toBeGreaterThan(0);
-        const controls = page.getByRole("main").locator("input,select,button");
+        const controls = page.getByRole("main").locator("input,textarea,select,button");
         for (let index = 0; index < await controls.count(); index += 1) {
           await expect(controls.nth(index)).toBeDisabled();
         }

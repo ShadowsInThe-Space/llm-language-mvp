@@ -34,6 +34,7 @@ from .program import (
     FormView,
     InputField,
     ListView,
+    Pagination,
     ParamTransform,
     ProgramError,
     ProgramLimits,
@@ -328,7 +329,7 @@ def _query(node: _Node, params: dict[str, Param]) -> Query:
         table, key, value, project = _form(node, kind, 5, 5)
         return SelectUnique(_name(table), _name(key), _input(value, params), _projection(project))
     if kind == "select_list":
-        table, project, order, limit, offset, where = _form(node, kind, 7, 7)
+        table, project, order, limit, offset, where, *cursor_nodes = _form(node, kind, 7, 8)
         ordering: list[Order] = []
         for item in _form(order, "order", 2):
             column, direction = _items(item, 2, 2)
@@ -340,6 +341,7 @@ def _query(node: _Node, params: dict[str, Param]) -> Query:
             _name(table), _projection(project), tuple(ordering),
             _number(_form(limit, "limit", 2, 2)[0]),
             _number(_form(offset, "offset", 2, 2)[0]), _pairs(where, "where", params),
+            _pairs(cursor_nodes[0], "cursor", params) if cursor_nodes else (),
         )
     if kind == "conditional_update":
         table, key, key_value, revision, expected, values, project = _form(node, kind, 8, 8)
@@ -416,6 +418,20 @@ def _columns(node: _Node) -> tuple[DisplayColumn, ...]:
     return tuple(columns)
 
 
+def _pagination(node: _Node) -> Pagination:
+    action, *pairs = _form(node, "paginate", 3)
+    bindings: list[tuple[str, str]] = []
+    names: set[str] = set()
+    for pair in pairs:
+        param, column = _items(pair, 2, 2)
+        name = _name(param)
+        if name in names:
+            _fail("duplicate pagination parameter", pair, "BINDING")
+        names.add(name)
+        bindings.append((name, _name(column)))
+    return Pagination(_name(action), tuple(bindings))
+
+
 def _view(node: _Node, path: str, source_map: dict[str, WebSourceSpan]) -> ViewNode:
     items = _items(node, 1)
     kind = _name(items[0])
@@ -430,7 +446,7 @@ def _view(node: _Node, path: str, source_map: dict[str, WebSourceSpan]) -> ViewN
         for index, item in enumerate(_form(field_node, "fields", 2)):
             data = _items(item, 3)
             control = _name(data[2])
-            if control not in {"input", "select", "checkbox"}:
+            if control not in {"input", "textarea", "select", "checkbox"}:
                 _fail("unsupported input control", data[2])
             choices: list[tuple[str, Scalar]] = []
             for choice in data[3:]:
@@ -446,15 +462,27 @@ def _view(node: _Node, path: str, source_map: dict[str, WebSourceSpan]) -> ViewN
             _string(submit), _string(clear),
         )
     if kind in {"list", "detail"}:
-        data = _form(node, kind, 5, 6 if kind == "list" else 5)
+        data = _form(node, kind, 5, 7 if kind == "list" else 5)
         name, action, columns, states = data[:4]
         if kind == "detail":
             return DetailView(_name(name), _name(action), _columns(columns), _states(states))
         selection = None
-        if len(data) == 5:
-            detail, param, column = _form(data[4], "select", 4, 4)
-            selection = Selection(_name(detail), _name(param), _name(column))
-        return ListView(_name(name), _name(action), _columns(columns), _states(states), selection)
+        pagination = None
+        for option in data[4:]:
+            head = _name(_items(option, 1)[0])
+            if head == "select" and selection is None:
+                detail, param, column = _form(option, "select", 4, 4)
+                selection = Selection(_name(detail), _name(param), _name(column))
+                source_map[f"{path}.selection"] = option.span
+            elif head == "paginate" and pagination is None:
+                pagination = _pagination(option)
+                source_map[f"{path}.pagination"] = option.span
+                source_map.setdefault(f"views.{_name(name)}.pagination", option.span)
+            else:
+                _fail("list options are select and paginate, each at most once", option)
+        return ListView(
+            _name(name), _name(action), _columns(columns), _states(states), selection, pagination,
+        )
     _fail("only form/list/detail/use views are supported", node, "VIEW")
 
 

@@ -129,16 +129,19 @@ ViewStates(loading, error, empty, success)
 InputField(param, label, control="input", choices=())
 DisplayColumn(column, label)
 FormView(name, action, fields, states, submit_label="Save", clear_label="Clear")
-ListView(name, action, columns, states, selection=None)
+ListView(name, action, columns, states, selection=None, pagination=None)
 DetailView(name, action, columns, states)
 Selection(detail, param, column)
+Pagination(action, bindings)  # tuple of (next_action_param, confirmed_row_column)
 ```
 
 All four states are required and contain bounded display text.
 
 - A form binds every parameter of a parameterized Insert/ConditionalUpdate
   action exactly once. Types come from the action signature, not field claims.
-  Bool uses a checkbox. Other scalar types use input or select. A select has
+  Bool uses a checkbox. Other scalar types use input or select; Text additionally
+  supports textarea for multiline input. Textarea never accepts numeric or Bool
+  parameters and has no choices. A select has
   1..64 distinct typed values with bounded labels; other controls have no
   choices. Submit invokes the declared action. Clear is strictly local UI
   reset; no server clear action or DB effect is represented.
@@ -151,6 +154,27 @@ All four states are required and contain bounded display text.
   selection binds that exact parameter from the same projected unique-key
   column, type and table. The target action follows unambiguously from the
   named detail view; it is never an independently supplied conflicting call.
+- Optional pagination names a next-page SelectList action and an immutable tuple
+  mapping each of its parameters to a column from a confirmed row. The first
+  action has no cursor or parameters. The next action must be identical in table,
+  projection, explicit ordering, filter, page limit, offset and authorization;
+  only its complete keyset cursor differs. Cursor columns cover the effective
+  ordering, including the primary-key tie breaker, and must all be projected.
+  Cursor values are distinct declared parameters of exactly the column types.
+  The binding map must match these parameters and columns exactly; declaration
+  order is not significant to lookup, but is bound by the canonical snapshot.
+  Transforms on the next action are rejected because the cursor must use the
+  exact confirmed ordering values. The next action is called through pagination,
+  not bound directly as a list view. These rules also check unused components.
+  All violations use `W_PROGRAM_VIEW` at the list's pagination path. Malformed
+  cursor query shapes remain action/query errors.
+
+The client derives next-page cursor inputs from the last row of a successful
+page, never a draft or an unconfirmed response. Previous navigation retains the
+already used request cursors as bounded local UI state. Loading the first page
+or clearing resets this navigation. Paging orders individual calls; it does not
+promise a database snapshot spanning requests under concurrent writes.
+Confirmation counters are local UI state, with no clock operation or DB mutation.
 
 Expanded view IDs are globally unique. These rules do not contain branches for
 history, tasks, CRM or another domain. Different schemas and column sets use
@@ -193,7 +217,8 @@ The checker derives each `server:<action>` function directly from its actual
 query node: SelectUnique/SelectList require `db.read`, while
 Insert/ConditionalUpdate require `db.write`. All actions remain server-side.
 Each actual concrete UI view derives a `ui:<view>` function with
-`network.call`; a list-to-detail selection also records the static client
+`network.call`; pagination contributes its actual second network operation,
+and a list-to-detail selection also records the static client
 detail edge. The HTTP action boundary is transport, never an ordinary
 client-to-server function edge. Entry sets are derived from actual declarations
 and views. `check_effect_graph` checks the resulting graph and partitions.

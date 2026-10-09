@@ -17,7 +17,7 @@
  * Requests use closed {action,input} envelopes; inputs are nominal <action>Input
  * records (or {} when empty). Success is direct nominal record/Option/list JSON;
  * Int/Nat are canonical decimal STRINGS, Bool is a JSON boolean. The generated
- * pure title_preview function stores the first 120 Unicode code points.
+ * shared preserve_text entry preserves all admitted text, including newlines.
  *
  * Passing seed alone is not restart evidence. This runner never starts, mocks,
  * resets or substitutes the host/database; CI owns process restart and storage.
@@ -29,14 +29,13 @@ const TASK_ID = "restart-task";
 const RECEIPT_ID = "restart-cas-winner";
 const INVALID_ID = "restart-invalid-task";
 const PARAMS_ID = "restart-invalid-params";
-const HISTORY_SOURCE = "Grüße 🌍 東京 " + "é".repeat(130);
-const TASK_SOURCE = "Aufgabe 🧭 café 東京 " + "😀".repeat(90);
+const HISTORY_SOURCE = "Grüße 🌍 東京\nzweite Zeile\t" + "é".repeat(130);
+const TASK_SOURCE = "Aufgabe 🧭 café 東京\nzweite Zeile\t" + "😀".repeat(90);
 const CANDIDATES = [
   {branch: "A", title: "CAS Sieger A 🌍 " + "é".repeat(130), done: true, priority: "7"},
   {branch: "B", title: "CAS Sieger B 東京 " + "界".repeat(130), done: false, priority: "9"},
 ];
 const MAX_NAT = 9007199254740991n;
-const preview = text => Array.from(text).slice(0, 120).join("");
 
 function exactObject(value, names, context) {
   assert.ok(value !== null && typeof value === "object" && !Array.isArray(value),
@@ -63,7 +62,7 @@ function none(value, context) {
   assert.deepEqual(value, {tag: "None", value: null}, `${context}: unexpected persisted record`);
 }
 function taskFields(candidate) {
-  return {id: TASK_ID, title: preview(candidate.title), revision: "1",
+  return {id: TASK_ID, title: candidate.title, revision: "1",
     done: candidate.done, priority: candidate.priority};
 }
 function validateTask(fields, expected, context) {
@@ -97,10 +96,11 @@ async function main() {
       throw new Error(`${context}: cannot reach real built host at ${url}: ${error.message}`);
     }
     requests++;
+    const responseText = await response.text();
     assert.match(response.headers.get("content-type") ?? "", /^application\/json\b/i,
-      `${context}: response is not JSON`);
+      `${context}: response is not JSON (HTTP ${response.status}): ${responseText.slice(0, 500)}`);
     let body;
-    try { body = await response.json(); }
+    try { body = JSON.parse(responseText); }
     catch { throw new Error(`${context}: response was invalid JSON (HTTP ${response.status})`); }
     if (expectedStatus !== null)
       assert.equal(response.status, expectedStatus, `${context}: unexpected HTTP status`);
@@ -127,8 +127,8 @@ async function main() {
     const history = some(await fetchRow("history", HISTORY_ID), "fetch",
       ["id", "title", "revision"], "history persistence");
     canonicalNat(history.revision, "history persistence.revision");
-    assert.deepEqual(history, {id: HISTORY_ID, title: preview(HISTORY_SOURCE), revision: "0"},
-      "history persistence: Unicode/pure preview changed");
+    assert.deepEqual(history, {id: HISTORY_ID, title: HISTORY_SOURCE, revision: "0"},
+      "history persistence: stored Unicode changed");
     const receipt = some(await fetchRow("history", RECEIPT_ID), "fetch",
       ["id", "title", "revision"], "winner receipt persistence");
     assert.equal(receipt.id, RECEIPT_ID, "winner receipt identity changed");
@@ -147,14 +147,14 @@ async function main() {
       none(await fetchRow(app, id), `fresh seed ${app}/${id}`);
     const history = record((await invoke("history", "save",
       {id: HISTORY_ID, title: HISTORY_SOURCE})).body, "saveRow", ["id", "title"], "history save");
-    assert.deepEqual(history, {id: HISTORY_ID, title: preview(HISTORY_SOURCE)},
+    assert.deepEqual(history, {id: HISTORY_ID, title: HISTORY_SOURCE},
       "history save must execute the pure Unicode title transform");
     const task = record((await invoke("tasks", "save", {id: TASK_ID, title: TASK_SOURCE})).body,
       "saveRow", ["id", "title"], "task save");
-    assert.deepEqual(task, {id: TASK_ID, title: preview(TASK_SOURCE)}, "task save changed Unicode");
+    assert.deepEqual(task, {id: TASK_ID, title: TASK_SOURCE}, "task save changed Unicode");
     const initial = some(await fetchRow("tasks", TASK_ID), "fetch",
       ["id", "title", "revision", "done", "priority"], "task initial state");
-    validateTask(initial, {id: TASK_ID, title: preview(TASK_SOURCE), revision: "0",
+    validateTask(initial, {id: TASK_ID, title: TASK_SOURCE, revision: "0",
       done: false, priority: "0"}, "task initial state");
 
     const race = await Promise.all(CANDIDATES.map(candidate => invoke("tasks", "update", {

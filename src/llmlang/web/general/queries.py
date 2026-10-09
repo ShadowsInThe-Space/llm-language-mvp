@@ -26,6 +26,9 @@ MAX_TABLES = 16
 MAX_COLUMNS = 32
 MAX_LIST_ROWS = 1000
 MAX_LIST_OFFSET = 10000
+# Fixed general web target budgets, including every repeated positional binding.
+MAX_QUERY_BINDINGS = 100
+MAX_QUERY_SQL_BYTES = 100000
 _NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}\Z")
 type Scalar = str | int | bool
 
@@ -195,12 +198,14 @@ class SelectList:
     limit: int
     offset: int = 0
     where: tuple[tuple[str, Input], ...] = ()
+    cursor: tuple[tuple[str, Input], ...] = ()
 
     def __post_init__(self) -> None:
         _name(self.table)
         _tuple(self.projection)
         _tuple(self.order)
         _tuple(self.where)
+        _tuple(self.cursor)
 
 
 @dataclass(frozen=True, slots=True)
@@ -323,6 +328,47 @@ def _key(table: Table, name: str) -> Column:
     return column
 
 
+def effective_order(schema: Schema, query: SelectList) -> tuple[Order, ...]:
+    """Resolve a declared total ordering, adding the primary key when absent."""
+    if not isinstance(query, SelectList):
+        raise QueryError("Effective ordering requires a list query")
+    table = schema.table(query.table)
+    _tuple(query.order)
+    if not query.order or len(query.order) > MAX_COLUMNS:
+        raise QueryError("Lists require an explicit bounded ordering")
+    result: list[Order] = []
+    names: set[str] = set()
+    for order in query.order:
+        if not isinstance(order, Order) or order.direction not in ("asc", "desc"):
+            raise QueryError("Ordering requires declared columns and asc/desc direction")
+        column = table.column(order.column)
+        if column.name in names:
+            raise QueryError("Duplicate order column")
+        names.add(column.name)
+        result.append(order)
+    if table.primary_key.name not in names:
+        result.append(Order(table.primary_key.name))
+    return tuple(result)
+
+
+def _cursor_fields(
+    table: Table, cursor: tuple[tuple[str, Input], ...], order: tuple[Order, ...],
+) -> tuple[tuple[Column, Input], ...]:
+    _tuple(cursor)
+    if len(cursor) != len(order):
+        raise QueryError("Cursor must cover the exact effective order")
+    fields: list[tuple[Column, Input]] = []
+    for pair, ordering in zip(cursor, order, strict=True):
+        _tuple(pair)
+        if len(pair) != 2:
+            raise QueryError("Cursor bindings require a column name and value")
+        name, value = pair
+        if name != ordering.column:
+            raise QueryError("Cursor columns must follow the exact effective order")
+        fields.append((table.column(name), value))
+    return tuple(fields)
+
+
 def compile_query(schema: Schema, query: Query) -> CompiledQuery:
     """Compile a closed query, validating literal inputs and typed parameter uses."""
     if not isinstance(query, (Insert, SelectUnique, SelectList, ConditionalUpdate)):
@@ -370,27 +416,27 @@ def compile_query(schema: Schema, query: Query) -> CompiledQuery:
         )
         cardinality = "optional"
     elif isinstance(query, SelectList):
-        _tuple(query.order)
-        if not query.order or len(query.order) > MAX_COLUMNS:
-            raise QueryError("Lists require an explicit bounded ordering")
+        order = effective_order(schema, query)
         if type(query.limit) is not int or not 1 <= query.limit <= MAX_LIST_ROWS:
             raise QueryError("List limit must be an integer in 1..1000")
         if type(query.offset) is not int or not 0 <= query.offset <= MAX_LIST_OFFSET:
             raise QueryError("List offset must be an integer in 0..10000")
-        ordering = []
-        ordered_names = set()
-        for order in query.order:
-            if not isinstance(order, Order) or order.direction not in ("asc", "desc"):
-                raise QueryError("Ordering requires declared columns and asc/desc direction")
-            column = table.column(order.column)
-            if column.name in ordered_names:
-                raise QueryError("Duplicate order column")
-            ordered_names.add(column.name)
-            ordering.append(f"{_quote(column.name)} {order.direction.upper()}")
-        if table.primary_key.name not in ordered_names:
-            ordering.append(f"{_quote(table.primary_key.name)} ASC")
+        ordering = [f"{_quote(item.column)} {item.direction.upper()}" for item in order]
         predicates = [f"{_quote(column.name)} = {bind(column, value)}"
                       for column, value in _fields(table, query.where)]
+        if query.cursor:
+            if query.offset != 0:
+                raise QueryError("A keyset cursor cannot be combined with a nonzero offset")
+            cursor = _cursor_fields(table, query.cursor, order)
+            alternatives = []
+            for index, ((column, value), item) in enumerate(zip(cursor, order, strict=True)):
+                equalities = [f"{_quote(previous.name)} = {bind(previous, previous_value)}"
+                              for previous, previous_value in cursor[:index]]
+                comparison = "<" if item.direction == "desc" else ">"
+                equalities.append(f"{_quote(column.name)} {comparison} {bind(column, value)}")
+                conjunction = " AND ".join(equalities)
+                alternatives.append(f"({conjunction})" if index else conjunction)
+            predicates.append(f"({' OR '.join(alternatives)})")
         where = " WHERE " + " AND ".join(predicates) if predicates else ""
         bindings.extend((Binding(NatType(), query.limit), Binding(NatType(), query.offset)))
         sql = (f"SELECT {projection} FROM {_quote(table.name)}{where} "
@@ -413,6 +459,10 @@ def compile_query(schema: Schema, query: Query) -> CompiledQuery:
                f"WHERE {_quote(key.name)} = {key_marker} AND {_quote(revision.name)} = "
                f"{revision_marker} RETURNING {projection}")
         cardinality = "conditional"
+    if len(bindings) > MAX_QUERY_BINDINGS:
+        raise QueryError("Query exceeds the supported bound-parameter budget")
+    if len(sql.encode("utf-8")) > MAX_QUERY_SQL_BYTES:
+        raise QueryError("Query exceeds the supported SQL byte budget")
     return CompiledQuery(sql, tuple(bindings), ResultDescriptor(columns, cardinality, max_rows))
 
 

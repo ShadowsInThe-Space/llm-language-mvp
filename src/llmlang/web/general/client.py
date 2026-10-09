@@ -13,6 +13,8 @@ def emit_client(program: WebProgram) -> str:
     """Recheck the source program; never serialize the server snapshot to a browser."""
     checked = validate_program(program)
     used = {view.action for view in checked.expanded_views}
+    used.update(view.pagination.action for view in checked.expanded_views
+                if isinstance(view, ListView) and view.pagination)
     actions = [{"name": action.name,
                 "input": type_descriptor(action.input_codec) if action.input_codec else None,
                 "output": type_descriptor(action.output_codec)}
@@ -44,6 +46,10 @@ def emit_client(program: WebProgram) -> str:
                                             "param": view.selection.param,
                                             "column": view.selection.column}
                                            if view.selection else None)
+                descriptor["pagination"] = ({"action": view.pagination.action,
+                                             "bindings": [{"param": param, "column": column}
+                                                          for param, column in view.pagination.bindings]}
+                                            if view.pagination else None)
             else:
                 assert isinstance(view, DetailView)
         views.append(descriptor)
@@ -61,20 +67,23 @@ import type {CodecType} from "./codecs";
 
 type Row = {record: string; fields: Record<string, unknown>};
 type Status = "loading" | "error" | "empty" | "success";
-export type ViewState = {status: Status; value: unknown; error: string | null};
+export type ViewState = {status: Status; value: unknown; error: string | null; confirmation: number};
 type States = Record<Status, string>;
 type Action = {name: string; input: CodecType | null; output: CodecType};
-type Field = {param: string; label: string; control: "input" | "select" | "checkbox";
+type Field = {param: string; label: string; control: "input" | "select" | "checkbox" | "textarea";
   type: CodecType; choices: {label: string; wire: unknown}[]};
 type Column = {column: string; label: string};
 type View = {name: string; action: string; states: States} & (
   {kind: "form"; fields: Field[]; submitLabel: string; clearLabel: string}
-  | {kind: "list"; columns: Column[]; selection: {detail: string; param: string; column: string} | null}
+  | {kind: "list"; columns: Column[]; selection: {detail: string; param: string; column: string} | null;
+     pagination: {action: string; bindings: {param: string; column: string}[]} | null}
   | {kind: "detail"; columns: Column[]});
 const SPEC: {name: string; title: string; actions: Action[]; views: View[]} = __CLIENT_METADATA__;
 const ACTIONS = new Map(SPEC.actions.map(action => [action.name, action]));
 const VIEWS = new Map(SPEC.views.map(view => [view.name, view]));
 const MAX_BYTES = 32768;
+const MAX_PAGE_CURSORS = 32;
+const MAX_PAGE_CURSOR_BYTES = 262144;
 function exactObject(value: unknown, keys: string[]): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid object");
   const object = value as Record<string, unknown>;
@@ -142,7 +151,10 @@ export function createClientController(endpoint = "/api/general", fetcher: typeo
   if (typeof endpoint !== "string" || !endpoint.startsWith("/") || endpoint.startsWith("//")
     || /[\\\s#]/.test(endpoint)) throw new Error("Same-origin endpoint path required");
   const states = new Map<string, ViewState>(SPEC.views.map(view => [view.name,
-    {status: "empty", value: null, error: null}]));
+    {status: "empty", value: null, error: null, confirmation: 0}]));
+  const pages = new Map<string, {index: number; base: number; cursors: {input: unknown; bytes: number}[]}>(SPEC.views
+    .filter(view => view.kind === "list").map(view => [view.name,
+      {index: 0, base: 0, cursors: [{input: {}, bytes: 2}]}]));
   const requests = new Map<string, {revision: number; abort: AbortController}>();
   const revisions = new Map<string, number>();
   const listeners = new Set<() => void>();
@@ -159,15 +171,39 @@ export function createClientController(endpoint = "/api/general", fetcher: typeo
     requests.get(name)?.abort.abort(); requests.delete(name);
     const revision = (revisions.get(name) ?? 0) + 1; revisions.set(name, revision); return revision;
   }
-  async function perform(target: View, buildInput: () => unknown): Promise<void> {
+  function pagination(target: Extract<View, {kind: "list"}>) {
+    const page = pages.get(target.name)!;
+    const state = states.get(target.name)!;
+    const output = ACTIONS.get(target.action)!.output;
+    const rows = (state.value as {list?: Row[]} | null)?.list ?? [];
+    return {page: page.index + 1,
+      canNext: !!target.pagination && state.status !== "loading" && output.kind === "list"
+        && rows.length > 0 && rows.length === output.capacity,
+      canPrevious: !!target.pagination && state.status !== "loading" && page.index > page.base};
+  }
+  function pageAction(target: Extract<View, {kind: "list"}>, index: number): string {
+    return index === 0 ? target.action : target.pagination!.action;
+  }
+  function confirmPage(target: Extract<View, {kind: "list"}>, index: number, native: unknown): void {
+    const page = pages.get(target.name)!;
+    const bytes = new TextEncoder().encode(JSON.stringify(native)).byteLength;
+    page.cursors = page.cursors.slice(0, index - page.base + 1);
+    page.cursors[index - page.base] = {input: structuredClone(native), bytes}; page.index = index;
+    let total = page.cursors.reduce((sum, cursor) => sum + cursor.bytes, 0);
+    while (page.cursors.length > MAX_PAGE_CURSORS || total > MAX_PAGE_CURSOR_BYTES) {
+      total -= page.cursors.shift()!.bytes; page.base++;
+    }
+  }
+  async function perform(target: View, buildInput: () => unknown, actionName = target.action,
+    onConfirm?: (native: unknown) => void): Promise<void> {
     const revision = invalidate(target.name);
-    const previous = states.get(target.name)!.value;
+    const previous = states.get(target.name)!;
     const abort = new AbortController(); requests.set(target.name, {revision, abort});
     const timer = setTimeout(() => abort.abort(), 10000);
     const current = () => !disposed && revisions.get(target.name) === revision;
-    publish(target.name, {status: "loading", value: previous, error: null});
+    publish(target.name, {...previous, status: "loading", error: null});
     try {
-      const action = ACTIONS.get(target.action)!;
+      const action = ACTIONS.get(actionName)!;
       const native = buildInput();
       const input = action.input === null ? exactObject(native, []) : encodeValue(action.input, native);
       const body = JSON.stringify({action: action.name, input});
@@ -183,9 +219,13 @@ export function createClientController(endpoint = "/api/general", fetcher: typeo
         throw new Error("Request failed");
       }
       const value = decodeValue(action.output, wire);
-      if (current()) publish(target.name, {status: isEmpty(value) ? "empty" : "success", value, error: null});
+      if (current()) {
+        onConfirm?.(native);
+        publish(target.name, {status: isEmpty(value) ? "empty" : "success", value, error: null,
+          confirmation: previous.confirmation + 1});
+      }
     } catch {
-      if (current()) publish(target.name, {status: "error", value: previous, error: target.states.error});
+      if (current()) publish(target.name, {...previous, status: "error", error: target.states.error});
     } finally {
       clearTimeout(timer); if (current()) requests.delete(target.name);
     }
@@ -199,14 +239,41 @@ export function createClientController(endpoint = "/api/general", fetcher: typeo
     },
     loadList(name: string): Promise<void> {
       const target = view(name); if (target.kind !== "list") throw new Error("List view required");
-      return perform(target, () => ({}));
+      const page = pages.get(name)!, index = page.index;
+      return perform(target, () => structuredClone(page.cursors[index - page.base].input), pageAction(target, index),
+        native => confirmPage(target, index, native));
+    },
+    getPagination(name: string) {
+      const target = view(name); if (target.kind !== "list") throw new Error("List view required");
+      return pagination(target);
+    },
+    nextPage(name: string): Promise<void> {
+      const target = view(name); if (target.kind !== "list") throw new Error("List view required");
+      if (!pagination(target).canNext) return Promise.resolve();
+      const index = pages.get(name)!.index + 1;
+      return perform(target, () => {
+        const rows = (states.get(name)!.value as {list: Row[]}).list;
+        const fields: Record<string, unknown> = Object.create(null);
+        for (const binding of target.pagination!.bindings)
+          fields[binding.param] = rows[rows.length - 1].fields[binding.column];
+        const input = ACTIONS.get(target.pagination!.action)!.input;
+        if (input?.kind !== "record") throw new Error("Pagination input required");
+        return {record: input.name, fields};
+      }, target.pagination!.action, native => confirmPage(target, index, native));
+    },
+    previousPage(name: string): Promise<void> {
+      const target = view(name); if (target.kind !== "list") throw new Error("List view required");
+      if (!pagination(target).canPrevious) return Promise.resolve();
+      const page = pages.get(name)!, index = page.index - 1;
+      return perform(target, () => structuredClone(page.cursors[index - page.base].input), pageAction(target, index),
+        native => confirmPage(target, index, native));
     },
     selectRow(name: string, row: Row): Promise<void> {
       const source = view(name);
       if (source.kind !== "list" || !source.selection) throw new Error("Selectable list required");
       const selection = source.selection; const target = view(selection.detail);
       return perform(target, () => {
-        const listType = ACTIONS.get(source.action)!.output;
+        const listType = ACTIONS.get(pageAction(source, pages.get(name)!.index))!.output;
         if (listType.kind !== "list") throw new Error("List descriptor required");
         encodeValue(listType.elem, row);
         const inputType = ACTIONS.get(target.action)!.input;
@@ -215,7 +282,10 @@ export function createClientController(endpoint = "/api/general", fetcher: typeo
       });
     },
     clear(name: string): void {
-      view(name); invalidate(name); publish(name, {status: "empty", value: null, error: null});
+      const target = view(name); invalidate(name);
+      if (target.kind === "list") pages.set(name, {index: 0, base: 0, cursors: [{input: {}, bytes: 2}]});
+      publish(name, {status: "empty", value: null, error: null,
+        confirmation: states.get(name)!.confirmation});
     },
     dispose(): void {
       for (const name of states.keys()) invalidate(name);
@@ -253,7 +323,9 @@ function FormPanel({view, controller, state, ready}: {view: Extract<View, {kind:
           value={String(field.choices.findIndex(choice => choice.wire === draft[field.param]))}
           onChange={event => change(field.param, field.choices[Number(event.target.value)].wire)}>
           {field.choices.map((choice, index) => <option key={index} value={String(index)}>{choice.label}</option>)}
-        </select> : field.type.kind === "text" ? <input id={id} name={field.param} type="text"
+        </select> : field.control === "textarea" ? <textarea id={id} name={field.param}
+          value={String(draft[field.param])} onChange={event => change(field.param, event.target.value)} />
+        : field.type.kind === "text" ? <input id={id} name={field.param} type="text"
           value={String(draft[field.param])} onChange={event => change(field.param, event.target.value)} />
         : <input id={id} name={field.param} type="text" inputMode="numeric"
           value={String(draft[field.param])} onChange={event => change(field.param, event.target.value)} />}
@@ -270,9 +342,17 @@ function FormPanel({view, controller, state, ready}: {view: Extract<View, {kind:
 function DataPanel({view, controller, state, ready}: {view: Exclude<View, {kind: "form"}>; controller: ClientController; state: ViewState; ready: boolean}) {
   const value = state.value as {list?: Row[]; tag?: string; value?: Row} | null;
   const rows = view.kind === "list" ? value?.list ?? [] : value?.tag === "Some" && value.value ? [value.value] : [];
+  const page = view.kind === "list" ? controller.getPagination(view.name) : null;
   return <div>
     {view.kind === "list" && <button type="button" disabled={!ready || state.status === "loading"}
       onClick={() => {void controller.loadList(view.name);}}>Load</button>}
+    {view.kind === "list" && view.pagination && <>
+      <button type="button" disabled={!ready || !page?.canPrevious}
+        onClick={() => {void controller.previousPage(view.name);}}>Previous</button>
+      <button type="button" disabled={!ready || !page?.canNext}
+        onClick={() => {void controller.nextPage(view.name);}}>Next</button>
+      <span>Page {page?.page}</span>
+    </>}
     <button type="button" disabled={!ready} onClick={() => controller.clear(view.name)}>Clear</button>
     {rows.length > 0 && <table><thead><tr>{view.columns.map(column => <th key={column.column} scope="col">{column.label}</th>)}
       {view.kind === "list" && view.selection && <th scope="col">Details</th>}</tr></thead>
@@ -295,7 +375,9 @@ export default function GeneralApp({endpoint = "/api/general"}: {endpoint?: stri
   return <main><h1>{SPEC.title}</h1>{SPEC.views.map(view => {
     const state = controller.getState(view.name);
     return <section key={view.name} aria-label={view.name} aria-busy={state.status === "loading"}>
-      <p role={state.status === "error" ? "alert" : "status"}>{view.states[state.status]}</p>
+      <p role={state.status === "error" ? "alert" : "status"}>{view.states[state.status]}
+        {state.confirmation > 0 && (state.status === "success" || (state.status === "empty" && state.value !== null))
+          && <span> · Confirmation {state.confirmation}</span>}</p>
       {view.kind === "form" ? <FormPanel view={view} controller={controller} state={state} ready={ready} />
         : <DataPanel view={view} controller={controller} state={state} ready={ready} />}
     </section>;

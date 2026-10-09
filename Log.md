@@ -726,3 +726,32 @@ KI-Fachreview.
   both examples. The dedicated React SSR/jsdom hydration run passed all five tests
   without the baseline's optional-toolchain skip. Both installed-wheel checks
   passed. The follow-up changes only the evidence documentation.
+
+### 2026-10-09 — M3 host acceptance and history behavior correction
+
+- The remaining host environment was not an external authorization blocker.
+  Added a pinned Vinext 1.0.0-beta.5/Vite 8.0.13/React 19.2.6 fixture using
+  official Cloudflare plugin 1.31.0 and Wrangler 4.80.0, built workerd output,
+  local D1 bindings and Chromium/Firefox/WebKit acceptance. No generated target
+  file is hand-patched. The local shell cannot resolve package hosts; CI owns
+  dependency installation and execution. This does not require a cloud deployment.
+- Initial host checkpoint `0e1c091f9842fb8b7f944f32244cfd7be2355db4` built
+  successfully and passed client/source-map inspection (10 JS files, seven maps).
+  The actual D1 run exposed a non-JSON response from the Tasks route. Added host
+  diagnostics; no D1/browser acceptance is claimed from this failing run.
+- Acceptance review also found previously overlooked functional gaps: the example
+  truncated stored text, had no multiline control, and hid records beyond the
+  first page. Corrected both examples to preserve admitted 4096-byte UTF-8 text,
+  including empty and multiline input. The shared A1 helper is intentionally
+  neutral; nonidentity transforms remain covered by dedicated runtime tests.
+- Added generic closed keyset cursors with lexicographic ordering and a primary-key
+  tie breaker, checked continuation-action contracts, textarea controls and visible
+  successful-request counters without introducing an unmodeled clock effect.
+  One-row example pages retain the exact existing 32768-byte wire bound.
+- Independent review reproduced D1's 100-binding limit with a 107-binding query;
+  compilation now rejects excess binding/SQL-byte budgets. Previous-page memory
+  is bounded while forward paging remains available. Review also closed inline
+  source-map audit and false-positive process-restart evidence gaps with regressions.
+- Focused general tests passed locally; full exact-snapshot CI, pinned lockfile,
+  genuine local D1 and browser evidence still gate completion. M4 tenant, session,
+  general idempotency, transaction and migration work is not pulled into M3.

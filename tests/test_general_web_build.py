@@ -51,7 +51,9 @@ class GeneralBuildTests(unittest.TestCase):
                                          pure_sources=self.pure))
 
     def test_executable_library_changes_both_servers_and_invalidates_build_binding(self):
-        changed = {"helpers": self.pure["helpers"].replace("(const 120)", "(const 80)")}
+        changed = {"helpers": self.pure["helpers"].replace(
+            "(return text)", "(let n Nat (const 80)) "
+            "(let short (Text 4096) (text_prefix_codepoints text n)) (return short)")}
         for name in ("history", "tasks"):
             source = (EXAMPLES / f"{name}.webapp").read_text()
             before = compile_source(source, library_sources=self.libraries, pure_sources=self.pure)

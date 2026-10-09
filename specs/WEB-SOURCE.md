@@ -52,7 +52,8 @@ The closed query forms are:
 (insert TABLE (values (COLUMN INPUT)...) (project COLUMN...))
 (select_unique TABLE UNIQUE_COLUMN INPUT (project COLUMN...))
 (select_list TABLE (project COLUMN...) (order (COLUMN asc|desc)...)
-  (limit N) (offset N) (where (COLUMN INPUT)...))
+  (limit N) (offset N) (where (COLUMN INPUT)...)
+  [(cursor (COLUMN INPUT)...)])
 (conditional_update TABLE UNIQUE_COLUMN KEY_INPUT REVISION_COLUMN EXPECTED_INPUT
   (values (COLUMN INPUT)...) (project COLUMN...))
 ```
@@ -63,6 +64,17 @@ a primary-key tie breaker where needed. Unique selects require a declared unique
 key. Conditional updates bind the key and expected Nat revision atomically;
 updates cannot rewrite their key/revision, and successful updates increment the
 revision. Source never supplies raw SQL or interpolated SQL fragments.
+
+The optional `cursor` is a typed keyset boundary, not an arbitrary predicate.
+It lists every effective ordering column exactly once in effective order:
+explicit order columns followed by the primary key ascending if not already
+present. For history ordered by `id desc`, the cursor is `(cursor (id cursor_id))`.
+For tasks ordered by `priority desc` with the implicit `id asc` tie breaker, it is
+`(cursor (priority cursor_priority) (id cursor_id))`. Cursor inputs must exactly
+match column types. Partial, duplicated, reordered, unknown or mistyped cursor
+columns fail closed, as does a nonempty cursor with a nonzero offset. The query
+compiler builds the bounded prepared lexicographic comparison; source cannot
+choose SQL operators or supply an SQL fragment.
 
 
 ## Explicit pure action transforms
@@ -101,13 +113,14 @@ Views appear directly at application scope, or inside reusable components:
 
 ```text
 (form VIEW ACTION
-  (fields (PARAM "Label" input|checkbox)
+  (fields (PARAM "Label" input|textarea|checkbox)
           (PARAM "Label" select (choice "Label" SCALAR)...))
   (states "Loading" "Error" "Empty" "Success")
   (buttons "Submit" "Clear"))
 (list VIEW ACTION (columns (COLUMN "Label")...)
   (states "Loading" "Error" "Empty" "Success")
-  [(select DETAIL_VIEW PARAM COLUMN)])
+  [(select DETAIL_VIEW PARAM COLUMN)]
+  [(paginate NEXT_ACTION (NEXT_PARAM CONFIRMED_COLUMN)...)])
 (detail VIEW ACTION (columns (COLUMN "Label")...)
   (states "Loading" "Error" "Empty" "Success"))
 (component NAME VIEW_OR_USE...)
@@ -115,12 +128,29 @@ Views appear directly at application scope, or inside reusable components:
 ```
 
 Fields bind every form action parameter exactly once. Bool uses checkbox;
+`textarea` is supported only for Text and preserves multiline scalar text;
 select choices are typed scalars. List views use parameter-free bounded list
 queries, details use unique selects, and displayed columns must be projected.
 List selection binds an explicit unique row field into the target detail action
 parameter. Clear is local form state, as defined by the generic model; source
 does not add a destructive database clear action. Labels, state messages and
 buttons are explicit bounded display text.
+
+A list can declare `select` and `paginate` independently, each at most once, in
+either order after its states. Pagination names an explicit next-page query
+action and maps its cursor parameters to projected fields from the confirmed
+row. The next action must preserve the initial list's schema/query shape,
+projection, effective ordering, bounds and authorization while adding its exact
+typed cursor parameters. Unknown next actions, incorrect field/parameter
+mappings and duplicate mappings fail closed. Next-page transforms are forbidden;
+a cursor must retain the actual confirmed database ordering values. Component
+libraries can declare these mappings explicitly and bind them into both consumers.
+
+Page bounds apply to every response. Large Text capacities therefore require
+appropriately small pages within the separate codec body budget; the full-text
+examples use `(Text 4096)` with one-row pages and keyset navigation. This syntax
+retains the complete bounded text, including line breaks, rather than assuming
+that a presentation preview is the stored value.
 
 External UI libraries are separate canonical source snapshots. For example, both
 a history application and a task application can use this same source library

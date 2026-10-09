@@ -254,5 +254,99 @@ class WebSourceTests(unittest.TestCase):
                              pure_sources={"helpers": pure.replace("(entry preview)", "")})
 
 
+    def test_keyset_pagination_textarea_roundtrip_and_binding(self):
+        next_action = '''(action browse_next ((cursor_id (Text 64))) public
+          (select_list entries (project id title) (order (id desc))
+            (limit 20) (offset 0) (where) (cursor (id cursor_id))))'''
+        source = application().replace("(order (title asc))", "(order (id desc))")
+        source = source.replace("(library common)", next_action + " (library common)")
+        ui = UI.replace('(title "Text" input)', '(title "Text" textarea)').replace(
+            "(select detail selected_id id))",
+            "(select detail selected_id id) (paginate browse_next (cursor_id id)))",
+        )
+        parsed = parse_web_source(source, library_sources={"common": ui})
+        self.assertEqual(parsed.program.actions[-1].query.cursor[0][0], "id")
+        self.assertEqual(parsed.program.actions[-1].query.cursor[0][1].name, "cursor_id")
+        self.assertEqual(parsed.checked.expanded_views[0].fields[-1].control, "textarea")
+        pagination = parsed.checked.expanded_views[1].pagination
+        self.assertEqual((pagination.action, pagination.bindings),
+                         ("browse_next", (("cursor_id", "id"),)))
+        canonical_ui = parse_component_library(ui).canonical_source
+        repeated = parse_web_source(parsed.canonical_source,
+                                    library_sources={"common": canonical_ui})
+        self.assertEqual(repeated.program, parsed.program)
+        self.assertEqual(repeated.semantic_hash, parsed.semantic_hash)
+        self.assertTrue(check_web_source_binding(source, parsed.program,
+                                                library_sources={"common": ui}))
+        offered = parsed.checked.snapshot()
+        offered["expanded_views"][1]["pagination"]["bindings"][0]["param"] = "changed"
+        self.assertFalse(check_web_source_binding(source, offered, library_sources={"common": ui}))
+        alternate = ui.replace("(cursor_id id)", "(cursor_id title)")
+        self.assertFalse(check_web_source_binding(source, parsed.program,
+                                                 library_sources={"common": alternate}))
+
+    def test_closed_pagination_cursor_and_textarea_errors(self):
+        next_action = '''(action browse_next ((cursor_id (Text 64))) public
+          (select_list entries (project id title) (order (id desc))
+            (limit 20) (offset 0) (where) (cursor (id cursor_id))))'''
+        source = application().replace("(order (title asc))", "(order (id desc))")
+        source = source.replace("(library common)", next_action + " (library common)")
+        ui = UI.replace("(select detail selected_id id))",
+                        "(select detail selected_id id) (paginate browse_next (cursor_id id)))")
+        for cursor in ("(cursor (id cursor_id extra))", "(cursor (id missing))",
+                       "(cursor (id cursor_id) (id cursor_id))", "(sql \"raw\")"):
+            with self.subTest(cursor=cursor), self.assertRaises(WebSourceError):
+                parse_web_source(source.replace("(cursor (id cursor_id))", cursor),
+                                 library_sources={"common": ui})
+        for pagination in (
+            "(paginate missing (cursor_id id))",
+            "(paginate browse_next (cursor_id title))",
+            "(paginate browse_next (cursor_id id extra))",
+            "(paginate browse_next (cursor_id id) (cursor_id id))",
+            "(paginate browse_next (cursor_id id)) (paginate browse_next (cursor_id id))",
+            "(select detail selected_id id) (select detail selected_id id)",
+        ):
+            with self.subTest(pagination=pagination), self.assertRaises(WebSourceError):
+                parse_web_source(source, library_sources={"common": ui.replace(
+                    "(paginate browse_next (cursor_id id))", pagination)})
+        with self.assertRaises(WebSourceError):
+            changed = source.replace("(offset 0) (where) (cursor", "(offset 1) (where) (cursor")
+            parse_web_source(changed,
+                             library_sources={"common": ui})
+        local = '''(websrc1 bad "Bad"
+          (schema (table tasks (id (Text 64) primary) (done Bool)))
+          (action save ((id (Text 64)) (done Bool)) public
+            (insert tasks (values (id id) (done done)) (project id)))
+          (form create save (fields (id "ID" input) (done "Done" textarea))
+            (states "Loading" "Error" "Empty" "Saved") (buttons "Save" "Clear")))'''
+        with self.assertRaises(WebSourceError):
+            parse_web_source(local)
+    def test_composite_task_cursor_preserves_effective_order_and_types(self):
+        source = application("tasks", "Planner", "(done Bool) (priority Nat)",
+                             "(done false) (priority 0)")
+        source = source.replace("(project id title) (order (title asc))",
+                                "(project id title priority) (order (priority desc))")
+        next_action = '''(action browse_next ((cursor_priority Nat) (cursor_id (Text 64))) public
+          (select_list tasks (project id title priority) (order (priority desc))
+            (limit 20) (offset 0) (where)
+            (cursor (priority cursor_priority) (id cursor_id))))'''
+        source = source.replace("(library common)", next_action + " (library common)")
+        ui = UI.replace("(select detail selected_id id))",
+            "(select detail selected_id id) "
+            "(paginate browse_next (cursor_priority priority) (cursor_id id)))")
+        parsed = parse_web_source(source, library_sources={"common": ui})
+        self.assertEqual(tuple(column for column, _ in parsed.program.actions[-1].query.cursor),
+                         ("priority", "id"))
+        self.assertEqual(parsed.checked.expanded_views[1].pagination.bindings,
+                         (("cursor_priority", "priority"), ("cursor_id", "id")))
+        for cursor in ("(cursor (id cursor_id))",
+                       "(cursor (id cursor_id) (priority cursor_priority))",
+                       "(cursor (priority cursor_id) (id cursor_id))"):
+            with self.subTest(cursor=cursor), self.assertRaises(WebSourceError):
+                parse_web_source(source.replace(
+                    "(cursor (priority cursor_priority) (id cursor_id))", cursor),
+                    library_sources={"common": ui})
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -54,8 +54,8 @@ test("tasks: concurrent real D1 revision updates have one winner and one conflic
     const saved = await call(request, "tasks", origin, "save", {id, title: "Original task"});
     expect(saved.status()).toBe(200);
     const candidates = [
-      {id, title: `First ${"😀é漢x".repeat(40)}`, revision: "0", done: true, priority: "3"},
-      {id, title: `Second ${"🧠n\u0303猫".repeat(40)}`, revision: "0", done: false, priority: "7"},
+      {id, title: `First line\n${"😀é漢x\n".repeat(200)}`, revision: "0", done: true, priority: "3"},
+      {id, title: `Second line\n${"🧠n\u0303猫\n".repeat(200)}`, revision: "0", done: false, priority: "7"},
     ];
     const results = await Promise.all(candidates.map(fields =>
       call(request, "tasks", origin, "update", fields),
@@ -65,7 +65,7 @@ test("tasks: concurrent real D1 revision updates have one winner and one conflic
     const loser = 1 - winner;
     expect(await results[loser].json()).toEqual({error: "ConditionNotMet"});
     const expected = {
-      id, title: Array.from(candidates[winner].title).slice(0, 120).join(""),
+      id, title: candidates[winner].title,
       revision: "1", done: candidates[winner].done, priority: candidates[winner].priority,
     };
     expect(await results[winner].json()).toEqual({tag: "Some", value: {

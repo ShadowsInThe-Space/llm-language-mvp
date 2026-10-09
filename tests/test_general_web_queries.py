@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from pathlib import Path
 
 from llmlang.web.general.codecs import BoolType, IntType, NatType, OptionType, TextType
@@ -22,6 +22,7 @@ from llmlang.web.general.queries import (
     SelectUnique,
     Table,
     compile_query,
+    effective_order,
     execute_sqlite,
     schema_sql,
 )
@@ -167,6 +168,131 @@ class QueryTests(unittest.TestCase):
                 compile_query(SCHEMA, SelectList("items", ("id",), (Order("id"),), limit, offset))
         with self.assertRaises(QueryError):
             compile_query(SCHEMA, SelectList("items", ("id",), (), 1))
+
+    def test_effective_order_exposes_explicit_columns_and_primary_tiebreaker(self) -> None:
+        first = SelectList("items", ("id",), (Order("score", "desc"),), 2)
+        self.assertEqual(effective_order(SCHEMA, first), (Order("score", "desc"), Order("id")))
+        explicit_key = replace(first, order=(Order("id", "desc"), Order("score")))
+        self.assertEqual(effective_order(SCHEMA, explicit_key), explicit_key.order)
+
+    def test_keyset_mixed_order_pages_cover_ties_unicode_bool_and_nat(self) -> None:
+        data = (
+            ("a", False, 5, 1), ("é", False, 5, 1), ("東京", False, 5, 1),
+            ("b", False, 5, 0), ("😀", True, 8, 0), ("α", True, 8, 0),
+            ("z", True, 2, 1), ("e", False, 1, 0), ("界", True, 8, 1),
+        )
+        for key, done, score, revision in data:
+            self.insert((("id", key), ("title", "value"), ("revision", revision),
+                         ("score", score), ("done", done)))
+        first = SelectList("items", ("id", "done", "score", "revision"),
+                           (Order("done"), Order("score", "desc"), Order("revision")), 2)
+        query = first
+        found = []
+        sizes = []
+        for _ in range(10):
+            result = execute_sqlite(self.db, SCHEMA, query)
+            if not result.rows:
+                break
+            found.extend(result.rows)
+            sizes.append(len(result.rows))
+            last = dict(zip(result.columns, result.rows[-1], strict=True))
+            cursor = tuple((order.column, last[order.column])
+                           for order in effective_order(SCHEMA, query))
+            query = replace(first, cursor=cursor)
+        expected = sorted(data, key=lambda row: (row[1], -row[2], row[3], row[0]))
+        self.assertEqual(found, expected)
+        self.assertEqual(sizes, [2, 2, 2, 2, 1])
+        self.assertEqual(len(set(row[0] for row in found)), len(data))
+
+    def test_keyset_predicate_combines_where_and_repeated_positional_values(self) -> None:
+        injected = 'é"; DROP TABLE items;--'
+        query = SelectList("items", ("id",), (Order("revision", "desc"),), 2,
+                           where=(("done", True),),
+                           cursor=(("revision", 3), ("id", injected)))
+        compiled = compile_query(SCHEMA, query)
+        self.assertIn('WHERE "done" = ? AND ("revision" < ? OR '
+                      '("revision" = ? AND "id" > ?))', compiled.sql)
+        self.assertEqual(compiled.bind(), (1, 3, 3, injected, 2, 0))
+        self.assertNotIn(injected, compiled.sql)
+        self.assertEqual(compile_query(SCHEMA, query), compiled)
+
+    def test_keyset_where_filter_applies_to_every_or_branch(self) -> None:
+        rows = (("a", False, 9), ("b", True, 2), ("c", False, 1),
+                ("é", True, 2), ("東京", True, 0), ("z", False, 2))
+        for key, done, revision in rows:
+            values = dict(VALUES)
+            values.update(id=key, done=done, revision=revision)
+            self.insert(tuple(values.items()))
+        query = SelectList("items", ("id", "revision"), (Order("revision", "desc"),), 10,
+                           where=(("done", True),), cursor=(("revision", 2), ("id", "b")))
+        self.assertEqual(execute_sqlite(self.db, SCHEMA, query).rows, (("é", 2), ("東京", 0)))
+
+    def test_keyset_static_parameters_bind_each_lexicographic_occurrence(self) -> None:
+        query = SelectList("items", ("id",), (Order("done"), Order("revision", "desc")), 2,
+                           cursor=(("done", Param("last_done", BoolType())),
+                                   ("revision", Param("last_revision", NatType())),
+                                   ("id", Param("last_id", TextType(64)))))
+        compiled = compile_query(SCHEMA, query)
+        values = compiled.bind({"last_done": False, "last_revision": 3, "last_id": "é"})
+        self.assertEqual(values, (0, 0, 3, 0, 3, "é", 2, 0))
+        self.assertEqual(len(compiled.bindings), compiled.sql.count("?"))
+        with self.assertRaises(QueryError):
+            compiled.bind({"last_done": 0, "last_revision": 3, "last_id": "é"})
+
+    def test_keyset_rejects_partial_duplicate_reordered_untyped_or_offset_cursor(self) -> None:
+        first = SelectList("items", ("id",), (Order("revision", "desc"),), 2)
+        invalid = (
+            (("revision", 0),), (("id", "one"), ("revision", 0)),
+            (("revision", 0), ("revision", 0)), (("revision", 0), ("unknown", "one")),
+            (("revision", -1), ("id", "one")), (("revision", True), ("id", "one")),
+            (("revision", 0), ("id", None)),
+            (("revision", Param("r", IntType())), ("id", "one")),
+            (("revision", 0), ("id", Param("i", TextType(63)))),
+        )
+        for cursor in invalid:
+            with self.subTest(cursor=cursor), self.assertRaises(QueryError):
+                compile_query(SCHEMA, replace(first, cursor=cursor))
+        with self.assertRaises(QueryError):
+            compile_query(SCHEMA, replace(first, offset=1, cursor=(("revision", 0), ("id", "one"))))
+        with self.assertRaises(QueryError):
+            replace(first, cursor=[("revision", 0), ("id", "one")])
+
+    def test_keyset_target_binding_budget_counts_repeated_cursor_and_where_values(self) -> None:
+        def wide(count: int, filters: int = 0) -> tuple[Schema, SelectList]:
+            names = tuple(f"column_{index}" for index in range(count))
+            schema = Schema((Table("wide", tuple(
+                Column(name, NatType(), primary_key=index == 0)
+                for index, name in enumerate(names)
+            )),))
+            query = SelectList("wide", names, tuple(Order(name) for name in names), 1,
+                where=tuple((names[index], Param(f"filter_{index}", NatType()))
+                            for index in range(filters)),
+                cursor=tuple((name, Param(f"cursor_{index}", NatType()))
+                             for index, name in enumerate(names)))
+            return schema, query
+
+        schema, query = wide(13)
+        compiled = compile_query(schema, query)
+        self.assertEqual(len(compiled.bindings), 93)
+        self.assertLessEqual(len(compiled.sql.encode("utf-8")), 100000)
+        schema, query = wide(13, 7)
+        compiled = compile_query(schema, query)
+        params = {binding.value.name: 0 for binding in compiled.bindings
+                  if isinstance(binding.value, Param)}
+        self.assertEqual(len(compiled.bind(params)), 100)
+        for count, filters in ((14, 0), (13, 8)):
+            schema, query = wide(count, filters)
+            with self.subTest(count=count, filters=filters), self.assertRaises(QueryError):
+                compile_query(schema, query)
+
+    def test_descending_primary_key_cursor_has_no_ascending_reorder(self) -> None:
+        for key in ("a", "é", "東京", "😀"):
+            self.insert(tuple((name, key if name == "id" else value) for name, value in VALUES))
+        first = SelectList("items", ("id",), (Order("id", "desc"),), 2)
+        self.assertEqual(execute_sqlite(self.db, SCHEMA, first).rows, (("😀",), ("東京",)))
+        second = replace(first, cursor=(("id", "東京"),))
+        self.assertEqual(execute_sqlite(self.db, SCHEMA, second).rows, (("é",), ("a",)))
+        self.assertIn('WHERE ("id" < ?)', compile_query(SCHEMA, second).sql)
 
     def test_list_equality_predicates_are_bound(self) -> None:
         self.insert()

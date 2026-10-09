@@ -24,6 +24,7 @@ from llmlang.web.general.program import (
     FormView,
     InputField,
     ListView,
+    Pagination,
     ParamTransform,
     ProgramError,
     ProgramLimits,
@@ -99,6 +100,18 @@ def preview_library() -> bytes:
                             "entrypoints": ["preview", "bytes"],
                             "limits": {"max_steps": 100, "max_collection_expansion": 10,
                                        "max_call_depth": 8}})
+
+
+def paged_application() -> WebProgram:
+    original = application()
+    params = (Param("after_title", TextType(32)), Param("after_id", TextType(64)))
+    first = original.actions[1]
+    next_action = replace(first, name="next", params=params, query=replace(
+        first.query, cursor=(("title", params[0]), ("id", params[1]))))
+    listing = replace(original.views[1], pagination=Pagination(
+        "next", (("after_title", "title"), ("after_id", "id"))))
+    return replace(original, actions=(*original.actions, next_action),
+                   views=(original.views[0], listing, original.views[2]))
 
 
 class ProgramTests(unittest.TestCase):
@@ -192,6 +205,134 @@ class ProgramTests(unittest.TestCase):
             self.rejected(replace(original, views=(original.views[0],
                            replace(original.views[1], columns=columns), original.views[2])),
                           "W_PROGRAM_VIEW")
+
+    def test_textarea_is_exactly_a_text_control_and_binds_snapshot(self) -> None:
+        original = application()
+        form = original.views[0]
+        textarea = replace(form.fields[1], control="textarea")
+        program = replace(original, views=(replace(form, fields=(form.fields[0], textarea,
+                          form.fields[2])), *original.views[1:]))
+        checked = validate_program(program)
+        self.assertEqual(checked.snapshot()["expanded_views"][0]["fields"][1]["control"],
+                         "textarea")
+        self.assertNotEqual(checked.semantic_hash, validate_program(original).semantic_hash)
+        fields = (*form.fields[:2], replace(form.fields[2], control="textarea"))
+        self.rejected(replace(original, views=(replace(form, fields=fields),
+                      *original.views[1:])), "W_PROGRAM_VIEW")
+        numeric = replace(original.actions[0], params=(Param("id", NatType()),
+                                                      *original.actions[0].params[1:]),
+                          query=replace(original.actions[0].query,
+                                        values=(("id", Param("id", NatType())),
+                                                *original.actions[0].query.values[1:])))
+        table = original.schema.tables[0]
+        schema = Schema((replace(table, columns=(Column("id", NatType(), primary_key=True),
+                                                *table.columns[1:])),))
+        fields = (replace(form.fields[0], control="textarea"), *form.fields[1:])
+        self.rejected(replace(original, schema=schema, actions=(numeric,),
+                      views=(replace(form, fields=fields),)), "W_PROGRAM_VIEW")
+
+    def test_pagination_binds_next_query_cursor_and_preserves_first_page_contract(self) -> None:
+        program = paged_application()
+        checked = validate_program(program)
+        listing = checked.snapshot()["expanded_views"][1]
+        self.assertEqual(listing["pagination"], {"action": "next", "bindings": [
+            {"param": "after_title", "column": "title"},
+            {"param": "after_id", "column": "id"},
+        ]})
+        self.assertEqual(checked.action("list").decode_input({}), {})
+        wire = {"record": "nextInput", "fields": {"after_title": "a", "after_id": "id1"}}
+        self.assertEqual(checked.action("next").decode_input(wire), wire["fields"])
+        next_snapshot = checked.snapshot()["actions"][-1]["query"]
+        self.assertEqual([item["column"] for item in next_snapshot["cursor"]], ["title", "id"])
+        self.assertNotIn("server:next", checked.effects.client_reachable)
+        self.assertEqual(checked.effects.summary("server:next").transitive_effects,
+                         frozenset({"db.read"}))
+        self.assertNotEqual(checked.semantic_hash, validate_program(replace(
+            program, views=(program.views[0], replace(program.views[1], pagination=None),
+                            program.views[2]))).semantic_hash)
+        reversed_binding = Pagination("next", (("after_id", "id"), ("after_title", "title")))
+        validate_program(replace(program, views=(program.views[0],
+                         replace(program.views[1], pagination=reversed_binding), program.views[2])))
+
+    def test_pagination_rejects_unbound_mutable_and_incomplete_bindings(self) -> None:
+        original = paged_application()
+        for paging in (Pagination("missing", (("after_title", "title"), ("after_id", "id"))),
+                       Pagination("next", ()),
+                       Pagination("next", (("after_title", "title"),)),
+                       Pagination("next", (("after_title", "title"), ("after_id", "title"))),
+                       Pagination("next", (("unknown", "title"), ("after_id", "id"))),
+                       Pagination("next", [("after_title", "title"), ("after_id", "id")])):
+            with self.subTest(paging=paging):
+                self.rejected(replace(original, views=(original.views[0],
+                              replace(original.views[1], pagination=paging), original.views[2])),
+                              "W_PROGRAM_VIEW")
+
+    def test_pagination_rejects_changed_query_auth_and_transformed_cursors(self) -> None:
+        original = paged_application()
+        action = original.actions[-1]
+        for changed in (replace(action, authorization="admin"),
+                        replace(action, query=replace(action.query, limit=10)),
+                        replace(action, transforms=(ParamTransform(
+                            "after_title", "preview", ("after_title",)),))):
+            with self.subTest(action=changed):
+                self.rejected(replace(original, pure_library=preview_library(),
+                              actions=(*original.actions[:-1], changed)), "W_PROGRAM_VIEW")
+        bad_offset = replace(action, query=replace(action.query, offset=1))
+        self.rejected(replace(original, actions=(*original.actions[:-1], bad_offset)),
+                      "W_PROGRAM_ACTION")
+        self.rejected(replace(original, views=(original.views[0],
+                      replace(original.views[1], action="next"), original.views[2])),
+                      "W_PROGRAM_VIEW")
+
+    def test_pagination_cursor_columns_must_all_be_projected(self) -> None:
+        original = paged_application()
+        first = replace(original.actions[1], query=replace(original.actions[1].query,
+                                                           projection=("id", "done")))
+        next_action = replace(original.actions[-1], query=replace(original.actions[-1].query,
+                                                                 projection=("id", "done")))
+        listing = replace(original.views[1], columns=(DisplayColumn("done", "Done"),))
+        self.rejected(replace(original, actions=(original.actions[0], first,
+                      original.actions[2], next_action),
+                      views=(original.views[0], listing, original.views[2])), "W_PROGRAM_VIEW")
+
+    def test_full_multiline_text4096_is_expressible_with_one_row_keyset_pages(self) -> None:
+        original = paged_application()
+        table = original.schema.tables[0]
+        schema = Schema((replace(table, columns=(table.columns[0],
+                        Column("title", TextType(4096)), *table.columns[2:])),))
+        save = original.actions[0]
+        title = Param("title", TextType(4096))
+        save = replace(save, params=(save.params[0], title, save.params[2]),
+                       query=replace(save.query, values=(save.query.values[0],
+                                     ("title", title), *save.query.values[2:])))
+        first = replace(original.actions[1], query=replace(original.actions[1].query, limit=1))
+        next_action = original.actions[-1]
+        cursor_title = Param("after_title", TextType(4096))
+        next_action = replace(next_action, params=(cursor_title, next_action.params[1]),
+                              query=replace(next_action.query, limit=1, cursor=(
+                                  ("title", cursor_title), next_action.query.cursor[1])))
+        form = original.views[0]
+        form = replace(form, fields=(form.fields[0], replace(form.fields[1], control="textarea"),
+                                     form.fields[2]))
+        checked = validate_program(replace(original, schema=schema,
+            actions=(save, first, original.actions[2], next_action),
+            views=(form, *original.views[1:])))
+        text = "😀é漢x\n" * 300
+        self.assertGreater(len(text.encode("utf-8")), 512)
+        self.assertLessEqual(len(text.encode("utf-8")), 4096)
+        wire = {"record": "saveInput", "fields": {"id": "one", "title": text, "done": False}}
+        self.assertEqual(checked.action("save").decode_input(wire)["title"], text)
+        row = {"record": "detailRow", "fields": {
+            "id": "one", "title": text, "done": False, "revision": 0}}
+        self.assertEqual(checked.action("detail").encode_output({"tag": "Some", "value": row})
+                         ["value"]["fields"]["title"], text)
+
+    def test_unused_components_must_also_validate_pagination(self) -> None:
+        original = paged_application()
+        bad = replace(original.views[1], name="unused_list",
+                      pagination=Pagination("unknown", (("after_title", "title"),)))
+        self.rejected(replace(original, components=(ComponentDef("unused", (bad,)),)),
+                      "W_PROGRAM_VIEW")
 
     def test_selection_requires_unique_action_exact_param_and_matching_table_key(self) -> None:
         original = application()
