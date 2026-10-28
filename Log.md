@@ -834,3 +834,16 @@ KI-Fachreview.
   and final documentation changes. Readiness is now enabled for the complete
   unchanged issue set #21/#22/#32. It authorizes the candidate delivery gates,
   not an unvalidated main merge or publication.
+
+## 2026-10-29 — D-047: Specifications are synthesized and challenged before they become authoritative
+
+**Decision:** The Software Factory no longer treats `Specify` as a one-shot requirement for a complete, correct specification. Human intent, examples and constraints first produce one or more **candidate specifications**. Pluggable reasoning engines may synthesize, critique and refine those candidates. A candidate becomes an authoritative, protected contract only through an explicit acceptance transition backed by independent evidence.
+
+**Architecture:** The refined flow is `Specify → Challenge → Refine → Verify-Spec → Generate → Prove/Verify → Repair → Verify`. Reasoning engines may use ordinary LLM reasoning, game-theoretic methods, adversarial/debate agents, domain planners, OCA-style approaches or future fine-tuned models. Their internal reasoning method is not part of the trusted computing base.
+
+**Trust boundary:** Reasoning output, multi-model consensus and model confidence are proposals, not proof. The Factory exchanges structured artifacts such as requirements, proposed contracts, assumptions, ambiguities, counterexamples and provenance; it does not require exposed chain-of-thought. Compiler checks, independent validators, SMT/formal proof, executable acceptance examples and explicit product-owner decisions remain the truth gates.
+
+**Reason:** A formally verified implementation may still satisfy the wrong specification. Treating specification synthesis as fallible makes that risk explicit and allows counterexamples and independent checks to improve the contract before implementation. This preserves D-001 (correctness is specification-relative) while reducing the chance that an incorrect specification is frozen too early.
+
+**Consequence:** Issue #52 scopes the design and is marked **DO NOT DO YET**. Existing issue #7 remains the specialized-agent foundation; #44 protects contracts only after acceptance; #45 binds evidence to exact revisions. No implementation or roadmap expansion is authorized by this decision alone.
+
